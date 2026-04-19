@@ -1,15 +1,15 @@
 :root {
-  --bg: #060b18;
-  --bg-soft: #0b1329;
-  --surface: rgba(255, 255, 255, 0.06);
-  --surface-strong: rgba(255, 255, 255, 0.1);
-  --text: #ecf2ff;
-  --muted: #adc0e6;
-  --primary: #67e8f9;
-  --primary-2: #8b5cf6;
-  --accent: #fbbf24;
-  --border: rgba(255, 255, 255, 0.14);
-  --shadow: 0 18px 45px rgba(2, 6, 23, 0.55);
+  --bg: #041527;
+  --bg-soft: #0a2740;
+  --surface: rgba(240, 250, 255, 0.1);
+  --surface-strong: rgba(255, 255, 255, 0.15);
+  --text: #eff8ff;
+  --muted: #b8d2e6;
+  --primary: #57d6eb;
+  --primary-2: #4f9df9;
+  --accent: #ffd166;
+  --border: rgba(194, 228, 255, 0.24);
+  --shadow: 0 18px 45px rgba(1, 19, 38, 0.45);
 }
 
 * {
@@ -24,9 +24,9 @@ body {
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   background:
-    radial-gradient(circle at 90% -10%, rgba(103, 232, 249, 0.2), transparent 40%),
-    radial-gradient(circle at -10% 20%, rgba(139, 92, 246, 0.24), transparent 42%),
-    linear-gradient(145deg, #060b18, #0a1430 55%, #111b3a);
+    radial-gradient(circle at 92% -6%, rgba(255, 209, 102, 0.28), transparent 40%),
+    radial-gradient(circle at -8% 24%, rgba(87, 214, 235, 0.26), transparent 43%),
+    linear-gradient(145deg, #041527, #083051 50%, #0f4f7a);
   min-height: 100vh;
 }
 
@@ -72,7 +72,7 @@ header {
   position: sticky;
   top: 0;
   z-index: 20;
-  background: rgba(5, 11, 25, 0.84);
+  background: rgba(3, 22, 40, 0.84);
   backdrop-filter: blur(14px);
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
@@ -127,12 +127,12 @@ nav a {
 nav a:hover,
 nav a.active {
   color: #fff;
-  background: rgba(103, 232, 249, 0.16);
+  background: rgba(87, 214, 235, 0.2);
 }
 
 .btn {
-  background: linear-gradient(120deg, var(--accent), #f97316);
-  color: #1f1400;
+  background: linear-gradient(120deg, #ffd166, #ff9f43);
+  color: #2a1a00;
   font-weight: 800;
   padding: 0.65rem 1rem;
   border-radius: 12px;
@@ -147,14 +147,26 @@ nav a.active {
 }
 
 .btn-secondary {
-  background: rgba(103, 232, 249, 0.12);
-  color: #d8faff;
-  border: 1px solid rgba(103, 232, 249, 0.3);
+  background: rgba(87, 214, 235, 0.14);
+  color: #dbf6ff;
+  border: 1px solid rgba(87, 214, 235, 0.36);
   box-shadow: none;
 }
 
 .hero {
   padding: 5rem 0 3.6rem;
+  position: relative;
+}
+
+.hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(circle at 20% 22%, rgba(255, 255, 255, 0.2) 0 2px, transparent 3px),
+    radial-gradient(circle at 77% 36%, rgba(255, 255, 255, 0.15) 0 2px, transparent 3px);
+  pointer-events: none;
+  opacity: 0.6;
 }
 
 .hero-grid {
@@ -187,12 +199,22 @@ nav a.active {
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(150deg, rgba(103, 232, 249, 0.2), transparent 45%, rgba(139, 92, 246, 0.25));
+  background: linear-gradient(150deg, rgba(255, 209, 102, 0.2), transparent 45%, rgba(87, 214, 235, 0.3));
   pointer-events: none;
 }
 
+.hero-card::after {
+  content: "✈";
+  position: absolute;
+  right: 1rem;
+  bottom: 0.25rem;
+  color: rgba(255, 255, 255, 0.2);
+  font-size: 2rem;
+  transform: rotate(10deg);
+}
+
 .kicker {
-  color: #b8ecf6;
+  color: #caedff;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.1em;
@@ -259,13 +281,13 @@ footer p {
   margin: 0;
   font-size: 1.7rem;
   font-weight: 800;
-  color: var(--primary);
+  color: #8defff;
 }
 
 .offer-tag {
   display: inline-block;
-  background: rgba(251, 191, 36, 0.18);
-  color: #fcd34d;
+  background: rgba(255, 209, 102, 0.2);
+  color: #ffe19a;
   font-size: 0.74rem;
   border: 1px solid rgba(251, 191, 36, 0.35);
   border-radius: 999px;
@@ -308,7 +330,7 @@ footer p {
   justify-content: space-between;
   gap: 1rem;
   align-items: center;
-  background: linear-gradient(110deg, rgba(103, 232, 249, 0.2), rgba(139, 92, 246, 0.34));
+  background: linear-gradient(110deg, rgba(87, 214, 235, 0.26), rgba(79, 157, 249, 0.34));
 }
 
 footer {
@@ -434,8 +456,8 @@ button {
 }
 
 .business-card {
-  background: linear-gradient(160deg, rgba(103, 232, 249, 0.09), rgba(139, 92, 246, 0.1));
-  border: 1px solid rgba(103, 232, 249, 0.28);
+  background: linear-gradient(160deg, rgba(87, 214, 235, 0.12), rgba(79, 157, 249, 0.14));
+  border: 1px solid rgba(87, 214, 235, 0.34);
   border-radius: 18px;
   box-shadow: var(--shadow);
   padding: 1.1rem;
@@ -451,7 +473,7 @@ button {
 }
 
 .company-card {
-  background: linear-gradient(155deg, rgba(251, 191, 36, 0.12), rgba(103, 232, 249, 0.08));
+  background: linear-gradient(155deg, rgba(255, 209, 102, 0.16), rgba(87, 214, 235, 0.12));
 }
 
 .company-grid {
