@@ -1,0 +1,19 @@
+<svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">LuxeRoutes app icon</title>
+  <desc id="desc">Dark blue rounded-square icon with a plane, sun, swoosh and waves.</desc>
+
+  <rect x="6" y="6" width="244" height="244" rx="56" fill="#172F63"/>
+
+  <circle cx="166" cy="118" r="28" fill="#F2CA5B"/>
+
+  <path d="M72 154C95 145 121 137 147 132C176 127 202 126 221 130C217 133 211 136 202 137C179 139 155 142 133 147C112 152 91 160 74 169C62 166 58 160 72 154Z" fill="#F2CA5B"/>
+
+  <path d="M74 148C95 131 115 119 139 110C165 101 190 100 212 103C218 105 223 107 226 110C220 114 213 116 203 115C179 111 157 113 135 120C113 127 94 141 78 160C70 157 68 153 74 148Z" fill="#F5F7FA"/>
+
+  <path d="M98 188C121 179 148 174 177 173C197 172 214 175 226 181C217 186 205 189 191 189C169 186 147 188 125 196C114 199 103 199 98 188Z" fill="#F5F7FA"/>
+  <path d="M84 198C106 191 130 186 156 185C180 184 201 187 217 193C210 198 199 202 186 203C166 200 145 202 125 209C109 212 94 210 84 198Z" fill="#F5F7FA"/>
+
+  <g transform="translate(123 84) rotate(-19)">
+    <path d="M0 17L29 17L47 4C54 0 63 -1 67 3C71 7 67 15 60 19L45 27L44 50L34 53L30 35L17 38L16 48L7 47L0 51L-4 47L3 40L-7 33L-4 29L7 32L16 28L0 17Z" fill="#F5F7FA"/>
+  </g>
+</svg>
