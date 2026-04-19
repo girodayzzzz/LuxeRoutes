@@ -1,13 +1,10 @@
-<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <linearGradient id="g" x1="6" y1="5" x2="57" y2="60" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#22D3EE"/>
-      <stop offset="0.5" stop-color="#6366F1"/>
-      <stop offset="1" stop-color="#9333EA"/>
-    </linearGradient>
-  </defs>
-  <rect x="5" y="5" width="54" height="54" rx="15" fill="url(#g)"/>
-  <path d="M18 24V43H38" stroke="#F4F9FF" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M18 43C26 31 33 31 40 25C44 21 47 17 50 13" stroke="#FDBA74" stroke-width="3" stroke-linecap="round"/>
-  <circle cx="50" cy="13" r="4" fill="#FFF7D4"/>
+<svg width="128" height="128" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="favTitle favDesc">
+  <title id="favTitle">LuxeRoutes favicon</title>
+  <desc id="favDesc">Circular LuxeRoutes icon with plane, sun and waves.</desc>
+  <circle cx="64" cy="64" r="44" stroke="#CFA041" stroke-width="6" fill="none"/>
+  <path d="M20 69 C34 50, 56 41, 96 32" stroke="#172F63" stroke-width="8" stroke-linecap="round" fill="none"/>
+  <path d="M98 24 L111 28 L121 20 C124 18 126 18 127 20 C128 22 126 25 123 28 L115 36 L116 51 L110 53 L106 42 L98 45 L98 50 L91 49 L86 51 L83 48 L89 44 L82 39 L85 36 L92 38 L98 35 Z" fill="#172F63"/>
+  <path d="M52 69 A12 12 0 0 1 76 69" fill="#CFA041"/>
+  <path d="M37 74 C51 71, 77 71, 91 74 C76 76, 51 76, 37 74Z" fill="#5B5F66"/>
+  <path d="M35 81 C51 78, 77 78, 93 81 C77 84, 51 84, 35 81Z" fill="#5B5F66"/>
 </svg>

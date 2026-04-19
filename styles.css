@@ -87,14 +87,11 @@ header {
 .logo {
   display: flex;
   align-items: center;
-  gap: 0.65rem;
-  font-weight: 800;
-  letter-spacing: 0.2px;
 }
 
 .logo img {
-  width: 44px;
-  height: 44px;
+  width: clamp(150px, 24vw, 230px);
+  height: auto;
 }
 
 .menu-toggle {
