@@ -1,0 +1,24 @@
+<svg width="660" height="170" viewBox="0 0 660 170" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="logoTitle logoDesc">
+  <title id="logoTitle">LuxeRoutes logo</title>
+  <desc id="logoDesc">A modern LuxeRoutes logo with a gradient compass and premium wordmark.</desc>
+
+  <defs>
+    <linearGradient id="lrSky" x1="12" y1="12" x2="152" y2="152" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#47C6FF"/>
+      <stop offset="1" stop-color="#1B4D9C"/>
+    </linearGradient>
+    <linearGradient id="lrGold" x1="53" y1="50" x2="125" y2="120" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFE7A6"/>
+      <stop offset="1" stop-color="#D4A130"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="12" y="12" width="140" height="140" rx="42" fill="url(#lrSky)"/>
+  <circle cx="82" cy="82" r="34" fill="none" stroke="url(#lrGold)" stroke-width="6"/>
+  <path d="M82 46L92 72L118 82L92 92L82 118L72 92L46 82L72 72L82 46Z" fill="url(#lrGold)"/>
+  <path d="M52 118C68 111 90 109 113 112C107 118 98 123 88 126C76 130 63 128 52 118Z" fill="#EAF4FF" fill-opacity="0.88"/>
+
+  <text x="180" y="106" fill="#0F294F" font-size="68" font-weight="700" font-family="'Segoe UI', 'Inter', 'Avenir Next', sans-serif" letter-spacing="0.5">Luxe</text>
+  <text x="370" y="106" fill="#D4A130" font-size="68" font-weight="700" font-family="'Segoe UI', 'Inter', 'Avenir Next', sans-serif" letter-spacing="0.5">Routes</text>
+  <text x="183" y="132" fill="#4E5D78" font-size="18" font-weight="500" font-family="'Segoe UI', 'Inter', 'Avenir Next', sans-serif" letter-spacing="3.6">PREMIUM TRAVEL OFFERS</text>
+</svg>
