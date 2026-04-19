@@ -21,6 +21,8 @@ body {
   font-family: "Inter", "Segoe UI", Arial, sans-serif;
   color: var(--text);
   line-height: 1.65;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
   background:
     radial-gradient(circle at 90% -10%, rgba(103, 232, 249, 0.2), transparent 40%),
     radial-gradient(circle at -10% 20%, rgba(139, 92, 246, 0.24), transparent 42%),
@@ -31,6 +33,14 @@ body {
 a {
   color: inherit;
   text-decoration: none;
+}
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
 }
 
 img {
@@ -411,5 +421,54 @@ button {
 
   nav ul.open {
     display: flex;
+  }
+}
+
+
+.stack-head {
+  margin-bottom: 1rem;
+}
+
+.stack-head h2 {
+  margin-bottom: 0.35rem;
+}
+
+.business-card {
+  background: linear-gradient(160deg, rgba(103, 232, 249, 0.09), rgba(139, 92, 246, 0.1));
+  border: 1px solid rgba(103, 232, 249, 0.28);
+  border-radius: 18px;
+  box-shadow: var(--shadow);
+  padding: 1.1rem;
+}
+
+.compact-list {
+  margin-top: 0.45rem;
+  margin-bottom: 1rem;
+}
+
+.compact-list li {
+  margin: 0.2rem 0;
+}
+
+.company-card {
+  background: linear-gradient(155deg, rgba(251, 191, 36, 0.12), rgba(103, 232, 249, 0.08));
+}
+
+.company-grid {
+  display: grid;
+  gap: 0.3rem 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  margin-bottom: 0.75rem;
+}
+
+.company-inline {
+  color: var(--muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
   }
 }
