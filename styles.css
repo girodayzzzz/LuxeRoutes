@@ -330,7 +330,7 @@ footer p {
   background: linear-gradient(110deg, rgba(87, 214, 235, 0.26), rgba(79, 157, 249, 0.34));
 }
 
-footer {
+.site-footer {
   background: rgba(2, 6, 23, 0.8);
   border-top: 1px solid rgba(255, 255, 255, 0.08);
   color: #d9e7ff;
@@ -344,9 +344,17 @@ footer {
   padding: 2.1rem 0;
 }
 
-footer h4 {
+.site-footer h4 {
   margin-bottom: 0.5rem;
   color: #fff;
+}
+
+.site-footer .footer-note {
+  font-size: 0.92rem;
+}
+
+.site-footer a {
+  line-height: 1.8;
 }
 
 .copyright {
@@ -484,10 +492,54 @@ button {
   color: var(--muted);
 }
 
+.partner-hero {
+  padding: 3.3rem 0 1.7rem;
+}
+
+.partner-hero-grid {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 1rem;
+}
+
+.partner-benefits {
+  margin: 0.8rem 0 1rem;
+  padding-left: 1.1rem;
+}
+
+.partner-benefits li {
+  margin-bottom: 0.45rem;
+}
+
+.metric-strip {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.metric-strip .stat-card p {
+  margin: 0;
+}
+
+.partners-steps {
+  counter-reset: partner-step;
+}
+
+.partners-steps .card h3::before {
+  counter-increment: partner-step;
+  content: "Step " counter(partner-step) " • ";
+  color: #8defff;
+}
+
 @media (prefers-reduced-motion: reduce) {
   * {
     animation: none !important;
     transition: none !important;
     scroll-behavior: auto !important;
+  }
+}
+
+@media (max-width: 900px) {
+  .partner-hero-grid {
+    grid-template-columns: 1fr;
   }
 }
