@@ -176,7 +176,8 @@ p { color: var(--color-muted); }
 .form-shell p:not(.eyebrow) { margin-top: 1rem; color: var(--color-muted-strong); }
 .luxury-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
 .luxury-form label { display: grid; gap: .45rem; color: var(--color-text); font-weight: 800; }
-.luxury-form .full, .luxury-form button, .form-status { grid-column: 1 / -1; }
+.luxury-form .full, .luxury-form button, .form-status, .luxury-form .honeypot { grid-column: 1 / -1; }
+.honeypot { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
 input, textarea, select { width: 100%; border: 1px solid rgba(241,215,150,.25); border-radius: 16px; background: rgba(5, 8, 13, .84); color: var(--color-text); padding: .95rem 1rem; font: inherit; transition: border-color .2s ease, box-shadow .2s ease, background .2s ease; }
 input:focus, textarea:focus, select:focus { border-color: rgba(241,215,150,.62); box-shadow: 0 0 0 4px rgba(198,161,91,.1); outline: none; }
 textarea { resize: vertical; }
