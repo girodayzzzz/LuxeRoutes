@@ -1,4 +1,13 @@
 
+const header = document.querySelector('[data-header]');
+const updateHeaderState = () => {
+  if (!header) return;
+  header.classList.toggle('scrolled', window.scrollY > 18);
+};
+updateHeaderState();
+window.addEventListener('scroll', updateHeaderState, { passive: true });
+
+
 const currentPage = window.location.pathname.split('/').pop() || 'index.html';
 document.querySelectorAll('.primary-nav a[href]').forEach((link) => {
   const href = link.getAttribute('href');
@@ -15,12 +24,14 @@ const nav = document.querySelector('.primary-nav');
 if (toggle && nav) {
   const closeMenu = () => {
     nav.classList.remove('open');
+    document.body.classList.remove('nav-open');
     toggle.setAttribute('aria-expanded', 'false');
     toggle.setAttribute('aria-label', 'Open navigation');
   };
 
   toggle.addEventListener('click', () => {
     const isOpen = nav.classList.toggle('open');
+    document.body.classList.toggle('nav-open', isOpen);
     toggle.setAttribute('aria-expanded', String(isOpen));
     toggle.setAttribute('aria-label', isOpen ? 'Close navigation' : 'Open navigation');
   });

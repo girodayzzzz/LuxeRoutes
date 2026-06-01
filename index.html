@@ -3,267 +3,234 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>LuxeRoutes | Bespoke Luxury Travel Across Europe</title>
-  <meta name="description" content="Bespoke European luxury travel with private routes, curated stays, ultra-luxury escapes, and attentive concierge planning." />
-  <meta property="og:title" content="LuxeRoutes | Bespoke Luxury Travel Across Europe" />
-  <meta property="og:description" content="Private European routes, curated stays, and indulgent travel experiences designed by LuxeRoutes." />
+  <title>LuxeRoutes | Handpicked Luxury Routes Across Europe</title>
+  <meta name="description" content="Discover curated luxury stays, refined European escapes, and unforgettable private experiences across Slovenia, Croatia, Italy, Austria, Switzerland, and France." />
+  <meta name="robots" content="index, follow" />
+  <meta property="og:title" content="LuxeRoutes | Handpicked Luxury Routes Across Europe" />
+  <meta property="og:description" content="Curated stays, private experiences, and premium European travel routes designed for refined modern travelers." />
   <meta property="og:type" content="website" />
-  <meta property="og:url" content="https://luxeroutes.eu/index.html" />
-  <meta property="og:image" content="https://images.unsplash.com/photo-1491555103944-7c647fd857e6?auto=format&fit=crop&w=1800&q=82" />
+  <meta property="og:url" content="https://luxeroutes.eu/" />
+  <meta property="og:image" content="https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=1800&q=82" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="LuxeRoutes | Handpicked Luxury Routes Across Europe" />
+  <meta name="twitter:description" content="Curated stays, private experiences, and refined European luxury travel routes." />
+  <meta name="twitter:image" content="https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=1800&q=82" />
+  <link rel="canonical" href="https://luxeroutes.eu/" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@600;700;800&display=swap" rel="stylesheet" />
+  <link rel="preconnect" href="https://images.unsplash.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="icon" type="image/svg+xml" href="favicon.svg" />
   <link rel="stylesheet" href="styles.css" />
 </head>
-<body>
+<body class="home-page">
   <a class="skip-link" href="#main-content">Skip to content</a>
-  <header class="site-header" data-header>
-    <div class="header-top" aria-label="LuxeRoutes concierge highlights">
-      <div class="container header-top-inner">
-        <span>Private European Travel Design</span>
-        <a href="mailto:hello@luxeroutes.eu">hello@luxeroutes.eu</a>
-        <span>Tailored proposal within 48h</span>
-      </div>
-    </div>
+  <header class="site-header home-header" data-header>
     <div class="container nav-shell">
       <a class="brand" href="index.html" aria-label="LuxeRoutes home"><img src="logo.svg" alt="LuxeRoutes wordmark" /></a>
       <button class="menu-toggle" type="button" aria-label="Open navigation" aria-controls="primary-navigation" aria-expanded="false">
         <span></span><span></span><span></span>
       </button>
       <nav id="primary-navigation" class="primary-nav" aria-label="Primary navigation">
-        <a href="index.html" class="nav-link">Home</a>
-        <a href="destinations.html" class="nav-link">Destinations</a>
-        <div class="nav-item has-dropdown">
-          <a href="stays.html" class="nav-link">Stays</a>
-          <div class="nav-dropdown" aria-label="Stay categories">
-            <a href="hotels.html"><span>Luxury Hotels</span><small>Iconic rooms & suites</small></a>
-            <a href="apartments.html"><span>Private Apartments</span><small>Elegant city living</small></a>
-            <a href="stays.html"><span>Curated Stays</span><small>Villas, chalets & retreats</small></a>
-          </div>
-        </div>
-        <a href="experiences.html" class="nav-link">Experiences</a>
-        <a href="offers.html" class="nav-link">Offers</a>
-        <div class="nav-item has-dropdown">
-          <a href="journal.html" class="nav-link">Journal</a>
-          <div class="nav-dropdown" aria-label="LuxeRoutes company pages">
-            <a href="about.html"><span>About LuxeRoutes</span><small>How we design travel</small></a>
-            <a href="partners.html"><span>Partners</span><small>Work with our network</small></a>
-            <a href="managers.html"><span>Managers</span><small>Property representation</small></a>
-          </div>
-        </div>
+        <a href="#destinations" class="nav-link">Destinations</a>
+        <a href="#stays" class="nav-link">Stays</a>
+        <a href="#experiences" class="nav-link">Experiences</a>
+        <a href="#journal" class="nav-link">Journal</a>
         <a href="contact.html" class="nav-link">Contact</a>
-        <a class="btn btn-primary nav-cta" href="contact.html">Plan My Trip</a>
+        <a class="btn btn-primary nav-cta" href="contact.html">Request a Stay</a>
       </nav>
     </div>
   </header>
+
   <main id="main-content">
-    <section class="hero hero-home luxury-hero">
-      <div class="hero-media">
-        <img src="https://images.unsplash.com/photo-1491555103944-7c647fd857e6?auto=format&fit=crop&w=2200&q=84" alt="Cinematic mountain route for luxury travel in Europe" />
+    <section class="cinematic-hero" aria-label="LuxeRoutes luxury travel introduction">
+      <div class="hero-media" aria-hidden="true">
+        <img src="https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=2400&q=82" alt="" />
       </div>
-      <div class="hero-glass-card" aria-hidden="true">
-        <span>Private villas</span>
-        <strong>Alps · Adriatic · Mediterranean</strong>
-      </div>
-      <div class="container hero-content luxury-hero-content">
-        <p class="eyebrow">Well travelled, exceptionally cared for</p>
-        <h1>Bespoke European escapes, crafted around you.</h1>
-        <p class="hero-lead">LuxeRoutes designs private routes, elegant stays, and indulgent experiences for couples, families, founders, and small groups who want every detail handled with taste.</p>
+      <div class="hero-layers" aria-hidden="true"></div>
+      <div class="container hero-stage">
+        <p class="eyebrow">Private European travel design</p>
+        <h1>Handpicked Luxury Routes Across Europe</h1>
+        <p class="hero-lead">Discover curated stays, refined escapes, and unforgettable private experiences designed for modern European luxury travel.</p>
         <div class="button-row">
-          <a class="btn btn-primary" href="contact.html">Plan My Trip</a>
-          <a class="btn btn-secondary" href="experiences.html">Explore Experiences</a>
-        </div>
-        <div class="hero-proof luxury-proof" aria-label="LuxeRoutes service highlights">
-          <div><strong>48h</strong><span>curated reply</span></div>
-          <div><strong>6</strong><span>core regions</span></div>
-          <div><strong>1:1</strong><span>concierge care</span></div>
+          <a class="btn btn-primary" href="contact.html">Request a Curated Stay</a>
+          <a class="btn btn-secondary" href="#destinations">Explore Destinations</a>
         </div>
       </div>
+      <a class="scroll-indicator" href="#trust" aria-label="Scroll to LuxeRoutes service pillars">
+        <span></span>
+        <small>Scroll</small>
+      </a>
     </section>
 
-    <section class="trust-strip elevated-trust" aria-label="LuxeRoutes luxury service pillars">
+    <section id="trust" class="trust-strip luxury-trust" aria-label="LuxeRoutes trust pillars">
       <div class="container trust-grid">
-        <span>Tailor-made route design</span>
-        <span>Verified boutique stays</span>
-        <span>Private hosts & transfers</span>
-        <span>Celebrations, retreats & road trips</span>
+        <span><b>01</b>Curated European Stays</span>
+        <span><b>02</b>Private Experiences</span>
+        <span><b>03</b>Premium Partner Network</span>
+        <span><b>04</b>Designed for Refined Travelers</span>
       </div>
     </section>
 
-    <section class="section intro-luxury">
+    <section class="section editorial-intro" aria-labelledby="intro-heading">
       <div class="container editorial-split">
         <div>
-          <p class="eyebrow">Trust and luxury redefined</p>
-          <h2>Travel planning that feels personal, discreet, and beautifully simple.</h2>
+          <p class="eyebrow">A more considered way to travel</p>
+          <h2 id="intro-heading">A cinematic European escape, shaped around your pace, privacy, and sense of place.</h2>
         </div>
         <div class="editorial-copy">
-          <p>Inspired by the world’s best luxury travel advisors, LuxeRoutes is built around a human-first inquiry process: we understand the occasion, shape the route, and coordinate suitable stays, transport, and experiences before you commit.</p>
-          <p>From a private Adriatic island week to a wellness chalet in the Alps or a milestone villa celebration in Italy, every proposal is curated for pace, privacy, and place.</p>
+          <p>LuxeRoutes is built for travelers who want more than a listing page. We listen first, then curate a route around the occasion: a private villa week on the Adriatic, a lake retreat in the Alps, a wellness stay in the forest, or a slow coastal journey through Europe’s most atmospheric regions.</p>
+          <p>Every inquiry remains personal and static today: no instant checkout, no booking engine, and no automated promise before selected providers confirm the right details.</p>
         </div>
       </div>
     </section>
 
-    <section class="section section-dark">
-      <div class="container section-heading centered-heading">
-        <p class="eyebrow">Signature travel styles</p>
-        <h2>Choose your kind of indulgence</h2>
-        <p>Start with a mood, not a generic search result. We build the route around what matters most to you.</p>
-      </div>
-      <div class="container card-grid three service-showcase">
-        <article class="image-card feature-card">
-          <img src="https://images.unsplash.com/photo-1533105079780-92b9be482077?auto=format&fit=crop&w=1100&q=82" alt="Private Mediterranean coast escape" loading="lazy" />
-          <div class="card-body">
-            <p class="card-kicker">Personal travel</p>
-            <h3>Live outside the ordinary</h3>
-            <p>Romantic weekends, family holidays, island hopping, wine country drives, and slow stays tailored to your rhythm.</p>
-            <a class="text-link" href="destinations.html">View destinations</a>
-          </div>
-        </article>
-        <article class="image-card feature-card">
-          <img src="https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?auto=format&fit=crop&w=1100&q=82" alt="Luxury private villa prepared for guests" loading="lazy" />
-          <div class="card-body">
-            <p class="card-kicker">Ultra luxury</p>
-            <h3>Private stays with presence</h3>
-            <p>Villas, chalets, design hotels, private chefs, wellness teams, yacht days, and discreet add-ons for special occasions.</p>
-            <a class="text-link" href="stays.html">Explore stays</a>
-          </div>
-        </article>
-        <article class="image-card feature-card">
-          <img src="https://images.unsplash.com/photo-1529634806980-85c3dd6d34ac?auto=format&fit=crop&w=1100&q=82" alt="Elegant business travel lounge" loading="lazy" />
-          <div class="card-body">
-            <p class="card-kicker">Business travel</p>
-            <h3>Where work meets ease</h3>
-            <p>Executive travel support, polished hotels, transfers, retreat venues, and calm logistics after a demanding day.</p>
-            <a class="text-link" href="contact.html">Request support</a>
-          </div>
-        </article>
-      </div>
-    </section>
-
-    <section class="section destinations-panel">
-      <div class="container route-intro">
-        <div class="section-heading">
-          <p class="eyebrow">See Europe our way</p>
-          <h2>Elegant routes from the Adriatic to the Alps</h2>
-          <p>Destinations selected for natural beauty, refined hospitality, drive-time comfort, and access to memorable private experiences.</p>
-        </div>
-        <aside class="concierge-card" aria-label="LuxeRoutes concierge note">
-          <span>Concierge note</span>
-          <p>Each inquiry is reviewed manually so stays, transfers, and experiences match the occasion rather than a generic search result.</p>
-        </aside>
-      </div>
-      <div class="container card-grid four destination-mosaic">
-        <article class="image-card">
-          <img src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=900&q=80" alt="Slovenia luxury travel landscape" loading="lazy" />
-          <div class="card-body"><h3>Slovenia</h3><p>Alpine lakes, vineyard hills, and quiet design-led retreats.</p></div>
-        </article>
-        <article class="image-card tall-card">
-          <img src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=900&q=80" alt="Croatia luxury travel landscape" loading="lazy" />
-          <div class="card-body"><h3>Croatia</h3><p>Adriatic islands, heritage towns, yacht days, and private coastal escapes.</p></div>
-        </article>
-        <article class="image-card">
-          <img src="https://images.unsplash.com/photo-1516483638261-f4dbaf036963?auto=format&fit=crop&w=900&q=80" alt="Italy luxury travel landscape" loading="lazy" />
-          <div class="card-body"><h3>Italy</h3><p>Countryside villas, lakefront stays, cuisine, craft, and timeless style.</p></div>
-        </article>
-        <article class="image-card">
-          <img src="https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=900&q=80" alt="Austria luxury travel landscape" loading="lazy" />
-          <div class="card-body"><h3>Austria</h3><p>Chalets, music cities, spa hotels, and scenic Alpine routes.</p></div>
-        </article>
-      </div>
-      <div class="container section-action"><a class="btn btn-secondary" href="destinations.html">Explore All Routes</a></div>
-    </section>
-
-    <section class="section testimonial-section">
-      <div class="container testimonial-grid">
+    <section id="destinations" class="section destinations-cinema" aria-labelledby="destinations-heading">
+      <div class="container section-heading split-heading">
         <div>
-          <p class="eyebrow">Guest notes</p>
-          <h2>Designed for the trips people remember.</h2>
-          <p>Every route is balanced between inspiration and practical delivery: the right stay, the right pace, the right private details.</p>
+          <p class="eyebrow">Featured destinations</p>
+          <h2 id="destinations-heading">Europe, edited for beauty and ease.</h2>
         </div>
-        <div class="quote-stack" aria-label="Client style testimonials">
-          <blockquote>
-            <p>“The shortlist felt like it was made for our anniversary, not copied from a booking site.”</p>
-            <cite>Milestone escape · Lake Como</cite>
-          </blockquote>
-          <blockquote>
-            <p>“Transfers, restaurant timing, and villa details were all thought through before we arrived.”</p>
-            <cite>Family journey · Croatia</cite>
-          </blockquote>
-        </div>
+        <p>From Alpine lakes to Mediterranean islands, LuxeRoutes focuses on regions with natural drama, refined hospitality, and access to memorable private experiences.</p>
+      </div>
+      <div class="container destination-grid">
+        <a class="destination-card large" href="destinations.html" aria-label="Explore Slovenia luxury travel">
+          <img src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=80" alt="Lake and mountains in Slovenia for luxury European travel" loading="lazy" />
+          <div><span>Alpine lakes and wine country</span><h3>Slovenia</h3></div>
+        </a>
+        <a class="destination-card tall" href="destinations.html" aria-label="Explore Croatia luxury travel">
+          <img src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=80" alt="Croatian Adriatic coastline with clear blue water" loading="lazy" />
+          <div><span>Island days and heritage towns</span><h3>Croatia</h3></div>
+        </a>
+        <a class="destination-card" href="destinations.html" aria-label="Explore Italy luxury travel">
+          <img src="https://images.unsplash.com/photo-1516483638261-f4dbaf036963?auto=format&fit=crop&w=1000&q=80" alt="Italian coastal village overlooking the Mediterranean" loading="lazy" />
+          <div><span>Villas, lakes, cuisine, craft</span><h3>Italy</h3></div>
+        </a>
+        <a class="destination-card" href="destinations.html" aria-label="Explore Austria luxury travel">
+          <img src="https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1000&q=80" alt="Elegant Alpine route through Austria" loading="lazy" />
+          <div><span>Chalets, spas, music cities</span><h3>Austria</h3></div>
+        </a>
+        <a class="destination-card wide" href="destinations.html" aria-label="Explore Switzerland luxury travel">
+          <img src="https://images.unsplash.com/photo-1530122037265-a5f1f91d3b99?auto=format&fit=crop&w=1200&q=80" alt="Swiss mountain landscape for luxury route planning" loading="lazy" />
+          <div><span>Glacier views and discreet retreats</span><h3>Switzerland</h3></div>
+        </a>
+        <a class="destination-card" href="destinations.html" aria-label="Explore France luxury travel">
+          <img src="https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=1000&q=80" alt="Paris and refined French travel atmosphere" loading="lazy" />
+          <div><span>Riviera, countryside, city elegance</span><h3>France</h3></div>
+        </a>
       </div>
     </section>
 
-    <section class="section section-soft process-luxury">
+    <section id="stays" class="section stays-editorial" aria-labelledby="stays-heading">
+      <div class="container section-heading centered-heading">
+        <p class="eyebrow">Curated stays</p>
+        <h2 id="stays-heading">Stay somewhere with a point of view.</h2>
+        <p>Not generic categories, but carefully framed stay concepts that help us understand the mood, setting, and level of privacy you want.</p>
+      </div>
+      <div class="container stay-stack">
+        <article class="stay-feature">
+          <img src="https://images.unsplash.com/photo-1542718610-a1d656d1884c?auto=format&fit=crop&w=1400&q=80" alt="Luxury Alpine lake retreat surrounded by forest and mountains" loading="lazy" />
+          <div class="stay-copy"><span>Alps and lakes</span><h3>Alpine Lake Retreat</h3><p>Wake to still water, mountain air, private terraces, and slow mornings shaped around wellness, scenery, and restorative silence.</p><a class="text-link" href="stays.html">View curated stays</a></div>
+        </article>
+        <article class="stay-feature reverse">
+          <img src="https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?auto=format&fit=crop&w=1400&q=80" alt="Mediterranean villa interior with warm evening light" loading="lazy" />
+          <div class="stay-copy"><span>Coast and islands</span><h3>Mediterranean Villa Escape</h3><p>A private base for long lunches, sea-view evenings, boat days, local hosts, and family celebrations with room to breathe.</p><a class="text-link" href="stays.html">Explore villa ideas</a></div>
+        </article>
+        <article class="stay-feature compact">
+          <img src="https://images.unsplash.com/photo-1449158743715-0a90ebb6d2d8?auto=format&fit=crop&w=1100&q=80" alt="Hidden forest cabin for a private luxury escape" loading="lazy" />
+          <div class="stay-copy"><span>Forest privacy</span><h3>Hidden Forest Cabin</h3><p>Quiet architecture, firelight, trails, spa rituals, and a feeling of being far from everything without sacrificing comfort.</p><a class="text-link" href="stays.html">Discover cabins</a></div>
+        </article>
+        <article class="stay-feature compact reverse">
+          <img src="https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=1100&q=80" alt="Boutique wellness resort spa pool for refined European travel" loading="lazy" />
+          <div class="stay-copy"><span>Wellness-led stays</span><h3>Boutique Wellness Resort</h3><p>Design-forward retreats for spa journeys, mindful cuisine, private treatments, and travel days that feel intentionally unhurried.</p><a class="text-link" href="stays.html">Plan a wellness stay</a></div>
+        </article>
+      </div>
+    </section>
+
+    <section id="experiences" class="section experiences-showcase" aria-labelledby="experiences-heading">
+      <div class="container section-heading split-heading">
+        <div>
+          <p class="eyebrow">Private experiences</p>
+          <h2 id="experiences-heading">The details that make a route unforgettable.</h2>
+        </div>
+        <p>Pair your stay with discreet logistics, private hosts, regional rituals, and experiences that feel connected to the place rather than added at the end.</p>
+      </div>
+      <div class="container experience-grid">
+        <a class="experience-card xl" href="experiences.html"><img src="https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?auto=format&fit=crop&w=1200&q=80" alt="Private luxury transfer through a scenic European road" loading="lazy" /><span>Private Transfers</span></a>
+        <a class="experience-card" href="experiences.html"><img src="https://images.unsplash.com/photo-1506377247377-2a5b3b417ebb?auto=format&fit=crop&w=900&q=80" alt="European vineyard prepared for a private wine tour" loading="lazy" /><span>Wine Tours</span></a>
+        <a class="experience-card tall" href="experiences.html"><img src="https://images.unsplash.com/photo-1500375592092-40eb2168fd21?auto=format&fit=crop&w=900&q=80" alt="Yacht escape across blue Mediterranean water" loading="lazy" /><span>Yacht Escapes</span></a>
+        <a class="experience-card" href="experiences.html"><img src="https://images.unsplash.com/photo-1544161515-4ab6ce6db874?auto=format&fit=crop&w=900&q=80" alt="Wellness treatment room for a private retreat" loading="lazy" /><span>Wellness Retreats</span></a>
+        <a class="experience-card" href="experiences.html"><img src="https://images.unsplash.com/photo-1529230117010-b6c436154f25?auto=format&fit=crop&w=900&q=80" alt="Fly fishing experience in clear European mountain water" loading="lazy" /><span>Fishing Experiences</span></a>
+        <a class="experience-card wide" href="experiences.html"><img src="https://images.unsplash.com/photo-1526772662000-3f88f10405ff?auto=format&fit=crop&w=1200&q=80" alt="Romantic European getaway with scenic mountains" loading="lazy" /><span>Romantic Getaways</span></a>
+      </div>
+    </section>
+
+    <section class="section process-luxury" aria-labelledby="process-heading">
       <div class="container section-heading centered-heading">
         <p class="eyebrow">How LuxeRoutes works</p>
-        <h2>A curated inquiry process, not an instant booking engine</h2>
-        <p>No fake instant availability, no anonymous checkout, and no overpromising before the right partner confirms the details.</p>
+        <h2 id="process-heading">A human inquiry process for considered travel.</h2>
+        <p>We do not imply instant booking. Every request is reviewed before recommendations are shared or providers are introduced.</p>
       </div>
       <div class="container process-grid three">
-        <article><span>01</span><h3>Share the occasion</h3><p>Tell us the region, dates, travel style, guest count, and whether this is a family escape, retreat, celebration, or private road trip.</p></article>
-        <article><span>02</span><h3>Receive a considered shortlist</h3><p>We shape a route with suitable stays, transfer logic, private experiences, and clear notes on what still needs provider confirmation.</p></article>
-        <article><span>03</span><h3>Confirm with confidence</h3><p>You continue with the LuxeRoutes team or the relevant provider once availability, inclusions, and final terms are transparent.</p></article>
+        <article><span>01</span><h3>Submit your inquiry</h3><p>Share your destination ideas, dates, occasion, preferred style, and any practical details that matter.</p></article>
+        <article><span>02</span><h3>Receive curated recommendations</h3><p>We prepare a considered shortlist of suitable stay concepts, route ideas, and private experience options.</p></article>
+        <article><span>03</span><h3>Connect with selected providers</h3><p>When the direction is right, we help connect you with relevant providers so availability and final terms can be confirmed directly.</p></article>
       </div>
     </section>
 
-    <section class="section partner-band" aria-label="Partner categories">
-      <div class="container partner-inner">
-        <p class="eyebrow">Trusted European network</p>
-        <div class="partner-logos" aria-label="Luxury partner categories">
-          <span>Private villas</span>
-          <span>Boutique hotels</span>
-          <span>Chalets</span>
-          <span>Yachts</span>
-          <span>Wellness</span>
-          <span>Local hosts</span>
+    <section class="section partner-cta" aria-labelledby="partner-heading">
+      <div class="container partner-cta-inner">
+        <div>
+          <p class="eyebrow">For exceptional hosts and regional experts</p>
+          <h2 id="partner-heading">Partner With LuxeRoutes</h2>
+          <p>Property owners, experience providers, and regional managers can join our growing European luxury network.</p>
+        </div>
+        <div class="button-row">
+          <a class="btn btn-primary" href="partners.html">List Your Stay</a>
+          <a class="btn btn-secondary" href="managers.html">Apply as a Manager</a>
         </div>
       </div>
     </section>
 
-    <section class="section journal-band">
-      <div class="container section-heading">
-        <p class="eyebrow">Travel notes</p>
-        <h2>Editorial ideas for refined European travel</h2>
+    <section id="journal" class="section journal-preview" aria-labelledby="journal-heading">
+      <div class="container section-heading split-heading">
+        <div>
+          <p class="eyebrow">Journal preview</p>
+          <h2 id="journal-heading">Editorial notes for refined European travel.</h2>
+        </div>
+        <a class="text-link" href="journal.html">Visit the journal</a>
       </div>
-      <div class="container journal-grid">
-        <article class="image-card">
-          <img src="https://images.unsplash.com/photo-1542718610-a1d656d1884c?auto=format&fit=crop&w=900&q=80" alt="Best Luxury Cabins in Europe" loading="lazy" />
-          <div class="card-body"><h3>Best Luxury Cabins in Europe</h3><p>A guide to quiet Alpine, forest, and lakeside cabin concepts for travelers seeking privacy and atmosphere.</p><a class="text-link" href="journal.html">Read preview</a></div>
+      <div class="container journal-grid luxury-journal-grid">
+        <article class="journal-card">
+          <img src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1000&q=80" alt="Slovenian mountain landscape for a hidden luxury destination guide" loading="lazy" />
+          <div><span>Destination notes</span><h3>Hidden Luxury Destinations in Slovenia</h3><p>Lakes, vineyards, quiet valleys, and boutique stays for travelers who prefer understated beauty.</p><a class="text-link" href="journal.html">Read preview</a></div>
         </article>
-        <article class="image-card">
-          <img src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=900&q=80" alt="Hidden Luxury Destinations in Slovenia" loading="lazy" />
-          <div class="card-body"><h3>Hidden Luxury Destinations in Slovenia</h3><p>Explore lakes, wine regions, mountain valleys, and understated boutique stays across Slovenia.</p><a class="text-link" href="journal.html">Read preview</a></div>
+        <article class="journal-card featured">
+          <img src="https://images.unsplash.com/photo-1533105079780-92b9be482077?auto=format&fit=crop&w=1200&q=80" alt="Mediterranean coastline for a romantic European weekend guide" loading="lazy" />
+          <div><span>Route inspiration</span><h3>Romantic Weekend Escapes in Europe</h3><p>Elegant two-night ideas where atmosphere, privacy, and travel time are balanced with care.</p><a class="text-link" href="journal.html">Read preview</a></div>
         </article>
-        <article class="image-card">
-          <img src="https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=900&q=80" alt="Romantic Weekend Escapes in Europe" loading="lazy" />
-          <div class="card-body"><h3>Romantic Weekend Escapes in Europe</h3><p>Ideas for elegant two-night escapes, scenic routes, and refined stays across Europe.</p><a class="text-link" href="journal.html">Read preview</a></div>
+        <article class="journal-card">
+          <img src="https://images.unsplash.com/photo-1510798831971-661eb04b3739?auto=format&fit=crop&w=1000&q=80" alt="Luxury cabin surrounded by snow and forest in Europe" loading="lazy" />
+          <div><span>Stay concepts</span><h3>Best Luxury Cabins in Europe</h3><p>Forest hideaways, Alpine architecture, lakeside privacy, and cabin stays designed around quiet.</p><a class="text-link" href="journal.html">Read preview</a></div>
         </article>
       </div>
     </section>
 
-    <section class="section final-cta">
+    <section class="section final-cta luxury-final" aria-labelledby="final-heading">
       <div class="container">
-        <p class="eyebrow">Start planning</p>
-        <h2>Begin your next European escape with a real conversation</h2>
-        <p>Tell us what kind of journey you have in mind and LuxeRoutes will guide the next step with practical timing, suitable regions, and curated stay concepts.</p>
-        <a class="btn btn-primary" href="contact.html">Start a Private Inquiry</a>
+        <p class="eyebrow">Begin with a private brief</p>
+        <h2 id="final-heading">Begin Your Next European Escape</h2>
+        <p>Tell us the atmosphere, destination, and occasion you are imagining. LuxeRoutes will help shape the first curated direction.</p>
+        <a class="btn btn-primary" href="contact.html">Request a Curated Stay</a>
       </div>
     </section>
   </main>
-  <footer class="site-footer">
-    <div class="container footer-consultation">
-      <div>
-        <p class="eyebrow">Begin with a private brief</p>
-        <h2>Tell us where luxury should take you next.</h2>
-        <p>Share your preferred dates, travel style, and occasion. LuxeRoutes will shape a refined first proposal with stays, routes, and experiences that feel personal from the start.</p>
-      </div>
-      <a class="btn btn-primary" href="contact.html">Start Planning</a>
-    </div>
+
+  <footer class="site-footer luxury-footer">
     <div class="container footer-grid">
       <div class="footer-about">
         <a class="footer-brand" href="index.html"><img src="logo.svg" alt="LuxeRoutes wordmark" /></a>
-        <p>Curated luxury stays, refined destinations, and private travel experiences across Europe — designed with discretion, pace, and taste.</p>
+        <p>Curated luxury stays, refined destinations, and private travel experiences across Europe, designed with discretion, pace, and taste.</p>
         <div class="footer-contact-card">
           <span>Concierge desk</span>
           <a href="mailto:hello@luxeroutes.eu">hello@luxeroutes.eu</a>
@@ -275,26 +242,16 @@
           <li><a href="destinations.html">Destinations</a></li>
           <li><a href="stays.html">Curated Stays</a></li>
           <li><a href="experiences.html">Experiences</a></li>
-          <li><a href="offers.html">Special Offers</a></li>
           <li><a href="journal.html">Journal</a></li>
+          <li><a href="contact.html">Contact</a></li>
         </ul>
       </div>
       <div>
-        <h2>Stay Types</h2>
+        <h2>Business</h2>
         <ul>
-          <li><a href="hotels.html">Luxury Hotels</a></li>
-          <li><a href="apartments.html">Private Apartments</a></li>
-          <li><a href="other-offers.html">Other Offers</a></li>
-          <li><a href="contact.html">Tailor-made Route</a></li>
-        </ul>
-      </div>
-      <div>
-        <h2>Company</h2>
-        <ul>
-          <li><a href="about.html">About</a></li>
           <li><a href="partners.html">Become a Partner</a></li>
           <li><a href="managers.html">Become a Manager</a></li>
-          <li><a href="contact.html">Contact</a></li>
+          <li><a href="partners.html">Property Owners</a></li>
         </ul>
       </div>
       <div>
@@ -305,10 +262,18 @@
           <li><a href="cookies.html">Cookie Policy</a></li>
         </ul>
       </div>
+      <div>
+        <h2>Social</h2>
+        <ul>
+          <li><a href="mailto:hello@luxeroutes.eu">Email</a></li>
+          <li><a href="journal.html">Journal</a></li>
+          <li><a href="contact.html">Private Inquiry</a></li>
+        </ul>
+      </div>
     </div>
     <div class="container footer-bottom">
       <p>© 2026 LuxeRoutes. All rights reserved.</p>
-      <p>Designed for bespoke European travel planning.</p>
+      <p>Static luxury travel landing page for GitHub Pages.</p>
     </div>
   </footer>
   <script src="script.js"></script>
