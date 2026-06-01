@@ -2422,3 +2422,86 @@ body.home-page {
     flex-direction: column;
   }
 }
+
+/* Dedicated trip-planning page */
+.plan-trip-hero .container {
+  position: relative;
+  z-index: 1;
+}
+.plan-hero-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 380px);
+  align-items: end;
+  gap: clamp(1.5rem, 4vw, 3rem);
+}
+.plan-snapshot {
+  padding: clamp(1.2rem, 3vw, 1.65rem);
+  border: 1px solid rgba(241, 215, 150, .26);
+  border-radius: 28px;
+  background: rgba(7, 10, 16, .64);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(18px) saturate(1.2);
+}
+.plan-snapshot span,
+.numbered-card span {
+  display: inline-flex;
+  margin-bottom: .85rem;
+  color: var(--color-gold-light);
+  font-size: .74rem;
+  font-weight: 900;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+.plan-snapshot ul {
+  display: grid;
+  gap: .72rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.plan-snapshot li {
+  position: relative;
+  padding-left: 1.25rem;
+  color: rgba(248, 243, 233, .82);
+}
+.plan-snapshot li::before {
+  content: "✓";
+  position: absolute;
+  left: 0;
+  color: var(--color-gold-light);
+  font-weight: 900;
+}
+.numbered-card span {
+  width: 2.4rem;
+  height: 2.4rem;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(241, 215, 150, .25);
+  border-radius: 999px;
+  background: rgba(241, 215, 150, .08);
+}
+.plan-form-shell {
+  border-color: rgba(241, 215, 150, .24);
+  background:
+    radial-gradient(circle at 12% 12%, rgba(241, 215, 150, .12), transparent 18rem),
+    rgba(255, 255, 255, .035);
+}
+@media (max-width: 860px) {
+  .plan-hero-grid { grid-template-columns: 1fr; }
+  .plan-snapshot { max-width: 520px; }
+}
+
+/* Keep the header width stable as menu items change between pages. */
+.primary-nav {
+  flex-wrap: nowrap;
+}
+.primary-nav > .nav-link,
+.primary-nav > .nav-item,
+.primary-nav > .nav-cta {
+  flex: 0 0 auto;
+}
+.nav-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
