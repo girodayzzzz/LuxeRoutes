@@ -1,3 +1,14 @@
+
+const currentPage = window.location.pathname.split('/').pop() || 'index.html';
+document.querySelectorAll('.primary-nav a[href]').forEach((link) => {
+  const href = link.getAttribute('href');
+  if (href === currentPage) {
+    link.classList.add('active');
+    const parentLink = link.closest('.nav-item')?.querySelector(':scope > .nav-link');
+    if (parentLink) parentLink.classList.add('active');
+  }
+});
+
 const toggle = document.querySelector('.menu-toggle');
 const nav = document.querySelector('.primary-nav');
 
@@ -19,7 +30,7 @@ if (toggle && nav) {
     if (event.key === 'Escape') closeMenu();
   });
   window.addEventListener('resize', () => {
-    if (window.innerWidth >= 981) closeMenu();
+    if (window.innerWidth >= 1021) closeMenu();
   });
 }
 
