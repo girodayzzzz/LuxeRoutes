@@ -1,43 +1,37 @@
 const toggle = document.querySelector('.menu-toggle');
-const menu = document.querySelector('nav ul');
+const nav = document.querySelector('.primary-nav');
 
-if (toggle && menu) {
+if (toggle && nav) {
   const closeMenu = () => {
-    menu.classList.remove('open');
+    nav.classList.remove('open');
     toggle.setAttribute('aria-expanded', 'false');
+    toggle.setAttribute('aria-label', 'Open navigation');
   };
 
-  toggle.setAttribute('aria-expanded', 'false');
-
   toggle.addEventListener('click', () => {
-    const isOpen = menu.classList.toggle('open');
+    const isOpen = nav.classList.toggle('open');
     toggle.setAttribute('aria-expanded', String(isOpen));
+    toggle.setAttribute('aria-label', isOpen ? 'Close navigation' : 'Open navigation');
   });
 
+  nav.querySelectorAll('a').forEach((link) => link.addEventListener('click', closeMenu));
   document.addEventListener('keydown', (event) => {
     if (event.key === 'Escape') closeMenu();
   });
-
   window.addEventListener('resize', () => {
-    if (window.innerWidth > 900) closeMenu();
+    if (window.innerWidth >= 981) closeMenu();
   });
 }
 
-const year = document.querySelector('[data-year]');
-if (year) {
-  year.textContent = String(new Date().getFullYear());
-}
-
-const contactForm = document.querySelector('form.form-grid');
-if (contactForm) {
+document.querySelectorAll('[data-static-form]').forEach((form) => {
   const status = document.createElement('p');
   status.className = 'form-status';
   status.setAttribute('role', 'status');
-  contactForm.append(status);
+  form.append(status);
 
-  contactForm.addEventListener('submit', (event) => {
+  form.addEventListener('submit', (event) => {
     event.preventDefault();
-    status.textContent = 'Thanks! Your message was captured successfully.';
-    contactForm.reset();
+    status.textContent = 'Thank you. This static preview form is ready for a future secure form connection. Please email hello@luxeroutes.eu for now.';
+    form.reset();
   });
-}
+});
