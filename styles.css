@@ -220,3 +220,130 @@ textarea { resize: vertical; }
   .footer-bottom { display: block; }
   .footer-bottom p + p { margin-top: .4rem; }
 }
+
+/* Homepage luxury refresh */
+.centered-heading { max-width: 850px; margin-inline: auto; text-align: center; }
+.luxury-hero { isolation: isolate; }
+.luxury-hero .hero-media img { filter: saturate(.78) contrast(1.12) brightness(.82); transform: scale(1.02); }
+.luxury-hero::before {
+  content: "";
+  position: absolute;
+  inset: 1.1rem;
+  z-index: -1;
+  pointer-events: none;
+  border: 1px solid rgba(241, 215, 150, .22);
+  border-radius: 34px;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.04);
+}
+.luxury-hero::after {
+  background:
+    linear-gradient(90deg, rgba(5,7,12,.96), rgba(6,8,13,.73) 43%, rgba(6,8,13,.2)),
+    linear-gradient(0deg, var(--color-bg) 2%, transparent 45%),
+    radial-gradient(circle at 74% 36%, rgba(241,215,150,.2), transparent 22rem);
+}
+.luxury-hero-content { position: relative; max-width: var(--max); }
+.luxury-hero-content h1 { max-width: 860px; text-wrap: balance; }
+.luxury-hero-content .hero-lead { max-width: 700px; }
+.hero-glass-card {
+  position: absolute;
+  right: max(2rem, calc((100vw - var(--max)) / 2));
+  bottom: clamp(2rem, 7vw, 5rem);
+  z-index: 2;
+  width: min(330px, 32vw);
+  padding: 1.2rem 1.25rem;
+  border: 1px solid rgba(241,215,150,.26);
+  border-radius: 26px;
+  background: rgba(7, 10, 16, .56);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(18px) saturate(1.25);
+}
+.hero-glass-card span,
+.card-kicker {
+  display: block;
+  color: var(--color-gold-light);
+  font-size: .72rem;
+  font-weight: 900;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+}
+.hero-glass-card strong { display: block; margin-top: .45rem; color: var(--color-text); font-family: "Playfair Display", Georgia, serif; font-size: 1.35rem; line-height: 1.1; }
+.luxury-proof div { background: rgba(8, 11, 17, .68); }
+.elevated-trust { background: linear-gradient(90deg, rgba(11,15,24,.98), rgba(20,27,39,.95), rgba(11,15,24,.98)); }
+.intro-luxury { padding-top: clamp(4rem, 7vw, 6.5rem); }
+.editorial-split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(320px, .78fr); gap: clamp(2rem, 6vw, 5rem); align-items: start; }
+.editorial-split h2 { text-wrap: balance; }
+.editorial-copy { padding: clamp(1.25rem, 3vw, 2rem); border-left: 1px solid rgba(241,215,150,.3); background: linear-gradient(90deg, rgba(241,215,150,.08), transparent); }
+.editorial-copy p { color: var(--color-muted-strong); font-size: 1.06rem; }
+.editorial-copy p + p { margin-top: 1rem; }
+.service-showcase .feature-card { min-height: 100%; }
+.feature-card img { height: 330px; }
+.feature-card .card-body { min-height: 260px; display: flex; flex-direction: column; align-items: flex-start; }
+.feature-card .card-body p:not(.card-kicker) { color: var(--color-muted-strong); }
+.feature-card .text-link { margin-top: auto; padding-top: 1.1rem; }
+.destinations-panel { position: relative; overflow: hidden; }
+.destinations-panel::before {
+  content: "";
+  position: absolute;
+  inset: 8% auto auto -180px;
+  width: 360px;
+  height: 360px;
+  border-radius: 50%;
+  background: rgba(198,161,91,.12);
+  filter: blur(45px);
+}
+.destination-mosaic { align-items: stretch; }
+.destination-mosaic .image-card { min-height: 100%; }
+.destination-mosaic .image-card img { height: 260px; }
+.destination-mosaic .tall-card { grid-row: span 2; }
+.destination-mosaic .tall-card img { height: 420px; }
+.testimonial-section { background: linear-gradient(135deg, rgba(7,10,16,.96), rgba(20,27,39,.9)); border-block: 1px solid rgba(241,215,150,.12); }
+.testimonial-grid { display: grid; grid-template-columns: .82fr 1.18fr; gap: clamp(2rem, 5vw, 4rem); align-items: center; }
+.testimonial-grid > div:first-child p:not(.eyebrow) { margin-top: 1rem; color: var(--color-muted-strong); max-width: 560px; }
+.quote-stack { display: grid; gap: 1rem; }
+.quote-stack blockquote {
+  margin: 0;
+  padding: clamp(1.35rem, 3vw, 2rem);
+  border: 1px solid rgba(241,215,150,.2);
+  border-radius: 26px;
+  background: radial-gradient(circle at top left, rgba(241,215,150,.13), rgba(255,255,255,.045) 45%, rgba(8,11,17,.68));
+  box-shadow: var(--shadow-soft);
+}
+.quote-stack p { color: var(--color-text); font-family: "Playfair Display", Georgia, serif; font-size: clamp(1.4rem, 2.4vw, 2.1rem); line-height: 1.18; }
+.quote-stack cite { display: block; margin-top: 1rem; color: var(--color-gold-light); font-style: normal; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; font-size: .74rem; }
+.process-luxury .process-grid article { background: linear-gradient(180deg, rgba(24,32,46,.95), rgba(10,14,22,.96)); }
+.partner-band { padding-block: clamp(2.4rem, 5vw, 4rem); background: #05070b; border-block: 1px solid rgba(241,215,150,.14); }
+.partner-inner { text-align: center; }
+.partner-inner .eyebrow { margin-bottom: 1.3rem; }
+.partner-logos { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: .8rem; }
+.partner-logos span {
+  display: grid;
+  min-height: 82px;
+  place-items: center;
+  padding: 1rem;
+  border: 1px solid rgba(241,215,150,.18);
+  border-radius: 20px;
+  background: linear-gradient(145deg, rgba(255,255,255,.045), rgba(198,161,91,.08));
+  color: rgba(248,243,233,.82);
+  font-family: "Playfair Display", Georgia, serif;
+  font-size: clamp(1rem, 1.5vw, 1.25rem);
+}
+.journal-band .image-card img { height: 250px; }
+
+@media (max-width: 1020px) {
+  .hero-glass-card { display: none; }
+  .editorial-split, .testimonial-grid { grid-template-columns: 1fr; }
+  .destination-mosaic { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .destination-mosaic .tall-card { grid-row: auto; }
+  .destination-mosaic .tall-card img { height: 260px; }
+  .partner-logos { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+@media (max-width: 700px) {
+  .luxury-hero::before { inset: .75rem; border-radius: 24px; }
+  .luxury-hero-content h1 { font-size: clamp(3rem, 17vw, 4.8rem); }
+  .editorial-copy { border-left: 0; border-top: 1px solid rgba(241,215,150,.3); }
+  .service-showcase .feature-card .card-body { min-height: auto; }
+  .feature-card img, .destination-mosaic .image-card img, .destination-mosaic .tall-card img, .journal-band .image-card img { height: 235px; }
+  .destination-mosaic, .partner-logos { grid-template-columns: 1fr; }
+  .partner-logos span { min-height: 68px; }
+}
