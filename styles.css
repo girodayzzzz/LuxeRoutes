@@ -1630,3 +1630,172 @@ body.home-page {
     font-size: clamp(2.15rem, 12vw, 3.25rem);
   }
 }
+
+/* Route-first expansion: stronger hero, signature route cards, and detail page image heroes. */
+.refined-hero {
+  min-height: clamp(680px, 82svh, 860px);
+  padding: clamp(7rem, 10vw, 8.5rem) 0 clamp(4.5rem, 7vw, 6rem);
+}
+
+.refined-hero .hero-media img {
+  filter: saturate(.68) contrast(1.12) brightness(.66);
+}
+
+.refined-hero .hero-layers {
+  background:
+    linear-gradient(90deg, rgba(6,7,10,.94) 0%, rgba(6,7,10,.74) 42%, rgba(6,7,10,.28) 74%),
+    linear-gradient(180deg, rgba(6,7,10,.26) 0%, transparent 34%, #06070a 100%),
+    radial-gradient(circle at 72% 34%, rgba(217,188,122,.18), transparent 24rem);
+}
+
+.refined-hero .hero-stage h1 {
+  max-width: 980px;
+  font-size: clamp(3.6rem, 7.6vw, 7.4rem);
+}
+
+.signature-routes,
+.routes-collection {
+  background:
+    radial-gradient(circle at 12% 8%, rgba(201,164,92,.14), transparent 28rem),
+    linear-gradient(180deg, #06070a, #0b1120);
+}
+
+.route-card-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(1rem, 2.4vw, 1.45rem);
+}
+
+.route-card {
+  position: relative;
+  overflow: hidden;
+  min-height: 330px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: clamp(1.3rem, 3vw, 2rem);
+  border: 1px solid rgba(217,188,122,.2);
+  border-radius: 32px;
+  background:
+    linear-gradient(145deg, rgba(24,32,46,.95), rgba(8,11,17,.98)),
+    rgba(8,11,17,.9);
+  box-shadow: var(--shadow-soft);
+}
+
+.route-card::before {
+  content: "";
+  position: absolute;
+  inset: 1rem;
+  pointer-events: none;
+  border: 1px solid rgba(248,245,239,.1);
+  border-radius: 24px;
+}
+
+.route-card::after {
+  content: "";
+  position: absolute;
+  right: -3rem;
+  top: -3rem;
+  width: 11rem;
+  height: 11rem;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(241,215,150,.18), transparent 68%);
+}
+
+.route-card.featured-route {
+  grid-column: span 1;
+  background:
+    linear-gradient(145deg, rgba(44,55,73,.9), rgba(9,12,18,.96)),
+    radial-gradient(circle at 80% 12%, rgba(241,215,150,.24), transparent 24rem);
+  border-color: rgba(241,215,150,.34);
+}
+
+.route-card span,
+.route-card h3,
+.route-card p,
+.route-card ul,
+.route-card a {
+  position: relative;
+  z-index: 1;
+}
+
+.route-card span {
+  color: var(--color-gold-light);
+  font-size: .7rem;
+  font-weight: 900;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+}
+
+.route-card h3 {
+  margin-top: .75rem;
+  font-size: clamp(1.8rem, 3vw, 2.8rem);
+}
+
+.route-card p {
+  margin-top: .9rem;
+  color: rgba(248,245,239,.78);
+}
+
+.route-card ul {
+  margin: 1rem 0 0;
+  padding-left: 1.1rem;
+  color: var(--color-muted-strong);
+}
+
+.page-hero-image {
+  isolation: isolate;
+  overflow: hidden;
+  background: #070a10;
+}
+
+.page-hero-image .hero-media {
+  z-index: -2;
+}
+
+.page-hero-image .hero-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: saturate(.72) contrast(1.08) brightness(.58);
+}
+
+.page-hero-image::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    linear-gradient(90deg, rgba(6,8,13,.88), rgba(6,8,13,.58) 54%, rgba(6,8,13,.22)),
+    linear-gradient(180deg, rgba(6,8,13,.18), rgba(6,8,13,.9));
+}
+
+.destination-detail-hero h1,
+.routes-hero h1 {
+  max-width: 1040px;
+}
+
+@media (max-width: 1020px) {
+  .route-card-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 780px) {
+  .refined-hero {
+    min-height: auto;
+    padding: 7rem 0 5rem;
+  }
+
+  .refined-hero .hero-stage h1 {
+    font-size: clamp(3rem, 13vw, 4.8rem);
+  }
+
+  .route-card-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .route-card {
+    min-height: 280px;
+  }
+}
