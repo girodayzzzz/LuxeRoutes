@@ -1,4 +1,3 @@
-
 const header = document.querySelector('[data-header]');
 const updateHeaderState = () => {
   if (!header) return;
@@ -6,7 +5,6 @@ const updateHeaderState = () => {
 };
 updateHeaderState();
 window.addEventListener('scroll', updateHeaderState, { passive: true });
-
 
 const currentPage = window.location.pathname.split('/').pop() || 'index.html';
 document.querySelectorAll('.primary-nav a[href]').forEach((link) => {
@@ -45,7 +43,22 @@ if (toggle && nav) {
   });
 }
 
-document.querySelectorAll('[data-static-form]').forEach((form) => {
+const formatLabel = (name) => name.replace(/_/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase());
+
+const buildInquiryBody = (form, formData) => {
+  const type = form.dataset.formType || 'LuxeRoutes inquiry';
+  const lines = [`${type}`, ''];
+
+  formData.forEach((value, key) => {
+    if (key === 'website' || !String(value).trim()) return;
+    lines.push(`${formatLabel(key)}: ${value}`);
+  });
+
+  lines.push('', `Submitted from: ${window.location.href}`);
+  return lines.join('\n');
+};
+
+document.querySelectorAll('[data-inquiry-form]').forEach((form) => {
   const status = document.createElement('p');
   status.className = 'form-status';
   status.setAttribute('role', 'status');
@@ -53,7 +66,20 @@ document.querySelectorAll('[data-static-form]').forEach((form) => {
 
   form.addEventListener('submit', (event) => {
     event.preventDefault();
-    status.textContent = 'Thank you. This static preview form is ready for a future secure form connection. Please email hello@luxeroutes.eu for now.';
+
+    const formData = new FormData(form);
+    if (String(formData.get('website') || '').trim()) {
+      status.textContent = 'Thank you. Your inquiry has been received.';
+      form.reset();
+      return;
+    }
+
+    const recipient = form.dataset.recipient || 'hello@luxeroutes.eu';
+    const subject = encodeURIComponent(form.dataset.formType || 'LuxeRoutes inquiry');
+    const body = encodeURIComponent(buildInquiryBody(form, formData));
+
+    status.textContent = 'Opening your email client with the inquiry details ready to send.';
+    window.location.href = `mailto:${recipient}?subject=${subject}&body=${body}`;
     form.reset();
   });
 });
