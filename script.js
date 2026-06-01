@@ -83,3 +83,69 @@ document.querySelectorAll('[data-inquiry-form]').forEach((form) => {
     form.reset();
   });
 });
+
+const normalizeFilterValue = (value) => String(value || '').trim().toLowerCase();
+
+const offerFilterRoot = document.querySelector('[data-offer-filter]');
+
+if (offerFilterRoot) {
+  const selectFilters = offerFilterRoot.querySelectorAll('[data-filter-select]');
+  const optionFilters = offerFilterRoot.querySelectorAll('[data-filter-option]');
+  const offerCards = offerFilterRoot.querySelectorAll('[data-offer-card]');
+  const resultCount = offerFilterRoot.querySelector('[data-result-count]');
+  const noResults = offerFilterRoot.querySelector('[data-no-results]');
+  const resetButton = offerFilterRoot.querySelector('[data-filter-reset]');
+
+  const getSelectedOptions = () => Array.from(optionFilters)
+    .filter((input) => input.checked)
+    .map((input) => normalizeFilterValue(input.value));
+
+  const cardMatchesSelect = (card, filterName, filterValue) => {
+    if (filterValue === 'all') return true;
+    const cardValues = normalizeFilterValue(card.dataset[filterName]).split(/\s+/);
+    return cardValues.includes(filterValue);
+  };
+
+  const cardMatchesOptions = (card, selectedOptions) => {
+    if (!selectedOptions.length) return true;
+    const cardOptions = normalizeFilterValue(card.dataset.options).split(/\s+/);
+    return selectedOptions.every((option) => cardOptions.includes(option));
+  };
+
+  const updateOffers = () => {
+    const selectedOptions = getSelectedOptions();
+    let visibleCount = 0;
+
+    offerCards.forEach((card) => {
+      const matchesSelects = Array.from(selectFilters).every((select) => {
+        const filterName = select.dataset.filterSelect;
+        const filterValue = normalizeFilterValue(select.value);
+        return cardMatchesSelect(card, filterName, filterValue);
+      });
+      const isVisible = matchesSelects && cardMatchesOptions(card, selectedOptions);
+
+      card.classList.toggle('is-hidden', !isVisible);
+      if (isVisible) visibleCount += 1;
+    });
+
+    if (resultCount) resultCount.textContent = String(visibleCount);
+    if (noResults) noResults.hidden = visibleCount !== 0;
+  };
+
+  selectFilters.forEach((select) => select.addEventListener('change', updateOffers));
+  optionFilters.forEach((input) => input.addEventListener('change', updateOffers));
+
+  if (resetButton) {
+    resetButton.addEventListener('click', () => {
+      selectFilters.forEach((select) => {
+        select.value = 'all';
+      });
+      optionFilters.forEach((input) => {
+        input.checked = false;
+      });
+      updateOffers();
+    });
+  }
+
+  updateOffers();
+}
