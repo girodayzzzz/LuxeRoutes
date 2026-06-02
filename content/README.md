@@ -14,7 +14,8 @@ Ta mapa je namenjena urejanju ponudb brez iskanja po dolgih HTML datotekah. Vseb
 4. Kopiraj ustrezno predlogo iz `content/offers/_templates/`.
 5. Datoteko poimenuj z malimi črkami in vezaji, npr. `lake-view-villa-bled.md`.
 6. Izpolni front matter polja na vrhu datoteke.
-7. Če mora biti ponudba vidna na javni strani, prenesi enake vrednosti v kartico na `offers.html` ali v prihodnji generator ponudb.
+7. Za pripravo HTML kartic za javno stran zaženi `./scripts/generate-offers.py`. Skripta prebere objavljene ponudbe in osveži `content/offers/_generated/offers-cards.html`.
+8. Če želiš kartice prikazati na `offers.html`, kopiraj generirani blok ali skripto poveži z deploy korakom.
 
 ## Pravilo poimenovanja
 
@@ -27,3 +28,22 @@ Uporabljaj samo male črke, številke in vezaje:
 ## Filtriranje
 
 Filtri naj uporabljajo vrednosti iz `content/offers/_taxonomy.md`, ker se ujemajo z obstoječimi `data-*` vrednostmi na `offers.html`.
+
+
+## Generator ponudb
+
+Za hitrejše dodajanje novih nastanitev je dodana skripta brez zunanjih odvisnosti:
+
+```bash
+./scripts/generate-offers.py
+```
+
+Skripta:
+
+- prebere `content/offers/<country>/accommodation/**/*.md`,
+- upošteva samo `status: published` in `content_kind: accommodation`,
+- uporabi vrednosti iz front matterja za `data-country`, `data-region`, `data-type` in `data-options`,
+- iz razdelka `## Short description` sestavi kratek opis,
+- zapiše kartice v `content/offers/_generated/offers-cards.html`.
+
+Pred objavo preveri, da so `country`, `region`, `type` in `options` skladni s `content/offers/_taxonomy.md`.

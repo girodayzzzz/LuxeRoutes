@@ -29,7 +29,7 @@
       </div>
     </div>
     <div class="container nav-shell">
-      <a class="brand" href="index.html" aria-label="LuxeRoutes home"><img src="logo.svg" alt="LuxeRoutes wordmark" /></a>
+      <a class="brand" href="index.html" aria-label="LuxeRoutes home"><img src="logo.svg" alt="LuxeRoutes wordmark"  width="620" height="160" loading="eager" decoding="async" /></a>
       <button class="menu-toggle" type="button" aria-label="Open navigation" aria-controls="primary-navigation" aria-expanded="false">
         <span></span><span></span><span></span>
       </button>
@@ -338,7 +338,7 @@
           <h2>Invite owners to submit stays.</h2>
           <p>This intake mirrors what the owner portal should collect once authentication and database storage are connected.</p>
         </div>
-        <form class="luxury-form" data-inquiry-form data-form-type="Owner property application" data-recipient="info@luxeroutes.eu">
+        <form class="luxury-form" data-inquiry-form data-endpoint="/api/inquiries" data-form-type="Owner property application" data-recipient="info@luxeroutes.eu">
           <input type="hidden" name="source_page" value="Admin Panel Owner Intake">
           <label class="honeypot" aria-hidden="true">Leave this field empty<input name="website" type="text" tabindex="-1" autocomplete="off"></label>
           <label>Owner name<input name="owner_name" type="text" required></label>

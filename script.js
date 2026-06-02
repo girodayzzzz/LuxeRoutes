@@ -128,13 +128,38 @@ const buildInquiryBody = (form, formData) => {
   return lines.join('\n');
 };
 
+const openMailFallback = (form, formData, status) => {
+  const recipient = form.dataset.recipient || 'info@luxeroutes.eu';
+  const offerName = String(formData.get('accommodation_interest') || '').trim();
+  const subjectBase = form.dataset.formType || 'LuxeRoutes inquiry';
+  const subject = encodeURIComponent(offerName ? `${subjectBase}: ${offerName}` : subjectBase);
+  const body = encodeURIComponent(buildInquiryBody(form, formData));
+
+  status.textContent = 'We could not submit directly, so your email client is opening with the inquiry details ready to send.';
+  window.location.href = `mailto:${recipient}?subject=${subject}&body=${body}`;
+};
+
+const submitInquiryPayload = async (endpoint, payload) => {
+  const response = await fetch(endpoint, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) throw new Error(`Inquiry endpoint returned ${response.status}`);
+  return response;
+};
+
 document.querySelectorAll('[data-inquiry-form]').forEach((form) => {
   const status = document.createElement('p');
   status.className = 'form-status';
   status.setAttribute('role', 'status');
   form.append(status);
 
-  form.addEventListener('submit', (event) => {
+  form.addEventListener('submit', async (event) => {
     event.preventDefault();
 
     const formData = new FormData(form);
@@ -144,15 +169,38 @@ document.querySelectorAll('[data-inquiry-form]').forEach((form) => {
       return;
     }
 
-    const recipient = form.dataset.recipient || 'info@luxeroutes.eu';
-    const offerName = String(formData.get('accommodation_interest') || '').trim();
-    const subjectBase = form.dataset.formType || 'LuxeRoutes inquiry';
-    const subject = encodeURIComponent(offerName ? `${subjectBase}: ${offerName}` : subjectBase);
-    const body = encodeURIComponent(buildInquiryBody(form, formData));
+    const submitButton = form.querySelector('button[type="submit"]');
+    const endpoint = form.dataset.endpoint;
+    const payload = collectInquiryPayload(form, formData);
 
-    status.textContent = 'Opening your email client with the inquiry details and JSON payload ready to send.';
-    window.location.href = `mailto:${recipient}?subject=${subject}&body=${body}`;
-    form.reset();
+    if (submitButton) submitButton.disabled = true;
+    form.setAttribute('aria-busy', 'true');
+    status.classList.remove('is-error');
+    status.textContent = endpoint
+      ? 'Sending your private brief securely to LuxeRoutes…'
+      : 'Opening your email client with the inquiry details ready to send.';
+
+    if (!endpoint) {
+      openMailFallback(form, formData, status);
+      form.reset();
+      form.removeAttribute('aria-busy');
+      if (submitButton) submitButton.disabled = false;
+      return;
+    }
+
+    try {
+      await submitInquiryPayload(endpoint, payload);
+      status.textContent = 'Thank you. Your inquiry has been received — LuxeRoutes will review it and reply within 48 hours.';
+      form.reset();
+    } catch (error) {
+      console.error(error);
+      status.classList.add('is-error');
+      openMailFallback(form, formData, status);
+      form.reset();
+    } finally {
+      form.removeAttribute('aria-busy');
+      if (submitButton) submitButton.disabled = false;
+    }
   });
 });
 
