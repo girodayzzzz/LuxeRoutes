@@ -3,6 +3,7 @@ title: "Adriatic Stone Villa"
 slug: "adriatic-stone-villa"
 status: published
 content_kind: accommodation
+sort_order: 20
 country: croatia
 region:
   - adriatic

@@ -3,6 +3,7 @@ title: "Offer title"
 slug: "offer-title"
 status: draft
 content_kind: accommodation
+sort_order: 999
 country: slovenia
 region:
   - lakes
