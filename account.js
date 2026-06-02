@@ -6,7 +6,12 @@ const accountForm = document.querySelector('[data-account-form]');
 const accountEmailInput = document.querySelector('[data-account-email-input]');
 const accountProfile = document.querySelector('[data-account-profile]');
 const accountLoginLink = document.querySelector('[data-account-login-link]');
+const isRegisterPage = () => document.body.classList.contains('account-page') && Boolean(accountForm);
+const isDashboardPage = () => document.body.classList.contains('account-dashboard-page');
+const isLoginPage = () => document.body.classList.contains('login-page');
 const accountStorageKey = 'luxeroutes-account-profile-v1';
+const accountSessionKey = 'luxeroutes-account-session-v1';
+const accountSessionTtlMs = 4 * 60 * 60 * 1000;
 let accountIdentity = null;
 let accountApiEnabled = false;
 
@@ -18,6 +23,36 @@ const accountEscapeHtml = (value) => String(value || '').replace(/[&<>"]/g, (cha
 }[character]));
 
 const isAccountLocalPreview = () => ['localhost', '127.0.0.1', ''].includes(window.location.hostname);
+
+const isSessionFresh = (session) => Boolean(session?.expiresAt && Date.now() < session.expiresAt);
+
+const loadAccountSession = () => {
+  const stored = sessionStorage.getItem(accountSessionKey);
+  if (!stored) return null;
+
+  try {
+    const session = JSON.parse(stored);
+    if (isSessionFresh(session)) return session;
+  } catch (error) {
+    // Ignore invalid browser cache and start a clean session.
+  }
+
+  sessionStorage.removeItem(accountSessionKey);
+  return null;
+};
+
+const saveAccountSession = ({ identity = accountIdentity, profile = null, grant = null, role = null } = {}) => {
+  if (!identity?.email && !profile?.email) return;
+
+  sessionStorage.setItem(accountSessionKey, JSON.stringify({
+    identity,
+    profile,
+    grant,
+    role: role || grant?.role || profile?.defaultRole || 'customer',
+    savedAt: Date.now(),
+    expiresAt: Date.now() + accountSessionTtlMs,
+  }));
+};
 
 const accountStatusLabel = (status) => ({
   active: 'Active',
@@ -98,11 +133,27 @@ const saveRemoteAccountProfile = async (profile) => {
   return response.json();
 };
 
+const updateAccountNav = ({ email = '', role = '', active = false } = {}) => {
+  document.querySelectorAll('[data-nav-login]').forEach((link) => {
+    link.textContent = active ? 'Logged in' : 'Login';
+    link.setAttribute('aria-label', active
+      ? `Email session active for ${email || role || 'signed-in user'}`
+      : 'Login to LuxeRoutes');
+  });
+
+  document.querySelectorAll('[data-nav-account]').forEach((link) => {
+    link.textContent = active ? 'My Account' : 'Account';
+    link.setAttribute('aria-label', active
+      ? `Open LuxeRoutes account for ${email || role || 'signed-in user'}`
+      : 'Open LuxeRoutes account dashboard');
+  });
+};
+
 const renderAccountProfile = (profile, grant = null) => {
   if (!accountProfile) return;
 
   if (!profile) {
-    accountProfile.innerHTML = '<p class="empty-state">No local profile saved yet.</p>';
+    accountProfile.innerHTML = '<p class="empty-state">No profile loaded yet. <a href="login.html">Login</a> first, or <a href="register.html">create your account</a> if you are new.</p>';
     return;
   }
 
@@ -137,37 +188,68 @@ const setAccountStatus = ({ heading, status, email, role, approved }) => {
     accountRole.classList.toggle('status-warning', !approved);
     accountRole.classList.toggle('status-pending', false);
   }
+  updateAccountNav({ email, role, active: Boolean(email && approved) });
+
   if (accountLoginLink) {
-    if (accountForm) {
+    if (isRegisterPage()) {
       accountLoginLink.textContent = 'Continue Registration';
       accountLoginLink.href = '#account-workspace';
+    } else if (email && approved) {
+      accountLoginLink.textContent = isDashboardPage() ? 'Refresh Account' : 'Open Account';
+      accountLoginLink.href = isDashboardPage() ? '#account-workspace' : 'account.html';
     } else {
-      accountLoginLink.textContent = email && approved ? 'Manage Account' : 'Login with Email';
-      accountLoginLink.href = email && approved ? '#account-workspace' : 'account.html';
+      accountLoginLink.textContent = 'Login with Email';
+      accountLoginLink.href = 'login.html';
     }
   }
 };
 
 const initialiseAccount = async () => {
+  const cachedSession = loadAccountSession();
+
+  if (cachedSession?.profile || cachedSession?.identity) {
+    const cachedEmail = cachedSession.identity?.email || cachedSession.profile?.email;
+    accountIdentity = cachedSession.identity || (cachedEmail ? { email: cachedEmail } : null);
+    setAccountStatus({
+      heading: 'Session restored',
+      status: 'Your login view is kept for this browser tab for a few hours. Cloudflare Access still verifies protected account actions in the background.',
+      email: cachedEmail,
+      role: cachedSession.role || cachedSession.grant?.role || cachedSession.profile?.defaultRole || 'Customer login',
+      approved: true,
+    });
+    renderAccountProfile(cachedSession.profile || loadAccountProfile(), cachedSession.grant);
+  }
+
   const identity = await getAccessIdentity();
   accountIdentity = identity;
   const remoteAccount = identity ? await loadRemoteAccountProfile() : null;
-  const profile = remoteAccount?.profile || loadAccountProfile();
+  const profile = remoteAccount?.profile || cachedSession?.profile || loadAccountProfile();
 
   if (identity) {
+    saveAccountSession({ identity, profile, grant: remoteAccount?.grant, role: remoteAccount?.role });
     setAccountStatus({
       heading: 'Email verified',
       status: remoteAccount?.profile
         ? 'Cloudflare Access verified your email and loaded your profile from Cloudflare D1.'
-        : 'Cloudflare Access verified your email. Register as a customer, then an admin can grant owner or manager access by this email.',
+        : (isLoginPage()
+          ? 'Cloudflare Access verified your email. Continue to Account for accepted offers, settings, and coupons, or register if you still need a profile.'
+          : 'Cloudflare Access verified your email. Register as a customer, then an admin can grant owner or manager access by this email.'),
       email: identity.email,
       role: remoteAccount?.role ? accountEscapeHtml(remoteAccount.role) : 'Customer login',
+      approved: true,
+    });
+  } else if (cachedSession?.profile || cachedSession?.identity) {
+    setAccountStatus({
+      heading: 'Session still active',
+      status: 'We kept your login session visible in this tab. Reopen Login if Cloudflare asks you to verify again.',
+      email: cachedSession.identity?.email || cachedSession.profile?.email,
+      role: cachedSession.role || 'Cached account',
       approved: true,
     });
   } else if (isAccountLocalPreview()) {
     setAccountStatus({
       heading: 'Local preview',
-      status: 'Local preview is active. In production, protect this page with a Cloudflare Access policy that allows everyone to login by email.',
+      status: 'Local preview is active. In production, protect login/register/account with Cloudflare Access so visitors verify by email.',
       email: profile?.email || 'localhost preview',
       role: 'Preview',
       approved: true,
@@ -175,14 +257,14 @@ const initialiseAccount = async () => {
   } else {
     setAccountStatus({
       heading: 'Login required',
-      status: 'This page should be protected by Cloudflare Access with an Everyone policy, so customers login with email before registering.',
+      status: 'Use the Login page to verify by email before opening Account. New users should create a profile on Register first.',
       email: 'Cloudflare Access required',
       role: 'Not verified',
       approved: false,
     });
   }
 
-  renderAccountProfile(profile, remoteAccount?.grant);
+  renderAccountProfile(profile, remoteAccount?.grant || cachedSession?.grant);
 };
 
 accountForm?.addEventListener('submit', async (event) => {
@@ -206,6 +288,7 @@ accountForm?.addEventListener('submit', async (event) => {
     const remoteAccount = await saveRemoteAccountProfile(profile);
     const savedProfile = remoteAccount.profile || profile;
     saveAccountProfile(savedProfile);
+    saveAccountSession({ identity: accountIdentity || { email: savedProfile.email }, profile: savedProfile, grant: remoteAccount.grant, role: remoteAccount.role });
     renderAccountProfile(savedProfile, remoteAccount.grant);
     setAccountStatus({
       heading: 'Profile saved',
@@ -220,6 +303,7 @@ accountForm?.addEventListener('submit', async (event) => {
     });
   } catch (error) {
     saveAccountProfile(profile);
+    saveAccountSession({ identity: accountIdentity || { email: profile.email }, profile, role: profile.defaultRole || profile.requestedRole || 'customer' });
     renderAccountProfile(profile);
     setAccountStatus({
       heading: 'Local fallback saved',

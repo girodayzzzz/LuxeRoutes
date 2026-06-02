@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Account Login | LuxeRoutes</title>
-  <meta name="description" content="Access your LuxeRoutes account for private travel briefs, saved profile details, and approved owner or manager collaboration." />
+  <title>Account Dashboard | LuxeRoutes</title>
+  <meta name="description" content="Your LuxeRoutes account dashboard for accepted offers, account settings, coupons, and saved access status." />
   <meta name="robots" content="noindex, nofollow" />
-  <meta property="og:title" content="Account Login | LuxeRoutes" />
-  <meta property="og:description" content="Login to LuxeRoutes using Cloudflare-protected email access." />
+  <meta property="og:title" content="Account Dashboard | LuxeRoutes" />
+  <meta property="og:description" content="Open your private LuxeRoutes account dashboard after verified email login." />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://luxeroutes.eu/account.html" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -17,14 +17,14 @@
   <link rel="manifest" href="site.webmanifest" />
   <link rel="stylesheet" href="styles.css" />
 </head>
-<body class="admin-page account-page">
+<body class="admin-page account-page account-dashboard-page">
   <a class="skip-link" href="#main-content">Skip to content</a>
   <header class="site-header" data-header>
     <div class="header-top" aria-label="LuxeRoutes account highlights">
       <div class="container header-top-inner">
         <span>Private LuxeRoutes Account</span>
         <a href="mailto:info@luxeroutes.eu">info@luxeroutes.eu</a>
-        <span>Customer · Owner · Manager</span>
+        <span>Offers · Settings · Coupons</span>
       </div>
     </div>
     <div class="container nav-shell">
@@ -37,7 +37,8 @@
         <a href="offers.html" class="nav-link">Offers</a>
         <a href="partners.html" class="nav-link">Partners</a>
         <a href="managers.html" class="nav-link">Managers</a>
-        <a href="account.html" class="nav-link">Account</a>
+        <a href="login.html" class="nav-link" data-nav-login>Login</a>
+        <a href="account.html" class="nav-link" data-nav-account>Account</a>
         <a href="admin-panel.html" class="nav-link">Admin Panel</a>
         <a class="btn btn-primary nav-cta" href="plan-trip.html">Plan a Trip</a>
       </nav>
@@ -49,26 +50,23 @@
       <div class="container admin-hero-grid">
         <div>
           <p class="eyebrow">LuxeRoutes account</p>
-          <h1>Login to your LuxeRoutes account.</h1>
-          <p class="admin-lead">Use Cloudflare email verification to open your private LuxeRoutes profile, see your saved account status, or continue into approved owner and manager collaboration.</p>
+          <h1>Your private account dashboard.</h1>
+          <p class="admin-lead">Account is now reserved for accepted offers, saved profile status, settings such as email changes, and future customer coupons.</p>
           <div class="button-row">
-            <a class="btn btn-primary" href="account.html" data-account-login-link>Login with Email</a>
-            <a class="btn btn-secondary" href="register.html">Create Account</a>
+            <a class="btn btn-primary" href="#accepted-offers">View Accepted Offers</a>
+            <a class="btn btn-secondary" href="#account-settings">Account Settings</a>
+            <a class="btn btn-secondary" href="login.html" data-account-login-link>Login with Email</a>
           </div>
         </div>
-        <aside class="admin-login-card" aria-label="Account login status">
-          <p class="eyebrow">Cloudflare email login</p>
+        <aside class="admin-login-card" aria-label="Account status">
+          <p class="eyebrow">Account access</p>
           <h2 data-account-heading>Checking session</h2>
           <p data-account-status>Checking whether Cloudflare Access already verified your email.</p>
           <div class="admin-auth-meta">
             <span class="status-pill status-pending" data-account-role>Verifying</span>
             <span data-account-email>Session pending</span>
           </div>
-          <ul class="login-checklist">
-            <li>Verified email login for customers, owners, and managers.</li>
-            <li>Owner and manager requests wait for admin approval.</li>
-            <li>New profiles are created on the registration page.</li>
-          </ul>
+          <p class="admin-helper account-switch-link">Need to login first? <a href="login.html">Open Login</a>. New here? <a href="register.html">Register</a>.</p>
         </aside>
       </div>
     </section>
@@ -77,27 +75,53 @@
       <div class="container">
         <div class="admin-toolbar">
           <div>
-            <p class="eyebrow">Profile</p>
-            <h2>Your LuxeRoutes profile</h2>
-            <p>Review the profile saved for your verified email. Create a new account if no profile has been registered yet.</p>
+            <p class="eyebrow">Dashboard</p>
+            <h2>Accepted offers, settings, and rewards</h2>
+            <p>This area is no longer the login/register page. It is the signed-in dashboard for useful account features.</p>
           </div>
-          <a class="btn btn-secondary" href="register.html">Create Account</a>
+          <a class="btn btn-secondary" href="login.html">Login / refresh session</a>
         </div>
 
         <div class="admin-grid two">
+          <article class="admin-card" id="accepted-offers">
+            <div class="card-head"><p class="eyebrow">Accepted offers</p><span class="status-pill status-approved">Account</span></div>
+            <h3>Your accepted offers</h3>
+            <div class="stack-list">
+              <div class="stack-item">
+                <div>
+                  <strong>No accepted offers yet</strong>
+                  <span>Approved travel proposals and confirmed partner offers will appear here after LuxeRoutes accepts or confirms them for your email.</span>
+                </div>
+                <span class="status-pill status-pending">Waiting</span>
+              </div>
+            </div>
+          </article>
+
           <article class="admin-card">
-            <div class="card-head"><p class="eyebrow">Saved profile</p><span class="status-pill status-approved">Account status</span></div>
+            <div class="card-head"><p class="eyebrow">Profile status</p><span class="status-pill">Verified email</span></div>
             <h3>Current access</h3>
             <div class="stack-list" data-account-profile></div>
           </article>
 
+          <article class="admin-card" id="account-settings">
+            <div class="card-head"><p class="eyebrow">Settings</p><span class="status-pill">Coming next</span></div>
+            <h3>Account settings</h3>
+            <ul class="permission-list">
+              <li><strong>Change email</strong><span>Email changes will require re-verification before saved offers move to the new address.</span></li>
+              <li><strong>Travel preferences</strong><span>Save preferred regions, stay types, budget notes, and guest details for future briefs.</span></li>
+              <li><strong>Privacy controls</strong><span>Request profile updates or deletion from the LuxeRoutes team.</span></li>
+            </ul>
+          </article>
+
           <article class="admin-card">
-            <div class="card-head"><p class="eyebrow">Next step</p><span class="status-pill">Email first</span></div>
-            <h3>Need a profile?</h3>
-            <p class="admin-helper">Register as a customer, owner, or manager on the dedicated registration page. Customers become active immediately; owner and manager requests remain pending until an admin approves them.</p>
-            <div class="button-row">
-              <a class="btn btn-primary" href="register.html">Create Account</a>
-              <a class="btn btn-secondary" href="plan-trip.html">Send Travel Brief</a>
+            <div class="card-head"><p class="eyebrow">Coupons</p><span class="status-pill status-pending">Rewards</span></div>
+            <h3>Coupons and invitations</h3>
+            <p class="admin-helper">Future welcome codes, repeat-traveler rewards, and private campaign coupons will be shown here after they are assigned to your account.</p>
+            <div class="stack-list">
+              <div class="stack-item">
+                <div><strong>No active coupons</strong><span>Ask LuxeRoutes to attach a private code to your verified email.</span></div>
+                <span class="status-pill">0 codes</span>
+              </div>
             </div>
           </article>
         </div>
@@ -114,16 +138,16 @@
       <div>
         <h3>Account</h3>
         <ul>
-          <li><a href="account.html">Login</a></li>
+          <li><a href="login.html">Login</a></li>
           <li><a href="register.html">Create account</a></li>
-          <li><a href="plan-trip.html">Plan a Trip</a></li>
+          <li><a href="account.html">Account dashboard</a></li>
         </ul>
       </div>
       <a class="btn btn-primary" href="plan-trip.html">Plan a Trip</a>
     </div>
     <div class="container footer-bottom">
       <p>© <span data-current-year>2026</span> LuxeRoutes. All rights reserved.</p>
-      <p>Email-first account prototype.</p>
+      <p>Private account dashboard.</p>
     </div>
   </footer>
   <script src="script.js"></script>

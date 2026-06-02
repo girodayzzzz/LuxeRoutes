@@ -3094,6 +3094,9 @@ body.home-page {
   gap: .45rem;
 }
 
+.account-switch-link { margin-top: 1rem; }
+.account-switch-link a { color: var(--color-gold-light); font-weight: 900; text-decoration: underline; text-underline-offset: .18em; }
+
 .admin-card-full { grid-column: 1 / -1; }
 
 .registration-columns {
