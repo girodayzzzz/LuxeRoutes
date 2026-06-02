@@ -285,6 +285,12 @@
 
         <section class="admin-panel" data-panel="people" aria-label="People panel">
           <div class="admin-grid two">
+            <article class="admin-card admin-card-full">
+              <div class="card-head"><p class="eyebrow">Registrations</p><span class="status-pill status-approved">Live D1 profiles</span></div>
+              <h3>Customer, owner, and manager registrations</h3>
+              <p class="admin-helper">Customers are approved automatically. Owner and manager requests show pending, approved, or rejected status with business context so you can review them quickly.</p>
+              <div data-registration-list class="registration-columns"></div>
+            </article>
             <article class="admin-card">
               <div class="card-head"><p class="eyebrow">Owners</p><span class="status-pill">Partner accounts</span></div>
               <h3>Owner directory</h3>
@@ -295,10 +301,10 @@
               <h3>Manager directory</h3>
               <div data-manager-list class="stack-list"></div>
             </article>
-            <article class="admin-card">
+            <article class="admin-card admin-card-full">
               <div class="card-head"><p class="eyebrow">Access grants</p><span class="status-pill status-approved">Email roles</span></div>
               <h3>Grant access by email</h3>
-              <p class="admin-helper">Everyone can register as a customer. Use this admin-only workflow to promote verified emails to owner, manager, or admin access.</p>
+              <p class="admin-helper">Use this admin-only workflow for manual corrections, direct invitations, or adding another trusted admin.</p>
               <form class="admin-form" data-access-grant-form>
                 <label>Email<input name="email" type="email" placeholder="person@example.com" required></label>
                 <label>Role

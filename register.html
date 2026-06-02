@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Account Login | LuxeRoutes</title>
-  <meta name="description" content="Login to your LuxeRoutes account to view your profile, status, and approved access role." />
+  <title>Register Account | LuxeRoutes</title>
+  <meta name="description" content="Register your LuxeRoutes account for private travel briefs, owner submissions, manager collaboration, or business travel." />
   <meta name="robots" content="noindex, nofollow" />
-  <meta property="og:title" content="Account Login | LuxeRoutes" />
-  <meta property="og:description" content="Login to LuxeRoutes using Cloudflare-protected email access." />
+  <meta property="og:title" content="Register Account | LuxeRoutes" />
+  <meta property="og:description" content="Register with LuxeRoutes using Cloudflare-protected email access." />
   <meta property="og:type" content="website" />
-  <meta property="og:url" content="https://luxeroutes.eu/account.html" />
+  <meta property="og:url" content="https://luxeroutes.eu/register.html" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@600;700;800&display=swap" rel="stylesheet" />
@@ -48,12 +48,12 @@
     <section class="admin-hero">
       <div class="container admin-hero-grid">
         <div>
-          <p class="eyebrow">LuxeRoutes account</p>
-          <h1>Login to your LuxeRoutes account.</h1>
-          <p class="admin-lead">Open your verified account to view your role, profile status, company context, and owner or manager approval progress.</p>
+          <p class="eyebrow">LuxeRoutes registration</p>
+          <h1>Create your LuxeRoutes profile.</h1>
+          <p class="admin-lead">Register once with a verified email. Customers become active immediately, while owner and manager access is reviewed by an admin before approval.</p>
           <div class="button-row">
-            <a class="btn btn-primary" href="#account-workspace" data-account-login-link>Login with Email</a>
-            <a class="btn btn-secondary" href="register.html">Create Account</a>
+            <a class="btn btn-primary" href="#account-workspace" data-account-login-link>Start Registration</a>
+            <a class="btn btn-secondary" href="account.html">Already have an account?</a>
           </div>
         </div>
         <aside class="admin-login-card" aria-label="Account login status">
@@ -66,10 +66,10 @@
           </div>
           <div class="login-checklist" aria-label="Account flow">
             <span>1. Verify email</span>
-            <span>2. View profile status</span>
-            <span>3. Manage approved access</span>
+            <span>2. Save profile</span>
+            <span>3. Admin approves partner access</span>
           </div>
-          <p class="admin-helper">Cloudflare Access verifies your email before this page opens. If you do not have a profile yet, use the register page below.</p>
+          <p class="admin-helper">Cloudflare Access verifies the email before this page opens. Owner and manager requests stay pending until an admin reviews the business context.</p>
         </aside>
       </div>
     </section>
@@ -79,33 +79,52 @@
         <div class="admin-toolbar">
           <div>
             <p class="eyebrow">Profile</p>
-            <h2>Your LuxeRoutes profile</h2>
+            <h2>Register your LuxeRoutes profile</h2>
             <p>Save your personal and optional company details. Owners, managers, and business-travel customers can include their company context for faster approval.</p>
           </div>
-          <a class="btn btn-secondary" href="admin-panel.html">Admin Access</a>
+          <a class="btn btn-secondary" href="account.html">Back to Login</a>
         </div>
 
         <div class="admin-grid two">
           <article class="admin-card">
-            <div class="card-head"><p class="eyebrow">Login status</p><span class="status-pill status-approved">Verified email</span></div>
-            <h3>Your saved profile</h3>
-            <p class="admin-helper">If Cloudflare Access has verified your email and a profile exists in D1, it appears here with your current role and approval status.</p>
-            <div class="stack-list" data-account-profile></div>
+            <div class="card-head"><p class="eyebrow">Register</p><span class="status-pill">Customer by default</span></div>
+            <h3>Create your account profile</h3>
+            <form class="admin-form" data-account-form>
+              <label>Email<input name="email" type="email" placeholder="you@example.com" required data-account-email-input></label>
+              <label>Full name<input name="name" type="text" placeholder="Your name" required></label>
+              <label>Account type
+                <select name="requested_role">
+                  <option value="customer">Customer / Traveler</option>
+                  <option value="owner">Property Owner</option>
+                  <option value="manager">Regional Manager</option>
+                </select>
+              </label>
+              <label>Company / organization<input name="company_name" type="text" placeholder="Optional: company, agency, property brand"></label>
+              <label>Website or profile<input name="company_website" type="url" placeholder="https://example.com"></label>
+              <label class="full">Business context
+                <select name="business_context">
+                  <option value="Personal travel">Personal travel</option>
+                  <option value="Business trip">Business trip / executive travel</option>
+                  <option value="Property owner company">Property owner company</option>
+                  <option value="Regional management">Regional management / concierge</option>
+                  <option value="Travel partner">Travel partner / agency</option>
+                </select>
+              </label>
+              <label class="full">Notes<textarea name="notes" rows="5" placeholder="Tell us what you need: trip planning, property onboarding, manager collaboration, company details..."></textarea></label>
+              <button class="btn btn-primary" type="submit">Save Profile</button>
+            </form>
           </article>
 
           <article class="admin-card">
-            <div class="card-head"><p class="eyebrow">New profile</p><span class="status-pill">Register once</span></div>
-            <h3>No profile yet?</h3>
-            <p class="admin-helper">Create a LuxeRoutes profile if you are a traveler, business-travel customer, property owner, regional manager, or partner. Customers are active immediately; owner and manager access waits for admin approval.</p>
+            <div class="card-head"><p class="eyebrow">Access model</p><span class="status-pill status-approved">Email first</span></div>
+            <h3>How roles will work</h3>
             <ul class="permission-list">
               <li><strong>Customer</strong><span>Active immediately for leisure or business trip planning.</span></li>
-              <li><strong>Owner</strong><span>Submit property or company details and wait for approval.</span></li>
-              <li><strong>Manager</strong><span>Submit regional or listing collaboration context and wait for approval.</span></li>
+              <li><strong>Owner</strong><span>Requests access with property or company details, then waits for admin approval.</span></li>
+              <li><strong>Manager</strong><span>Requests regional or listing collaboration access, then waits for admin approval.</span></li>
+              <li><strong>Admin</strong><span>Only trusted internal emails can approve, publish, and manage access.</span></li>
             </ul>
-            <div class="button-row account-action-row">
-              <a class="btn btn-primary" href="register.html">Register Profile</a>
-              <a class="btn btn-secondary" href="plan-trip.html">Send Travel Brief</a>
-            </div>
+            <div class="stack-list" data-account-profile></div>
           </article>
         </div>
       </div>

@@ -12,7 +12,8 @@ export const onRequestGet = async ({ request, env }) => {
     if (auth.error) return auth.error;
 
     const profiles = await auth.db.prepare(`
-      SELECT p.id, p.email, p.full_name AS name, p.default_role AS defaultRole, p.requested_role AS requestedRole,
+      SELECT p.id, p.email, p.full_name AS name, p.company_name AS companyName, p.company_website AS companyWebsite,
+        p.business_context AS businessContext, p.default_role AS defaultRole, p.requested_role AS requestedRole,
         p.notes, p.status, p.created_at AS createdAt, p.updated_at AS updatedAt,
         g.role AS grantedRole, g.note AS grantNote, g.status AS grantStatus
       FROM profiles p
@@ -37,10 +38,44 @@ export const onRequestPost = async ({ request, env }) => {
     const email = normalizeEmail(body.email);
     const role = String(body.role || 'customer');
     const note = String(body.note || '').trim();
+    const action = String(body.action || 'approve');
     const timestamp = nowIso();
 
     if (!email) return errorJson('Email is required.', 400);
     if (!isValidRole(role)) return errorJson('Invalid role.', 400);
+    if (!['approve', 'reject'].includes(action)) return errorJson('Invalid grant action.', 400);
+
+    if (action === 'reject') {
+      await auth.db.prepare(`
+        UPDATE profiles
+        SET status = 'rejected', default_role = 'customer', updated_at = ?
+        WHERE email = ?
+      `).bind(timestamp, email).run();
+
+      await auth.db.prepare(`
+        UPDATE access_grants
+        SET role = CASE WHEN role = 'admin' THEN role ELSE 'customer' END,
+          note = ?,
+          granted_by_email = ?,
+          status = 'active',
+          updated_at = ?
+        WHERE email = ?
+      `).bind(note || 'Owner/manager request rejected; customer access retained', auth.email, timestamp, email).run();
+
+      const [profile, grant] = await Promise.all([
+        auth.db.prepare(`
+          SELECT id, email, full_name AS name, company_name AS companyName, company_website AS companyWebsite,
+            business_context AS businessContext, default_role AS defaultRole, requested_role AS requestedRole,
+            notes, status, created_at AS createdAt, updated_at AS updatedAt
+          FROM profiles
+          WHERE email = ?
+          LIMIT 1
+        `).bind(email).first(),
+        auth.db.prepare(`${grantSelect} WHERE email = ? LIMIT 1`).bind(email).first(),
+      ]);
+
+      return json({ profile, grant, action: 'reject' });
+    }
 
     await auth.db.prepare(`
       INSERT INTO access_grants (id, email, role, note, granted_by_email, status, created_at, updated_at)

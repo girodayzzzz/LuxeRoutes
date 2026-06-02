@@ -6,7 +6,7 @@ This site now includes the first production-ready Cloudflare Pages Functions + D
 
 Implemented in this repository:
 
-- `account.html` + `account.js` — public account/register screen. It now tries to save the profile to `/api/account` and falls back to browser `localStorage` only if the API/D1 binding is missing.
+- `account.html`, `register.html` + `account.js` — separate login/status and registration screens. It now tries to save the profile to `/api/account` and falls back to browser `localStorage` only if the API/D1 binding is missing.
 - `admin-panel.html` + `admin-panel.js` — operations panel. It now tries to load and save access grants from `/api/admin/grants`; local preview still works on `localhost`.
 - `functions/api/account.js` — Cloudflare Pages Function for reading/upserting the verified visitor profile.
 - `functions/api/admin/grants.js` — Cloudflare Pages Function for admin-only role grant reads/writes.
@@ -16,6 +16,16 @@ Implemented in this repository:
 - `wrangler.toml` — keeps Pages build output at the repository root and intentionally omits placeholder D1 IDs; bind `DB` in the Pages dashboard or add a real D1 UUID only after creation.
 
 The property/inquiry workspace is still demo data in browser storage. Move it to D1 later when account and role setup is confirmed.
+
+## Owner/manager approval workflow now included
+
+The repository now separates public customer registration from privileged partner access:
+
+- Visitors login on `/account.html`; new customers, owners, and managers register on `/register.html`.
+- Customers, owners, and managers submit optional company, website, and business-context fields during registration.
+- Owners and managers keep default `customer` access and wait in **Admin Panel → People → Registrations** as `pending_admin_grant`.
+- **Approve** promotes the verified email to `owner` or `manager` in `access_grants` and marks the profile approved/active.
+- **Reject** keeps/returns the email to `customer` access and marks the profile rejected.
 
 ## Phase 1 — Create and bind Cloudflare D1
 
@@ -42,6 +52,12 @@ wrangler d1 migrations apply luxeroutes-db --local
 wrangler d1 migrations apply luxeroutes-db --remote
 ```
 
+If you already applied `0001_auth.sql`, run migrations again after pulling this update so D1 also applies `0002_profile_business_fields.sql` and adds the optional company/business fields:
+
+```bash
+wrangler d1 migrations apply luxeroutes-db --remote
+```
+
 For Cloudflare Pages production, add the D1 database binding in **Workers & Pages → LuxeRoutes Pages project → Settings → Functions → D1 database bindings**:
 
 - Variable/binding name: `DB`
@@ -61,12 +77,12 @@ Recommended setup:
    - `/account.html`
    - `/account`
    - `/login`
-   - `/register`
+   - `/register*` (covers `/register` and `/register.html`)
    - `/api/account`
 4. Add an **Allow** policy with **Include: Everyone**.
 5. Use email OTP or your chosen identity provider.
 
-Result: every visitor can login/register with a verified email. Their first D1 grant is `customer` by default, so LuxeRoutes captures the verified customer email before travel planning or partner onboarding continues.
+Result: every visitor can login or register with a verified email. A `customer` registration is active immediately. If the visitor requests `owner` or `manager`, the email still receives safe customer access only, while the requested privileged role stays pending for admin review.
 
 ## Phase 3 — Admin panel gate
 
@@ -92,7 +108,12 @@ After applying the D1 migration, insert your own verified email as the first adm
 wrangler d1 execute luxeroutes-db --remote --command "INSERT INTO access_grants (id, email, role, note, granted_by_email, status, created_at, updated_at) VALUES ('grant-initial-admin', 'YOUR_ADMIN_EMAIL@example.com', 'admin', 'Initial LuxeRoutes admin', 'system', 'active', datetime('now'), datetime('now')) ON CONFLICT(email) DO UPDATE SET role = 'admin', status = 'active', updated_at = datetime('now');"
 ```
 
-Then open `/admin-panel.html`, login with the same email, and use the access grant form to grant:
+Then open `/admin-panel.html`, login with the same email, and use the **People** panel:
+
+- **Registrations** — view `customer`, `owner`, and `manager` registrations in separate columns with names, emails, company context, and pending/approved/rejected status.
+- **Grant access by email** — manually grant `customer`, `owner`, `manager`, or `admin` access for direct invitations or corrections.
+
+Role meanings:
 
 - `customer` — default role for public registrations and travel leads.
 - `owner` — property owner access, granted by admin after review.
@@ -101,8 +122,8 @@ Then open `/admin-panel.html`, login with the same email, and use the access gra
 
 ## Phase 5 — Test the real login/register flow
 
-1. Open `/account.html` in production.
-2. Complete Cloudflare email verification.
+1. Open `/account.html` in production to confirm login/status loads.
+2. Open `/register.html` and complete Cloudflare email verification.
 3. Submit the profile form.
 4. Confirm D1 received the profile:
 
@@ -111,13 +132,29 @@ wrangler d1 execute luxeroutes-db --remote --command "SELECT email, full_name, r
 ```
 
 5. Open `/admin-panel.html` as the seeded admin.
-6. Confirm pending profiles and grants load from D1.
-7. Grant owner/manager/customer/admin roles from the admin panel.
-8. Confirm D1 received the grant:
+6. Confirm customer, owner, and manager profiles load under **People → Registrations**.
+7. Click **Approve** for a suitable owner/manager request, or **Reject** if it should stay customer-only.
+8. Confirm D1 received the profile status and grant:
 
 ```bash
-wrangler d1 execute luxeroutes-db --remote --command "SELECT email, role, note, status FROM access_grants ORDER BY updated_at DESC LIMIT 10;"
+wrangler d1 execute luxeroutes-db --remote --command "SELECT p.email, p.requested_role, p.status AS profile_status, g.role AS active_role, g.note FROM profiles p LEFT JOIN access_grants g ON g.email = p.email ORDER BY p.updated_at DESC LIMIT 10;"
 ```
+
+
+## Exact production checklist for the site owner
+
+You still need to complete these steps outside the repository in Cloudflare:
+
+1. Create the D1 database named `luxeroutes-db` if it does not already exist.
+2. Apply all migrations remotely with Wrangler, including `0001_auth.sql` and `0002_profile_business_fields.sql`.
+3. Bind that D1 database to the Pages project with binding name `DB`.
+4. Create a public Cloudflare Access application for `/account.html`, `/account`, `/login`, `/register*`, and `/api/account` with an **Everyone** allow policy.
+5. Create a separate Cloudflare Access application for `/admin-panel.html`, `/admin/*`, and `/api/admin/*` that only allows your trusted admin email addresses.
+6. Seed your first admin email into `access_grants` with the command in Phase 4.
+7. Test with three different emails: one customer, one owner request, and one manager request.
+8. From the admin email, approve one owner/manager request and reject the other to confirm both paths work.
+
+Do not share the admin URL until step 8 succeeds in a private/incognito browser window.
 
 ## Phase 6 — Next backend work
 

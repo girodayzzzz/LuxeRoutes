@@ -5,6 +5,7 @@ const accountRole = document.querySelector('[data-account-role]');
 const accountForm = document.querySelector('[data-account-form]');
 const accountEmailInput = document.querySelector('[data-account-email-input]');
 const accountProfile = document.querySelector('[data-account-profile]');
+const accountLoginLink = document.querySelector('[data-account-login-link]');
 const accountStorageKey = 'luxeroutes-account-profile-v1';
 let accountIdentity = null;
 let accountApiEnabled = false;
@@ -17,6 +18,18 @@ const accountEscapeHtml = (value) => String(value || '').replace(/[&<>"]/g, (cha
 }[character]));
 
 const isAccountLocalPreview = () => ['localhost', '127.0.0.1', ''].includes(window.location.hostname);
+
+const accountStatusLabel = (status) => ({
+  active: 'Active',
+  pending_admin_grant: 'Pending admin approval',
+  rejected: 'Owner/manager request rejected',
+}[status] || status || 'Pending admin approval');
+
+const accountStatusClass = (status) => {
+  if (status === 'active') return 'status-approved';
+  if (status === 'rejected') return 'status-warning';
+  return 'status-pending';
+};
 
 const getAccessIdentity = async () => {
   try {
@@ -85,7 +98,7 @@ const saveRemoteAccountProfile = async (profile) => {
   return response.json();
 };
 
-const renderAccountProfile = (profile) => {
+const renderAccountProfile = (profile, grant = null) => {
   if (!accountProfile) return;
 
   if (!profile) {
@@ -93,13 +106,18 @@ const renderAccountProfile = (profile) => {
     return;
   }
 
+  const currentRole = grant?.role || profile.defaultRole || 'customer';
+  const profileStatus = profile.status || (currentRole === 'customer' ? 'active' : 'pending_admin_grant');
+
   accountProfile.innerHTML = `
     <div class="stack-item">
       <div>
         <strong>${accountEscapeHtml(profile.name || 'Unnamed account')}</strong>
-        <span>${accountEscapeHtml(profile.email)} · Requested: ${accountEscapeHtml(profile.requestedRole || 'customer')}</span>
+        <span>${accountEscapeHtml(profile.email)} · Requested: ${accountEscapeHtml(profile.requestedRole || 'customer')} · Current: ${accountEscapeHtml(currentRole)}</span>
+        ${profile.companyName ? `<span>${accountEscapeHtml(profile.companyName)}${profile.businessContext ? ` · ${accountEscapeHtml(profile.businessContext)}` : ''}</span>` : ''}
+        ${profile.companyWebsite ? `<span>${accountEscapeHtml(profile.companyWebsite)}</span>` : ''}
       </div>
-      <span class="status-pill status-pending">Pending admin grant</span>
+      <span class="status-pill ${accountStatusClass(profileStatus)}">${accountEscapeHtml(accountStatusLabel(profileStatus))}</span>
     </div>
   `;
 };
@@ -109,6 +127,15 @@ const setAccountStatus = ({ heading, status, email, role, approved }) => {
   if (accountStatus) accountStatus.textContent = status;
   if (accountEmail) accountEmail.textContent = email || 'Email pending';
   if (accountEmailInput && email) accountEmailInput.value = email;
+  if (accountLoginLink) {
+    if (accountForm) {
+      accountLoginLink.textContent = 'Continue Registration';
+      accountLoginLink.href = '#account-workspace';
+    } else {
+      accountLoginLink.textContent = email && approved ? 'Manage Account' : 'Login with Email';
+      accountLoginLink.href = email && approved ? '#account-workspace' : 'account.html';
+    }
+  }
   if (accountRole) {
     accountRole.textContent = role;
     accountRole.classList.toggle('status-approved', Boolean(approved));
@@ -151,7 +178,7 @@ const initialiseAccount = async () => {
     });
   }
 
-  renderAccountProfile(profile);
+  renderAccountProfile(profile, remoteAccount?.grant);
 };
 
 accountForm?.addEventListener('submit', async (event) => {
@@ -161,8 +188,11 @@ accountForm?.addEventListener('submit', async (event) => {
     email: String(accountIdentity?.email || formData.get('email') || '').trim().toLowerCase(),
     name: String(formData.get('name') || '').trim(),
     requestedRole: String(formData.get('requested_role') || 'customer'),
+    companyName: String(formData.get('company_name') || '').trim(),
+    companyWebsite: String(formData.get('company_website') || '').trim(),
+    businessContext: String(formData.get('business_context') || '').trim(),
     notes: String(formData.get('notes') || '').trim(),
-    status: 'pending_admin_grant',
+    status: String(formData.get('requested_role') || 'customer') === 'customer' ? 'active' : 'pending_admin_grant',
     updatedAt: new Date().toISOString(),
   };
 
@@ -172,11 +202,13 @@ accountForm?.addEventListener('submit', async (event) => {
     const remoteAccount = await saveRemoteAccountProfile(profile);
     const savedProfile = remoteAccount.profile || profile;
     saveAccountProfile(savedProfile);
-    renderAccountProfile(savedProfile);
+    renderAccountProfile(savedProfile, remoteAccount.grant);
     setAccountStatus({
       heading: 'Profile saved',
       status: accountApiEnabled
-        ? 'Your profile is saved in Cloudflare D1 and is ready for admin role review.'
+        ? (savedProfile.requestedRole === 'customer'
+          ? 'Your customer profile is active in Cloudflare D1.'
+          : 'Your profile is saved in Cloudflare D1 and is waiting for admin approval before owner or manager access is enabled.')
         : 'Your profile is saved locally.',
       email: savedProfile.email,
       role: remoteAccount.role || 'Pending grant',

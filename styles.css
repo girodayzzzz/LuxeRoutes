@@ -2728,6 +2728,9 @@ body.home-page {
   line-height: 1.65;
 }
 
+.login-checklist { display: grid; gap: .5rem; margin-top: 1.1rem; }
+.login-checklist span { padding: .62rem .75rem; border: 1px solid rgba(241, 215, 150, .12); border-radius: 999px; color: var(--color-muted-strong); background: rgba(255, 255, 255, .035); font-weight: 800; font-size: .86rem; }
+
 .admin-login-card label { display: grid; gap: .55rem; margin-top: 1.25rem; color: var(--color-text); font-weight: 900; }
 
 .admin-login-card select,
@@ -2816,6 +2819,8 @@ body.home-page {
 .admin-tabs button:disabled,
 .mini-action:disabled { cursor: not-allowed; opacity: .42; }
 
+.mini-action-warning { border-color: rgba(255, 151, 130, .32); color: #ffc0b6; }
+
 .admin-panel { display: none; }
 .admin-panel.is-active { display: block; }
 
@@ -2834,6 +2839,7 @@ body.home-page {
 }
 
 .admin-card h3 { margin-bottom: 1rem; }
+.admin-card-full { grid-column: 1 / -1; }
 .admin-card .eyebrow { margin-bottom: 0; }
 .admin-helper { margin: -.25rem 0 1rem; color: var(--color-muted-strong); }
 .admin-helper code { color: var(--color-gold-light); }
@@ -2879,6 +2885,20 @@ body.home-page {
 
 .stack-item strong { display: block; color: var(--color-text); line-height: 1.25; }
 .stack-item span:not(.status-pill) { display: block; margin-top: .18rem; color: var(--color-muted); font-size: .88rem; }
+.access-request-list { margin-bottom: 1.2rem; }
+.registration-columns { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .9rem; }
+.registration-column { border: 1px solid rgba(241, 215, 150, .12); border-radius: 22px; padding: .9rem; background: rgba(255, 255, 255, .03); }
+.registration-column-head,
+.registration-card-head { display: flex; align-items: start; justify-content: space-between; gap: .8rem; }
+.registration-column-head { margin-bottom: .85rem; }
+.registration-column-head strong,
+.registration-card-head strong { display: block; color: var(--color-text); }
+.registration-card-list { display: grid; gap: .7rem; }
+.registration-card { display: grid; gap: .72rem; padding: .85rem; border: 1px solid rgba(241, 215, 150, .1); border-radius: 18px; background: rgba(6, 8, 13, .42); }
+.registration-card-head span:not(.status-pill),
+.registration-meta span { display: block; color: var(--color-muted); font-size: .86rem; }
+.registration-meta { display: grid; gap: .25rem; }
+.access-request-actions { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: .45rem; }
 .empty-state { padding: 1rem; border: 1px dashed rgba(241, 215, 150, .24); border-radius: 20px; color: var(--color-muted-strong); }
 .compact-list { padding-left: 1.1rem; }
 .compact-list li + li { margin-top: .55rem; }
@@ -3010,6 +3030,7 @@ body.home-page {
 @media (max-width: 1020px) {
   .admin-hero-grid,
   .admin-grid.two,
+  .registration-columns,
   .admin-grid.properties-layout,
   .admin-grid.builder-layout { grid-template-columns: 1fr; }
   .admin-toolbar { align-items: start; flex-direction: column; }
@@ -3021,6 +3042,8 @@ body.home-page {
   .admin-form,
   .admin-checkbox-grid { grid-template-columns: 1fr; }
   .stack-item,
+  .registration-column-head,
+  .registration-card-head,
   .card-head { align-items: start; flex-direction: column; }
   .admin-toolbar .btn { width: 100%; }
 }
