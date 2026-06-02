@@ -3381,3 +3381,185 @@ body.home-page {
     border-radius: 24px;
   }
 }
+
+/* Compact custom login layout */
+.login-page .auth-login-section {
+  min-height: calc(100vh - 126px);
+  display: grid;
+  align-items: center;
+  padding: clamp(3.2rem, 6vw, 5.6rem) 0;
+}
+
+.login-page .auth-login-section::before {
+  inset: 4rem auto auto 50%;
+  width: min(38rem, 82vw);
+  height: min(38rem, 82vw);
+  transform: translateX(-50%);
+  background: radial-gradient(circle, rgba(198, 161, 91, .16), transparent 66%);
+}
+
+.login-page .auth-login-section::after {
+  right: 12%;
+  bottom: 8%;
+  width: 18rem;
+  height: 18rem;
+  background: radial-gradient(circle, rgba(82, 105, 132, .18), transparent 72%);
+}
+
+.login-page .auth-shell {
+  width: min(100% - 32px, 960px);
+  grid-template-columns: minmax(260px, 360px) minmax(320px, 430px);
+  justify-content: center;
+  gap: clamp(1.1rem, 3vw, 2rem);
+}
+
+.login-studio-panel {
+  position: relative;
+  min-height: 430px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  overflow: hidden;
+  border: 1px solid rgba(241, 215, 150, .16);
+  border-radius: 30px;
+  padding: 1.45rem;
+  background:
+    linear-gradient(180deg, rgba(6, 8, 13, .16), rgba(6, 8, 13, .9)),
+    radial-gradient(circle at 32% 18%, rgba(241, 215, 150, .28), transparent 9rem),
+    url("https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=900&q=78") center/cover;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, .34);
+}
+
+.login-studio-panel::before {
+  content: "";
+  position: absolute;
+  inset: 1rem;
+  pointer-events: none;
+  border: 1px solid rgba(248, 243, 233, .14);
+  border-radius: 22px;
+}
+
+.login-brand-mark {
+  position: absolute;
+  top: 1.45rem;
+  left: 1.45rem;
+  display: grid;
+  place-items: center;
+  width: 54px;
+  height: 54px;
+  border: 1px solid rgba(241, 215, 150, .34);
+  border-radius: 18px;
+  background: rgba(6, 8, 13, .54);
+  color: var(--color-gold-light);
+  font-family: "Playfair Display", Georgia, serif;
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: .08em;
+  backdrop-filter: blur(14px) saturate(1.2);
+}
+
+.login-studio-panel h1 {
+  max-width: 320px;
+  font-size: clamp(2.6rem, 5vw, 4rem);
+}
+
+.login-studio-panel .admin-lead {
+  max-width: 310px;
+  margin-top: .85rem;
+  color: rgba(248, 243, 233, .84);
+  font-size: .98rem;
+}
+
+.login-route-preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .45rem;
+  margin-top: 1.2rem;
+}
+
+.login-route-preview span {
+  border: 1px solid rgba(241, 215, 150, .18);
+  border-radius: 999px;
+  padding: .42rem .68rem;
+  background: rgba(6, 8, 13, .48);
+  color: rgba(248, 243, 233, .82);
+  font-size: .72rem;
+  font-weight: 900;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  backdrop-filter: blur(12px);
+}
+
+.login-box {
+  width: 100%;
+  max-width: 430px;
+  border-radius: 30px;
+  padding: clamp(1.35rem, 3vw, 1.85rem);
+  background:
+    linear-gradient(150deg, rgba(18, 24, 36, .98), rgba(7, 10, 16, .96)),
+    radial-gradient(circle at 80% 0%, rgba(241, 215, 150, .18), transparent 11rem);
+}
+
+.login-box-head h2 {
+  font-size: clamp(2rem, 4vw, 2.7rem);
+}
+
+.login-box .auth-form {
+  gap: .82rem;
+  margin-top: 1.15rem;
+}
+
+.login-box .auth-form input {
+  border-radius: 16px;
+  padding: .86rem .95rem;
+}
+
+.login-box .auth-divider {
+  margin: 1rem 0;
+}
+
+.login-box .auth-status-card {
+  margin-top: 1rem;
+  border-radius: 18px;
+}
+
+.login-page .auth-next-section {
+  padding: clamp(2.6rem, 5vw, 4rem) 0;
+}
+
+.login-page .auth-mini-grid {
+  width: min(100% - 32px, 960px);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+@media (max-width: 860px) {
+  .login-page .auth-shell,
+  .login-page .auth-mini-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .login-studio-panel,
+  .login-box {
+    max-width: 520px;
+    margin-inline: auto;
+  }
+
+  .login-studio-panel {
+    min-height: 300px;
+  }
+}
+
+@media (max-width: 520px) {
+  .login-page .auth-login-section {
+    padding-block: 2rem;
+  }
+
+  .login-studio-panel,
+  .login-box {
+    border-radius: 24px;
+  }
+
+  .login-box .auth-actions {
+    grid-template-columns: 1fr;
+  }
+}
