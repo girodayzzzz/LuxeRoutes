@@ -50,3 +50,8 @@ export const requireAdmin = async (request, env) => {
 
   return { db, email, grant };
 };
+
+// Cloudflare Pages treats every JavaScript file under /functions as a route.
+// This module is primarily shared code, but exporting a handler keeps Pages
+// deployment validation happy if it maps /api/_utils during function bundling.
+export const onRequest = () => errorJson('Not found.', 404);

@@ -9,11 +9,11 @@ Static LuxeRoutes website prepared for GitHub source control and Cloudflare Page
 3. Select the GitHub repository.
 4. Use these build settings:
    - **Framework preset:** None
-   - **Build command:** leave empty
+   - **Build command:** `exit 0`
    - **Build output directory:** `/`
 5. Add the production custom domain in Cloudflare Pages after the first deploy.
 
-Cloudflare Pages will publish the static files from the repository root. The `_headers` and `_redirects` files are included for security headers and clean admin routing.
+Cloudflare Pages will publish the static files from the repository root. The `_headers`, `_redirects`, and `_routes.json` files are included for security headers, clean admin routing, and limiting Pages Functions invocation to `/api/*`.
 
 ## Account and admin access
 

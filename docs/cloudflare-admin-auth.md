@@ -10,8 +10,10 @@ Implemented in this repository:
 - `admin-panel.html` + `admin-panel.js` — operations panel. It now tries to load and save access grants from `/api/admin/grants`; local preview still works on `localhost`.
 - `functions/api/account.js` — Cloudflare Pages Function for reading/upserting the verified visitor profile.
 - `functions/api/admin/grants.js` — Cloudflare Pages Function for admin-only role grant reads/writes.
+- `functions/api/_utils.js` — shared API helpers; it also returns 404 if Pages maps it as `/api/_utils` during function bundling.
+- `_routes.json` — explicitly invokes Pages Functions only for `/api/*`, keeping static pages on the asset path.
 - `migrations/0001_auth.sql` — D1 schema for `profiles` and `access_grants`.
-- `wrangler.toml` — includes a `DB` D1 binding placeholder.
+- `wrangler.toml` — keeps Pages build output at the repository root and intentionally omits placeholder D1 IDs; bind `DB` in the Pages dashboard or add a real D1 UUID only after creation.
 
 The property/inquiry workspace is still demo data in browser storage. Move it to D1 later when account and role setup is confirmed.
 
@@ -24,7 +26,7 @@ wrangler login
 wrangler d1 create luxeroutes-db
 ```
 
-Copy the returned database UUID into `wrangler.toml`:
+For Cloudflare Pages production, the safest setup is to add the D1 binding in the Pages dashboard instead of committing a placeholder database ID. If you want Wrangler to manage the binding, copy the returned real database UUID into `wrangler.toml`:
 
 ```toml
 [[d1_databases]]
@@ -40,10 +42,12 @@ wrangler d1 migrations apply luxeroutes-db --local
 wrangler d1 migrations apply luxeroutes-db --remote
 ```
 
-For Cloudflare Pages production, also add the same D1 database binding in **Workers & Pages → LuxeRoutes Pages project → Settings → Functions → D1 database bindings**:
+For Cloudflare Pages production, add the D1 database binding in **Workers & Pages → LuxeRoutes Pages project → Settings → Functions → D1 database bindings**:
 
 - Variable/binding name: `DB`
 - D1 database: `luxeroutes-db`
+
+> Build troubleshooting: do not commit `database_id = "REPLACE_WITH_CLOUDFLARE_D1_DATABASE_ID"`. Cloudflare Pages can fail during “Initializing build environment” when Wrangler sees a placeholder D1 ID. Keep `wrangler.toml` without a `[[d1_databases]]` block until you have a real UUID, or configure the `DB` binding only in the Pages dashboard.
 
 ## Phase 2 — Public account login for customers
 
