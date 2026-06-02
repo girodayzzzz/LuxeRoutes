@@ -3,6 +3,7 @@ title: "Lake View Villa Bled"
 slug: "lake-view-villa-bled"
 status: published
 content_kind: accommodation
+sort_order: 10
 country: slovenia
 region:
   - lakes

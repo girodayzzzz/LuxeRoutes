@@ -2207,6 +2207,23 @@ body.home-page {
   accent-color: var(--color-gold-light);
 }
 
+.filter-panel select,
+.filter-panel input[type="search"] {
+  width: 100%;
+  border: 1px solid rgba(241,215,150,.16);
+  border-radius: 16px;
+  background: rgba(255,255,255,.06);
+  color: var(--color-text);
+  padding: .78rem .9rem;
+  font: inherit;
+  font-weight: 800;
+}
+
+.filter-panel input[type="search"]::placeholder {
+  color: rgba(232,226,211,.52);
+}
+
+
 .results-toolbar {
   display: flex;
   justify-content: space-between;

@@ -223,6 +223,7 @@ const offerFilterRoot = document.querySelector('[data-offer-filter]');
 if (offerFilterRoot) {
   const selectFilters = offerFilterRoot.querySelectorAll('[data-filter-select]');
   const optionFilters = offerFilterRoot.querySelectorAll('[data-filter-option]');
+  const searchInput = offerFilterRoot.querySelector('[data-filter-search]');
   const offerCards = offerFilterRoot.querySelectorAll('[data-offer-card]');
   const resultCount = offerFilterRoot.querySelector('[data-result-count]');
   const noResults = offerFilterRoot.querySelector('[data-no-results]');
@@ -261,8 +262,24 @@ if (offerFilterRoot) {
     return selectedOptions.every((option) => cardOptions.includes(option));
   };
 
+  const cardMatchesSearch = (card, searchValue) => {
+    if (!searchValue) return true;
+    const haystack = [
+      card.dataset.search,
+      card.dataset.country,
+      card.dataset.region,
+      card.dataset.type,
+      card.dataset.options,
+      card.querySelector('h3')?.textContent,
+      card.querySelector('p')?.textContent,
+    ].filter(Boolean).join(' ').toLowerCase();
+
+    return searchValue.split(/\s+/).every((term) => haystack.includes(term));
+  };
+
   const updateOffers = () => {
     const selectedOptions = getSelectedOptions();
+    const searchValue = normalizeFilterValue(searchInput?.value);
     let visibleCount = 0;
 
     offerCards.forEach((card) => {
@@ -271,7 +288,7 @@ if (offerFilterRoot) {
         const filterValue = normalizeFilterValue(select.value);
         return cardMatchesSelect(card, filterName, filterValue);
       });
-      const isVisible = matchesSelects && cardMatchesOptions(card, selectedOptions);
+      const isVisible = matchesSelects && cardMatchesOptions(card, selectedOptions) && cardMatchesSearch(card, searchValue);
 
       card.classList.toggle('is-hidden', !isVisible);
       if (isVisible) visibleCount += 1;
@@ -283,6 +300,7 @@ if (offerFilterRoot) {
 
   selectFilters.forEach((select) => select.addEventListener('change', updateOffers));
   optionFilters.forEach((input) => input.addEventListener('change', updateOffers));
+  searchInput?.addEventListener('input', updateOffers);
 
   if (resetButton) {
     resetButton.addEventListener('click', () => {
@@ -292,6 +310,7 @@ if (offerFilterRoot) {
       optionFilters.forEach((input) => {
         input.checked = false;
       });
+      if (searchInput) searchInput.value = '';
       updateOffers();
     });
   }
