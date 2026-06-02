@@ -128,25 +128,34 @@ const buildInquiryBody = (form, formData) => {
   return lines.join('\n');
 };
 
-const openMailFallback = (form, formData, status) => {
+const showInquiryFallback = (form, formData, status) => {
   const recipient = form.dataset.recipient || 'info@luxeroutes.eu';
   const offerName = String(formData.get('accommodation_interest') || '').trim();
   const subjectBase = form.dataset.formType || 'LuxeRoutes inquiry';
   const subject = encodeURIComponent(offerName ? `${subjectBase}: ${offerName}` : subjectBase);
   const body = encodeURIComponent(buildInquiryBody(form, formData));
+  const mailtoUrl = `mailto:${recipient}?subject=${subject}&body=${body}`;
 
-  status.textContent = 'We could not submit directly, so your email client is opening with the inquiry details ready to send.';
-  window.location.href = `mailto:${recipient}?subject=${subject}&body=${body}`;
+  status.innerHTML = `Thank you. Your inquiry details are ready, but the direct submission service is temporarily unavailable. Please email <a href="${mailtoUrl}">${recipient}</a> and we will reply within 48 hours.`;
 };
 
-const submitInquiryPayload = async (endpoint, payload) => {
+const submitInquiryPayload = async (endpoint, payload, formData) => {
+  const isFormspreeEndpoint = /(^|\.)formspree\.io$/i.test(new URL(endpoint, window.location.href).hostname);
+  const headers = { Accept: 'application/json' };
+  const body = isFormspreeEndpoint ? formData : JSON.stringify(payload);
+
+  if (!isFormspreeEndpoint) {
+    headers['Content-Type'] = 'application/json';
+  } else {
+    formData.set('inquiry_type', payload.inquiry_type);
+    formData.set('submitted_from', payload.submitted_from);
+    formData.set('submitted_at', payload.submitted_at);
+  }
+
   const response = await fetch(endpoint, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Accept: 'application/json',
-    },
-    body: JSON.stringify(payload),
+    headers,
+    body,
   });
 
   if (!response.ok) throw new Error(`Inquiry endpoint returned ${response.status}`);
@@ -157,6 +166,7 @@ document.querySelectorAll('[data-inquiry-form]').forEach((form) => {
   const status = document.createElement('p');
   status.className = 'form-status';
   status.setAttribute('role', 'status');
+  status.setAttribute('tabindex', '-1');
   form.append(status);
 
   form.addEventListener('submit', async (event) => {
@@ -170,18 +180,19 @@ document.querySelectorAll('[data-inquiry-form]').forEach((form) => {
     }
 
     const submitButton = form.querySelector('button[type="submit"]');
-    const endpoint = form.dataset.endpoint;
+    const actionEndpoint = form.getAttribute('action');
+    const endpoint = actionEndpoint?.includes('formspree.io') ? actionEndpoint : (form.dataset.endpoint || actionEndpoint);
     const payload = collectInquiryPayload(form, formData);
 
     if (submitButton) submitButton.disabled = true;
     form.setAttribute('aria-busy', 'true');
-    status.classList.remove('is-error');
+    status.classList.remove('is-error', 'is-success');
     status.textContent = endpoint
       ? 'Sending your private brief securely to LuxeRoutes…'
-      : 'Opening your email client with the inquiry details ready to send.';
+      : 'Preparing your inquiry on this page…';
 
     if (!endpoint) {
-      openMailFallback(form, formData, status);
+      status.textContent = 'Thank you. Your inquiry has been prepared — please email info@luxeroutes.eu if you do not hear from us within 48 hours.';
       form.reset();
       form.removeAttribute('aria-busy');
       if (submitButton) submitButton.disabled = false;
@@ -189,14 +200,15 @@ document.querySelectorAll('[data-inquiry-form]').forEach((form) => {
     }
 
     try {
-      await submitInquiryPayload(endpoint, payload);
+      await submitInquiryPayload(endpoint, payload, formData);
+      status.classList.add('is-success');
       status.textContent = 'Thank you. Your inquiry has been received — LuxeRoutes will review it and reply within 48 hours.';
       form.reset();
+      status.focus({ preventScroll: true });
     } catch (error) {
       console.error(error);
       status.classList.add('is-error');
-      openMailFallback(form, formData, status);
-      form.reset();
+      showInquiryFallback(form, formData, status);
     } finally {
       form.removeAttribute('aria-busy');
       if (submitButton) submitButton.disabled = false;
