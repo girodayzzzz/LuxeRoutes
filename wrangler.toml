@@ -2,9 +2,8 @@ name = "luxeroutes"
 compatibility_date = "2026-06-02"
 pages_build_output_dir = "."
 
-# Replace database_id after running:
-# wrangler d1 create luxeroutes-db
-[[d1_databases]]
-binding = "DB"
-database_name = "luxeroutes-db"
-database_id = "REPLACE_WITH_CLOUDFLARE_D1_DATABASE_ID"
+# D1 is intentionally not bound here because Cloudflare Pages can fail while
+# initializing the build environment if database_id contains a placeholder.
+# Bind the production database in the Cloudflare Pages dashboard as `DB`, or
+# add a [[d1_databases]] block only after replacing database_id with the real
+# Cloudflare D1 database UUID from `wrangler d1 create luxeroutes-db`.
