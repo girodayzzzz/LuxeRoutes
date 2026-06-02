@@ -17,14 +17,14 @@ Cloudflare Pages will publish the static files from the repository root. The `_h
 
 ## Account and admin access
 
-The site is prepared for **Cloudflare email login for everyone** plus **admin-approved role grants by email**.
+The site is prepared for **Cloudflare email login for everyone** plus **admin-approved role grants by email**. It now includes Cloudflare Pages Functions and a D1 migration for account profiles and access grants.
 
 Start with two Cloudflare Access applications:
 
-- Public account app: protect `/account.html`, `/account`, `/login`, and `/register` with **Include: Everyone** so customers can register/login and LuxeRoutes captures verified emails.
-- Admin app: protect `/admin-panel.html` and `/admin/*` with approved internal admin emails only.
+- Public account app: protect `/account.html`, `/account`, `/login`, `/register`, and `/api/account` with **Include: Everyone** so customers can register/login and LuxeRoutes captures verified emails.
+- Admin app: protect `/admin-panel.html`, `/admin/*`, and `/api/admin/*` with approved internal admin emails only.
 
-Admins can then grant `customer`, `owner`, `manager`, or `admin` access by verified email. See [`docs/cloudflare-admin-auth.md`](docs/cloudflare-admin-auth.md) for the full Cloudflare + D1 plan.
+Admins can then grant `customer`, `owner`, `manager`, or `admin` access by verified email after D1 is created, the `DB` binding is connected, and the first admin row is seeded. See [`docs/cloudflare-admin-auth.md`](docs/cloudflare-admin-auth.md) for the full Cloudflare + D1 plan.
 
 ## Content workflow
 

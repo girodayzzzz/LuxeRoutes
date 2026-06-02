@@ -1,8 +1,51 @@
-# Cloudflare account and role access plan
+# Cloudflare account, database, and role access plan
 
-This site is a static Cloudflare Pages project. The right model is **email login for everyone**, then **admin-approved role grants by email**.
+This site now includes the first production-ready Cloudflare Pages Functions + D1 layer for **email login for everyone**, account registration, and admin-approved role grants by email.
 
-## Phase 1 — Public account login for customers
+## Current status
+
+Implemented in this repository:
+
+- `account.html` + `account.js` — public account/register screen. It now tries to save the profile to `/api/account` and falls back to browser `localStorage` only if the API/D1 binding is missing.
+- `admin-panel.html` + `admin-panel.js` — operations panel. It now tries to load and save access grants from `/api/admin/grants`; local preview still works on `localhost`.
+- `functions/api/account.js` — Cloudflare Pages Function for reading/upserting the verified visitor profile.
+- `functions/api/admin/grants.js` — Cloudflare Pages Function for admin-only role grant reads/writes.
+- `migrations/0001_auth.sql` — D1 schema for `profiles` and `access_grants`.
+- `wrangler.toml` — includes a `DB` D1 binding placeholder.
+
+The property/inquiry workspace is still demo data in browser storage. Move it to D1 later when account and role setup is confirmed.
+
+## Phase 1 — Create and bind Cloudflare D1
+
+From the repository root, login to Wrangler and create the database:
+
+```bash
+wrangler login
+wrangler d1 create luxeroutes-db
+```
+
+Copy the returned database UUID into `wrangler.toml`:
+
+```toml
+[[d1_databases]]
+binding = "DB"
+database_name = "luxeroutes-db"
+database_id = "YOUR_REAL_DATABASE_ID"
+```
+
+Apply the migration locally for development and remotely for production:
+
+```bash
+wrangler d1 migrations apply luxeroutes-db --local
+wrangler d1 migrations apply luxeroutes-db --remote
+```
+
+For Cloudflare Pages production, also add the same D1 database binding in **Workers & Pages → LuxeRoutes Pages project → Settings → Functions → D1 database bindings**:
+
+- Variable/binding name: `DB`
+- D1 database: `luxeroutes-db`
+
+## Phase 2 — Public account login for customers
 
 Create a Cloudflare Zero Trust Access application for the public account area.
 
@@ -15,14 +58,13 @@ Recommended setup:
    - `/account`
    - `/login`
    - `/register`
+   - `/api/account`
 4. Add an **Allow** policy with **Include: Everyone**.
 5. Use email OTP or your chosen identity provider.
 
-Result: every visitor can login/register with an email. Their first role should be `customer` by default, so LuxeRoutes captures customer emails before travel planning or partner onboarding continues.
+Result: every visitor can login/register with a verified email. Their first D1 grant is `customer` by default, so LuxeRoutes captures the verified customer email before travel planning or partner onboarding continues.
 
-The public account page checks Cloudflare Access identity at `/.cloudflare/access/get-identity`. If Cloudflare verified the visitor, the page can prefill the verified email. Local development still works on `localhost` as a preview.
-
-## Phase 2 — Admin panel gate
+## Phase 3 — Admin panel gate
 
 Create a separate Cloudflare Zero Trust Access application for the operations panel.
 
@@ -31,49 +73,63 @@ Recommended setup:
 1. Protect these paths:
    - `/admin-panel.html`
    - `/admin/*`
+   - `/api/admin/*`
 2. Add an **Allow** policy only for trusted admin emails.
 3. Block everyone else.
 4. Test in a private browser window before sharing the admin URL.
 
-Admins should use the People → Access grants workflow to map verified emails to roles:
+Important: the API also checks D1. The signed-in email must have an active `admin` row in `access_grants` before `/api/admin/grants` can write role grants.
+
+## Phase 4 — Seed your first admin
+
+After applying the D1 migration, insert your own verified email as the first admin. Replace the email before running:
+
+```bash
+wrangler d1 execute luxeroutes-db --remote --command "INSERT INTO access_grants (id, email, role, note, granted_by_email, status, created_at, updated_at) VALUES ('grant-initial-admin', 'YOUR_ADMIN_EMAIL@example.com', 'admin', 'Initial LuxeRoutes admin', 'system', 'active', datetime('now'), datetime('now')) ON CONFLICT(email) DO UPDATE SET role = 'admin', status = 'active', updated_at = datetime('now');"
+```
+
+Then open `/admin-panel.html`, login with the same email, and use the access grant form to grant:
 
 - `customer` — default role for public registrations and travel leads.
 - `owner` — property owner access, granted by admin after review.
 - `manager` — regional or listing manager access, granted by admin after review.
 - `admin` — internal operations access only.
 
-## Phase 3 — Replace browser demo storage
+## Phase 5 — Test the real login/register flow
 
-The current registration and admin access grant UI is still a browser-side demo. Before real properties, inquiries, owners, managers, or customer emails are stored, move this data into Cloudflare storage:
+1. Open `/account.html` in production.
+2. Complete Cloudflare email verification.
+3. Submit the profile form.
+4. Confirm D1 received the profile:
 
-- **D1** for users, roles, profiles, properties, inquiries, and role grants.
-- **R2** for property photos and documents.
-- **Workers/Pages Functions** for authenticated API routes.
+```bash
+wrangler d1 execute luxeroutes-db --remote --command "SELECT email, full_name, requested_role, status FROM profiles ORDER BY updated_at DESC LIMIT 10;"
+```
 
-Suggested tables:
+5. Open `/admin-panel.html` as the seeded admin.
+6. Confirm pending profiles and grants load from D1.
+7. Grant owner/manager/customer/admin roles from the admin panel.
+8. Confirm D1 received the grant:
+
+```bash
+wrangler d1 execute luxeroutes-db --remote --command "SELECT email, role, note, status FROM access_grants ORDER BY updated_at DESC LIMIT 10;"
+```
+
+## Phase 6 — Next backend work
+
+After account and role grants are stable, move these modules from browser demo storage into D1/API routes:
+
+- properties,
+- owners,
+- managers,
+- inquiries,
+- offer publishing workflow.
+
+Use D1 for records and R2 for property photos/documents.
+
+Suggested future tables:
 
 ```sql
-profiles (
-  id text primary key,
-  email text not null unique,
-  full_name text,
-  default_role text not null default 'customer',
-  status text not null default 'active',
-  created_at text not null,
-  updated_at text not null
-);
-
-access_grants (
-  id text primary key,
-  email text not null,
-  role text not null check (role in ('customer', 'owner', 'manager', 'admin')),
-  note text,
-  granted_by_email text,
-  status text not null default 'active',
-  created_at text not null,
-  updated_at text not null
-);
-
 properties (
   id text primary key,
   owner_email text,
@@ -101,26 +157,6 @@ inquiries (
   updated_at text not null
 );
 ```
-
-## Phase 4 — Manager portal
-
-Managers login through the same account system, but the API should check `access_grants` before returning manager data. Managers should be able to:
-
-- read only assigned properties or assigned regions,
-- add regional notes,
-- update inquiry progress,
-- recommend approval,
-- never publish public offers directly.
-
-## Phase 5 — Owner portal
-
-Owners login through the same account system, but the API should check `access_grants` before returning owner data. Owners should be able to:
-
-- create draft property submissions,
-- edit their own drafts,
-- submit for review,
-- see only their own property statuses,
-- never see other owners, admin notes, or all inquiries.
 
 ## Important security rule
 
