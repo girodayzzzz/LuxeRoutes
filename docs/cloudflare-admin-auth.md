@@ -17,6 +17,16 @@ Implemented in this repository:
 
 The property/inquiry workspace is still demo data in browser storage. Move it to D1 later when account and role setup is confirmed.
 
+## Owner/manager approval workflow now included
+
+The repository now separates public customer registration from privileged partner access:
+
+- Customers register on `/account.html` and become `active` automatically.
+- Owners and managers register on `/account.html`, keep the default `customer` access, and wait in the admin panel as `pending_admin_grant`.
+- Admins review pending requests in **Admin Panel → People → Access grants → Review role requests**.
+- **Approve** promotes the verified email to `owner` or `manager` in `access_grants` and marks the profile active.
+- **Reject** keeps/returns the email to `customer` access and marks the profile rejected.
+
 ## Phase 1 — Create and bind Cloudflare D1
 
 From the repository root, login to Wrangler and create the database:
@@ -66,7 +76,7 @@ Recommended setup:
 4. Add an **Allow** policy with **Include: Everyone**.
 5. Use email OTP or your chosen identity provider.
 
-Result: every visitor can login/register with a verified email. Their first D1 grant is `customer` by default, so LuxeRoutes captures the verified customer email before travel planning or partner onboarding continues.
+Result: every visitor can login/register with a verified email. A `customer` registration is active immediately. If the visitor requests `owner` or `manager`, the email still receives safe customer access only, while the requested privileged role stays pending for admin review.
 
 ## Phase 3 — Admin panel gate
 
@@ -92,7 +102,12 @@ After applying the D1 migration, insert your own verified email as the first adm
 wrangler d1 execute luxeroutes-db --remote --command "INSERT INTO access_grants (id, email, role, note, granted_by_email, status, created_at, updated_at) VALUES ('grant-initial-admin', 'YOUR_ADMIN_EMAIL@example.com', 'admin', 'Initial LuxeRoutes admin', 'system', 'active', datetime('now'), datetime('now')) ON CONFLICT(email) DO UPDATE SET role = 'admin', status = 'active', updated_at = datetime('now');"
 ```
 
-Then open `/admin-panel.html`, login with the same email, and use the access grant form to grant:
+Then open `/admin-panel.html`, login with the same email, and use **People → Access grants**:
+
+- **Review role requests** — approve or reject pending `owner` and `manager` registrations.
+- **Grant access by email** — manually grant `customer`, `owner`, `manager`, or `admin` access for direct invitations or corrections.
+
+Role meanings:
 
 - `customer` — default role for public registrations and travel leads.
 - `owner` — property owner access, granted by admin after review.
@@ -111,13 +126,29 @@ wrangler d1 execute luxeroutes-db --remote --command "SELECT email, full_name, r
 ```
 
 5. Open `/admin-panel.html` as the seeded admin.
-6. Confirm pending profiles and grants load from D1.
-7. Grant owner/manager/customer/admin roles from the admin panel.
-8. Confirm D1 received the grant:
+6. Confirm pending owner/manager profiles load under **Review role requests**.
+7. Click **Approve** for a suitable owner/manager request, or **Reject** if it should stay customer-only.
+8. Confirm D1 received the profile status and grant:
 
 ```bash
-wrangler d1 execute luxeroutes-db --remote --command "SELECT email, role, note, status FROM access_grants ORDER BY updated_at DESC LIMIT 10;"
+wrangler d1 execute luxeroutes-db --remote --command "SELECT p.email, p.requested_role, p.status AS profile_status, g.role AS active_role, g.note FROM profiles p LEFT JOIN access_grants g ON g.email = p.email ORDER BY p.updated_at DESC LIMIT 10;"
 ```
+
+
+## Exact production checklist for the site owner
+
+You still need to complete these steps outside the repository in Cloudflare:
+
+1. Create the D1 database named `luxeroutes-db` if it does not already exist.
+2. Apply `migrations/0001_auth.sql` remotely with Wrangler.
+3. Bind that D1 database to the Pages project with binding name `DB`.
+4. Create a public Cloudflare Access application for `/account.html`, `/account`, `/login`, `/register`, and `/api/account` with an **Everyone** allow policy.
+5. Create a separate Cloudflare Access application for `/admin-panel.html`, `/admin/*`, and `/api/admin/*` that only allows your trusted admin email addresses.
+6. Seed your first admin email into `access_grants` with the command in Phase 4.
+7. Test with three different emails: one customer, one owner request, and one manager request.
+8. From the admin email, approve one owner/manager request and reject the other to confirm both paths work.
+
+Do not share the admin URL until step 8 succeeds in a private/incognito browser window.
 
 ## Phase 6 — Next backend work
 

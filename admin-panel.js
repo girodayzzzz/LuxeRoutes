@@ -194,6 +194,18 @@ const roleStatusClass = (role) => {
   return 'status-pending';
 };
 
+const profileStatusLabel = (status) => ({
+  active: 'Active',
+  pending_admin_grant: 'Pending approval',
+  rejected: 'Rejected',
+}[status] || status || 'Pending approval');
+
+const profileStatusClass = (status) => {
+  if (status === 'active') return 'status-approved';
+  if (status === 'rejected') return 'status-warning';
+  return 'status-pending';
+};
+
 const toUiGrant = (grant) => ({
   email: grant.email,
   role: grant.role,
@@ -444,6 +456,7 @@ const renderPropertyTable = () => {
 const renderPeople = () => {
   const ownerList = document.querySelector('[data-owner-list]');
   const managerList = document.querySelector('[data-manager-list]');
+  const pendingProfileList = document.querySelector('[data-pending-profile-list]');
   const accessGrantList = document.querySelector('[data-access-grant-list]');
 
   if (ownerList) {
@@ -464,25 +477,46 @@ const renderPeople = () => {
     `).join('');
   }
 
-  if (accessGrantList) {
+  if (pendingProfileList) {
     const accountProfile = getLocalAccountProfile();
-    const profileHint = accountProfile?.email
-      ? `<div class="stack-item"><div><strong>Latest local registration</strong><span>${escapeHtml(accountProfile.email)} · requested ${escapeHtml(formatRole(accountProfile.requestedRole || 'customer'))}</span></div><span class="status-pill status-pending">Pending</span></div>`
-      : '';
-    const remoteProfileHint = remoteProfiles
-      .filter((profile) => profile.status === 'pending_admin_grant' && !state.accessGrants.some((grant) => grant.email === profile.email && grant.role !== 'customer'))
-      .map((profile) => `
-        <div class="stack-item">
-          <div><strong>${escapeHtml(profile.name || profile.email)}</strong><span>${escapeHtml(profile.email)} · requested ${escapeHtml(formatRole(profile.requestedRole || 'customer'))}</span></div>
-          <span class="status-pill status-pending">Pending D1 profile</span>
+    const localPendingProfile = accountProfile?.email && ['owner', 'manager'].includes(accountProfile.requestedRole)
+      ? [{
+        ...accountProfile,
+        id: 'local-preview-request',
+        status: accountProfile.status || 'pending_admin_grant',
+        localOnly: true,
+      }]
+      : [];
+    const remotePendingProfiles = remoteProfiles.filter((profile) => (
+      ['owner', 'manager'].includes(profile.requestedRole)
+      && profile.status === 'pending_admin_grant'
+      && !state.accessGrants.some((grant) => grant.email === profile.email && grant.role === profile.requestedRole)
+    ));
+    const pendingProfiles = isLocalPreview() ? [...localPendingProfile, ...remotePendingProfiles] : remotePendingProfiles;
+
+    pendingProfileList.innerHTML = pendingProfiles.map((profile) => `
+      <div class="stack-item access-request-item">
+        <div>
+          <strong>${escapeHtml(profile.name || profile.email)}</strong>
+          <span>${escapeHtml(profile.email)} · requested ${escapeHtml(formatRole(profile.requestedRole))}${profile.notes ? ` · ${escapeHtml(profile.notes)}` : ''}</span>
+          ${profile.localOnly ? '<span>Local preview request — save it through production D1 before final approval.</span>' : ''}
         </div>
-      `).join('');
-    accessGrantList.innerHTML = `${profileHint}${remoteProfileHint}${state.accessGrants.map((grant) => `
+        <div class="access-request-actions">
+          <span class="status-pill ${profileStatusClass(profile.status)}">${escapeHtml(profileStatusLabel(profile.status))}</span>
+          <button class="mini-action" type="button" data-pending-role-action="approve" data-pending-email="${escapeHtml(profile.email)}" data-pending-role="${escapeHtml(profile.requestedRole)}" ${!canApprove() || profile.localOnly ? 'disabled' : ''}>Approve</button>
+          <button class="mini-action mini-action-warning" type="button" data-pending-role-action="reject" data-pending-email="${escapeHtml(profile.email)}" data-pending-role="${escapeHtml(profile.requestedRole)}" ${!canApprove() || profile.localOnly ? 'disabled' : ''}>Reject</button>
+        </div>
+      </div>
+    `).join('') || '<p class="empty-state">No pending owner or manager requests right now.</p>';
+  }
+
+  if (accessGrantList) {
+    accessGrantList.innerHTML = state.accessGrants.map((grant) => `
       <div class="stack-item">
         <div><strong>${escapeHtml(grant.email)}</strong><span>${escapeHtml(grant.note || 'No access note')}</span></div>
         <span class="status-pill ${roleStatusClass(grant.role)}">${escapeHtml(formatRole(grant.role))}</span>
       </div>
-    `).join('')}` || '<p class="empty-state">No access grants yet.</p>';
+    `).join('') || '<p class="empty-state">No access grants yet.</p>';
   }
 };
 
@@ -564,7 +598,7 @@ const loadRemoteAccessGrants = async () => {
   }
 };
 
-const saveRemoteAccessGrant = async ({ email, role, note }) => {
+const saveRemoteAccessGrant = async ({ email, role, note, action = 'approve' }) => {
   if (!currentIdentity || isLocalPreview()) return null;
 
   const response = await fetch('/api/admin/grants', {
@@ -574,7 +608,7 @@ const saveRemoteAccessGrant = async ({ email, role, note }) => {
       'Content-Type': 'application/json',
     },
     credentials: 'same-origin',
-    body: JSON.stringify({ email, role, note }),
+    body: JSON.stringify({ email, role, note, action }),
   });
 
   if (!response.ok) {
@@ -584,7 +618,11 @@ const saveRemoteAccessGrant = async ({ email, role, note }) => {
 
   const data = await response.json();
   remoteAccessEnabled = true;
-  return data.grant ? toUiGrant(data.grant) : null;
+  return {
+    grant: data.grant ? toUiGrant(data.grant) : null,
+    profile: data.profile || null,
+    action: data.action || action,
+  };
 };
 
 const unlockWorkspace = ({ role = 'admin', identity = null, localPreview = false } = {}) => {
@@ -698,6 +736,53 @@ const initialiseAdminPanel = async () => {
   document.querySelector('[data-copy-markdown]')?.addEventListener('click', copyMarkdown);
   document.querySelector('[data-download-markdown]')?.addEventListener('click', downloadMarkdown);
 
+  document.querySelector('[data-pending-profile-list]')?.addEventListener('click', async (event) => {
+    const actionButton = event.target.closest('[data-pending-role-action]');
+    if (!actionButton || !canApprove()) return;
+
+    const email = String(actionButton.dataset.pendingEmail || '').trim().toLowerCase();
+    const role = String(actionButton.dataset.pendingRole || 'customer');
+    const action = String(actionButton.dataset.pendingRoleAction || 'approve');
+    const note = action === 'approve'
+      ? `Approved ${formatRole(role)} access from admin review`
+      : `Rejected ${formatRole(role)} access from admin review`;
+    if (!email || !['owner', 'manager'].includes(role)) return;
+
+    try {
+      const remoteResult = await saveRemoteAccessGrant({ email, role, note, action });
+      const remoteGrant = remoteResult?.grant;
+      const remoteProfile = remoteResult?.profile;
+      const existingGrant = state.accessGrants.find((grant) => grant.email.toLowerCase() === email);
+
+      if (action === 'approve') {
+        if (existingGrant) {
+          existingGrant.role = remoteGrant?.role || role;
+          existingGrant.note = remoteGrant?.note || note;
+          existingGrant.status = remoteGrant?.status || 'Active';
+        } else {
+          state.accessGrants.unshift(remoteGrant || { email, role, note, status: 'Active' });
+        }
+      } else if (existingGrant) {
+        existingGrant.role = remoteGrant?.role || 'customer';
+        existingGrant.note = remoteGrant?.note || note;
+        existingGrant.status = remoteGrant?.status || 'Active';
+      }
+
+      remoteProfiles = remoteProfiles.map((profile) => (profile.email === email
+        ? { ...profile, ...(remoteProfile || {}), status: action === 'approve' ? 'active' : 'rejected' }
+        : profile));
+      saveState();
+      render();
+    } catch (error) {
+      setAuthCard({
+        status: `${error.message} Check the D1 binding and that your email has an admin access_grant.`,
+        email: currentIdentity?.email || 'Cloudflare Access required',
+        role: 'D1 warning',
+        approved: false,
+      });
+    }
+  });
+
   document.querySelector('[data-access-grant-form]')?.addEventListener('submit', async (event) => {
     event.preventDefault();
     if (!canApprove()) return;
@@ -710,7 +795,8 @@ const initialiseAdminPanel = async () => {
     if (!email) return;
 
     try {
-      const remoteGrant = await saveRemoteAccessGrant({ email, role, note });
+      const remoteResult = await saveRemoteAccessGrant({ email, role, note });
+      const remoteGrant = remoteResult?.grant;
       const existingGrant = state.accessGrants.find((grant) => grant.email.toLowerCase() === email);
       if (existingGrant) {
         existingGrant.role = remoteGrant?.role || role;
@@ -719,6 +805,7 @@ const initialiseAdminPanel = async () => {
       } else {
         state.accessGrants.unshift(remoteGrant || { email, role, note, status: 'Active' });
       }
+      remoteProfiles = remoteProfiles.filter((profile) => profile.email !== email);
     } catch (error) {
       setAuthCard({
         status: `${error.message} Check the D1 binding and that your email has an admin access_grant.`,
