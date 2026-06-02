@@ -42,6 +42,7 @@ export const onRequestPost = async ({ request, env }) => {
     const name = String(body.name || '').trim();
     const requestedRole = ['customer', 'owner', 'manager'].includes(body.requestedRole) ? body.requestedRole : 'customer';
     const notes = String(body.notes || '').trim();
+    const profileStatus = requestedRole === 'customer' ? 'active' : 'pending_admin_grant';
     const timestamp = nowIso();
 
     if (!email) return errorJson('Email is required.', 400);
@@ -49,17 +50,18 @@ export const onRequestPost = async ({ request, env }) => {
 
     await db.prepare(`
       INSERT INTO profiles (id, email, full_name, default_role, requested_role, notes, status, created_at, updated_at)
-      VALUES (?, ?, ?, 'customer', ?, ?, 'pending_admin_grant', ?, ?)
+      VALUES (?, ?, ?, 'customer', ?, ?, ?, ?, ?)
       ON CONFLICT(email) DO UPDATE SET
         full_name = excluded.full_name,
         requested_role = excluded.requested_role,
         notes = excluded.notes,
         status = CASE
-          WHEN profiles.status = 'active' THEN profiles.status
-          ELSE 'pending_admin_grant'
+          WHEN excluded.requested_role = 'customer' THEN 'active'
+          WHEN profiles.status = 'active' AND profiles.default_role IN ('owner', 'manager', 'admin') THEN profiles.status
+          ELSE excluded.status
         END,
         updated_at = excluded.updated_at
-    `).bind(makeId('profile'), email, name, requestedRole, notes, timestamp, timestamp).run();
+    `).bind(makeId('profile'), email, name, requestedRole, notes, profileStatus, timestamp, timestamp).run();
 
     await db.prepare(`
       INSERT INTO access_grants (id, email, role, note, granted_by_email, status, created_at, updated_at)

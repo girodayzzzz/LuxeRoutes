@@ -37,10 +37,43 @@ export const onRequestPost = async ({ request, env }) => {
     const email = normalizeEmail(body.email);
     const role = String(body.role || 'customer');
     const note = String(body.note || '').trim();
+    const action = String(body.action || 'approve');
     const timestamp = nowIso();
 
     if (!email) return errorJson('Email is required.', 400);
     if (!isValidRole(role)) return errorJson('Invalid role.', 400);
+    if (!['approve', 'reject'].includes(action)) return errorJson('Invalid grant action.', 400);
+
+    if (action === 'reject') {
+      await auth.db.prepare(`
+        UPDATE profiles
+        SET status = 'rejected', default_role = 'customer', updated_at = ?
+        WHERE email = ?
+      `).bind(timestamp, email).run();
+
+      await auth.db.prepare(`
+        UPDATE access_grants
+        SET role = CASE WHEN role = 'admin' THEN role ELSE 'customer' END,
+          note = ?,
+          granted_by_email = ?,
+          status = 'active',
+          updated_at = ?
+        WHERE email = ?
+      `).bind(note || 'Owner/manager request rejected; customer access retained', auth.email, timestamp, email).run();
+
+      const [profile, grant] = await Promise.all([
+        auth.db.prepare(`
+          SELECT id, email, full_name AS name, default_role AS defaultRole, requested_role AS requestedRole,
+            notes, status, created_at AS createdAt, updated_at AS updatedAt
+          FROM profiles
+          WHERE email = ?
+          LIMIT 1
+        `).bind(email).first(),
+        auth.db.prepare(`${grantSelect} WHERE email = ? LIMIT 1`).bind(email).first(),
+      ]);
+
+      return json({ profile, grant, action: 'reject' });
+    }
 
     await auth.db.prepare(`
       INSERT INTO access_grants (id, email, role, note, granted_by_email, status, created_at, updated_at)
