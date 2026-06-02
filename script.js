@@ -55,18 +55,76 @@ if (toggle && nav) {
   });
 }
 
-const formatLabel = (name) => name.replace(/_/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase());
+const formatLabel = (name) => name.replace(/[_-]/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase());
 
-const buildInquiryBody = (form, formData) => {
-  const type = form.dataset.formType || 'LuxeRoutes inquiry';
-  const lines = [`${type}`, ''];
+const params = new URLSearchParams(window.location.search);
+
+const setFieldValue = (field, value) => {
+  if (!field || !value) return;
+  const matchingOption = field.tagName === 'SELECT'
+    ? Array.from(field.options).find((option) => option.value === value || option.textContent === value)
+    : null;
+
+  field.value = matchingOption ? matchingOption.value : value;
+};
+
+document.querySelectorAll('[data-prefill-param]').forEach((field) => {
+  const value = params.get(field.dataset.prefillParam);
+  setFieldValue(field, value);
+});
+
+const offerContext = document.querySelector('[data-offer-context]');
+if (offerContext) {
+  const offerName = params.get('offer');
+  const offerType = params.get('request_type') || params.get('stay_preference');
+  const region = params.get('region');
+  const sourceUrlField = document.querySelector('[name="source_offer_url"]');
+
+  if (sourceUrlField && offerName && !sourceUrlField.value) {
+    sourceUrlField.value = `${window.location.origin}${window.location.pathname}${window.location.search}`;
+  }
+
+  if (offerName) {
+    const title = offerContext.querySelector('[data-offer-context-title]');
+    const meta = offerContext.querySelector('[data-offer-context-meta]');
+    offerContext.hidden = false;
+    if (title) title.textContent = offerName;
+    if (meta) meta.textContent = [offerType, region].filter(Boolean).join(' · ') || 'Specific accommodation request';
+  }
+}
+
+const collectInquiryPayload = (form, formData) => {
+  const payload = {
+    inquiry_type: form.dataset.formType || 'LuxeRoutes inquiry',
+    submitted_from: window.location.href,
+    submitted_at: new Date().toISOString(),
+  };
 
   formData.forEach((value, key) => {
-    if (key === 'website' || !String(value).trim()) return;
-    lines.push(`${formatLabel(key)}: ${value}`);
+    const cleanValue = String(value).trim();
+    if (key === 'website' || !cleanValue) return;
+
+    if (payload[key]) {
+      payload[key] = Array.isArray(payload[key]) ? [...payload[key], cleanValue] : [payload[key], cleanValue];
+      return;
+    }
+
+    payload[key] = cleanValue;
   });
 
-  lines.push('', `Submitted from: ${window.location.href}`);
+  return payload;
+};
+
+const buildInquiryBody = (form, formData) => {
+  const payload = collectInquiryPayload(form, formData);
+  const lines = [`${payload.inquiry_type}`, ''];
+
+  Object.entries(payload).forEach(([key, value]) => {
+    if (key === 'inquiry_type') return;
+    lines.push(`${formatLabel(key)}: ${Array.isArray(value) ? value.join(', ') : value}`);
+  });
+
+  lines.push('', 'JSON payload:', JSON.stringify(payload, null, 2));
   return lines.join('\n');
 };
 
@@ -87,10 +145,12 @@ document.querySelectorAll('[data-inquiry-form]').forEach((form) => {
     }
 
     const recipient = form.dataset.recipient || 'info@luxeroutes.eu';
-    const subject = encodeURIComponent(form.dataset.formType || 'LuxeRoutes inquiry');
+    const offerName = String(formData.get('accommodation_interest') || '').trim();
+    const subjectBase = form.dataset.formType || 'LuxeRoutes inquiry';
+    const subject = encodeURIComponent(offerName ? `${subjectBase}: ${offerName}` : subjectBase);
     const body = encodeURIComponent(buildInquiryBody(form, formData));
 
-    status.textContent = 'Opening your email client with the inquiry details ready to send.';
+    status.textContent = 'Opening your email client with the inquiry details and JSON payload ready to send.';
     window.location.href = `mailto:${recipient}?subject=${subject}&body=${body}`;
     form.reset();
   });
@@ -107,6 +167,23 @@ if (offerFilterRoot) {
   const resultCount = offerFilterRoot.querySelector('[data-result-count]');
   const noResults = offerFilterRoot.querySelector('[data-no-results]');
   const resetButton = offerFilterRoot.querySelector('[data-filter-reset]');
+
+  offerCards.forEach((card) => {
+    const requestLink = card.querySelector('.offer-footer a');
+    const offerTitle = card.querySelector('h3')?.textContent.trim();
+    if (!requestLink || !offerTitle) return;
+
+    const query = new URLSearchParams({
+      offer: offerTitle,
+      request_type: 'Specific accommodation',
+      stay_preference: formatLabel(card.dataset.type || 'Curated stay'),
+      region: [formatLabel(card.dataset.country || ''), formatLabel(card.dataset.region || '')].filter(Boolean).join(' · '),
+      source_url: `${window.location.origin}${window.location.pathname}#offers`,
+    });
+
+    requestLink.href = `plan-trip.html?${query.toString()}#trip-brief`;
+    requestLink.textContent = 'Request this stay';
+  });
 
   const getSelectedOptions = () => Array.from(optionFilters)
     .filter((input) => input.checked)

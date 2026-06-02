@@ -133,14 +133,26 @@
           <label class="honeypot" aria-hidden="true">Leave this field empty<input name="website" type="text" tabindex="-1" autocomplete="off"></label>
           <label>Name<input name="name" type="text" autocomplete="name" required></label>
           <label>Email<input name="email" type="email" autocomplete="email" required></label>
+          <input type="hidden" name="source_offer_url" data-prefill-param="source_url">
+          <div class="form-context-card full" data-offer-context hidden>
+            <span>Selected stay request</span>
+            <strong data-offer-context-title>Custom LuxeRoutes request</strong>
+            <small data-offer-context-meta>Offer details will be included in the email JSON.</small>
+          </div>
+          <label class="full">Accommodation / offer interest<input name="accommodation_interest" type="text" data-prefill-param="offer" placeholder="e.g. Lake View Villa Bled, private villa in Croatia, hotel guidance..."></label>
+          <label>Request type<select name="request_type" data-prefill-param="request_type" required><option value="">Select request type</option><option>Specific accommodation</option><option>Private villa</option><option>Luxury hotel</option><option>Apartment or chalet</option><option>Full private route</option><option>Transfer or experience</option><option>Not sure yet</option></select></label>
           <label>Phone / WhatsApp<input name="phone" type="tel" autocomplete="tel" placeholder="Optional, for faster coordination"></label>
-          <label>Preferred dates<input name="preferred_dates" type="text" placeholder="e.g. 12–21 September 2026" required></label>
-          <label>Travelers<input name="travelers" type="text" placeholder="e.g. 2 adults, 1 child" required></label>
+          <label>Arrival date<input name="arrival_date" type="date" required></label>
+          <label>Departure date<input name="departure_date" type="date" required></label>
+          <label>Flexible dates?<select name="flexible_dates"><option value="">Select flexibility</option><option>Exact dates</option><option>Flexible by a few days</option><option>Flexible by one week</option><option>Open to best availability</option></select></label>
           <label>Nights<input name="nights" type="text" placeholder="e.g. 7–10 nights"></label>
-          <label>Preferred regions<input name="preferred_regions" type="text" placeholder="Slovenia, Croatia, Italy..." required></label>
+          <label>Adults<input name="adults" type="number" min="1" placeholder="2" required></label>
+          <label>Children<input name="children" type="number" min="0" placeholder="0"></label>
+          <label>Rooms needed<input name="rooms" type="number" min="1" placeholder="1"></label>
+          <label>Preferred regions<input name="preferred_regions" type="text" data-prefill-param="region" placeholder="Slovenia, Croatia, Italy..." required></label>
           <label>Approx. budget<input name="approx_budget" type="text" placeholder="Optional range per trip"></label>
           <label>Departure city / airport<input name="departure_city" type="text" placeholder="Optional"></label>
-          <label>Stay preference<select name="stay_preference"><option value="">Select preference</option><option>Luxury hotel</option><option>Private villa</option><option>Boutique apartment</option><option>Chalet or cabin</option><option>Mix of curated stays</option></select></label>
+          <label>Stay preference<select name="stay_preference" data-prefill-param="stay_preference"><option value="">Select preference</option><option>Luxury hotel</option><option>Private villa</option><option>Boutique apartment</option><option>Chalet or cabin</option><option>Wellness retreat</option><option>Mix of curated stays</option></select></label>
           <label>Transfer preference<select name="transfer_preference"><option value="">Select preference</option><option>Private driver</option><option>Self-drive route</option><option>Train plus private transfers</option><option>Yacht or sea transfer</option><option>Not sure yet</option></select></label>
           <label class="full">Trip style<select name="trip_style" required><option value="">Select trip style</option><option>Romantic escape</option><option>Family journey</option><option>Food and wine route</option><option>Wellness retreat</option><option>Adventure and nature</option><option>Multi-country signature route</option><option>Business or partner trip</option></select></label>
           <fieldset class="full form-options">

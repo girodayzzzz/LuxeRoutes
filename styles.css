@@ -183,6 +183,10 @@ input:focus, textarea:focus, select:focus { border-color: rgba(241,215,150,.62);
 textarea { resize: vertical; }
 ::placeholder { color: rgba(180,172,158,.72); }
 .form-status { color: var(--color-gold-light); font-weight: 800; margin-top: .2rem; }
+.form-context-card { border: 1px solid rgba(241,215,150,.24); border-radius: 18px; background: rgba(198,161,91,.09); padding: 1rem; }
+.form-context-card span { display: block; color: var(--color-gold-light); font-size: .74rem; font-weight: 900; letter-spacing: .14em; text-transform: uppercase; }
+.form-context-card strong { display: block; margin-top: .35rem; font-family: "Playfair Display", serif; font-size: 1.25rem; }
+.form-context-card small { display: block; margin-top: .35rem; color: var(--color-muted-strong); }
 
 .legal-copy .container { max-width: 900px; }
 .legal-copy h2 { font-size: clamp(1.55rem, 3vw, 2.2rem); margin-top: 2.2rem; }
