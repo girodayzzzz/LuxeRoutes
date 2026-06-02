@@ -86,7 +86,7 @@ document.querySelectorAll('[data-inquiry-form]').forEach((form) => {
       return;
     }
 
-    const recipient = form.dataset.recipient || 'hello@luxeroutes.eu';
+    const recipient = form.dataset.recipient || 'info@luxeroutes.eu';
     const subject = encodeURIComponent(form.dataset.formType || 'LuxeRoutes inquiry');
     const body = encodeURIComponent(buildInquiryBody(form, formData));
 
