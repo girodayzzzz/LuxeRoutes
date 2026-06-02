@@ -1,6 +1,10 @@
 const adminApp = document.querySelector('[data-admin-app]');
 const roleSelect = document.querySelector('[data-role-select]');
 const storageKey = 'luxeroutes-admin-panel-v1';
+const offerBuilderForm = document.querySelector('[data-offer-builder-form]');
+const markdownOutput = document.querySelector('[data-markdown-output]');
+const offerPreview = document.querySelector('[data-offer-preview]');
+const offerPathTarget = document.querySelector('[data-offer-path]');
 
 const seedData = {
   properties: [
@@ -72,6 +76,60 @@ const inquiryStatusLabels = {
   lost: 'Lost',
 };
 
+const taxonomyLabels = {
+  countries: {
+    slovenia: 'Slovenia',
+    croatia: 'Croatia',
+    italy: 'Italy',
+    austria: 'Austria',
+    switzerland: 'Switzerland',
+    france: 'France',
+  },
+  regions: {
+    alps: 'Alps',
+    adriatic: 'Adriatic coast',
+    lakes: 'Lakes',
+    'wine-country': 'Wine country',
+    city: 'City',
+    countryside: 'Countryside',
+    riviera: 'Riviera',
+  },
+  accommodationTypes: {
+    villa: 'Private villa',
+    chalet: 'Chalet',
+    'boutique-hotel': 'Boutique hotel',
+    apartment: 'Apartment',
+    cabin: 'Cabin',
+    retreat: 'Wellness retreat',
+  },
+  tripTypes: {
+    'signature-route': 'Signature route',
+    'romantic-getaway': 'Romantic getaway',
+    'wine-tour': 'Wine tour',
+    'wellness-retreat': 'Wellness retreat',
+    'yacht-experience': 'Yacht experience',
+    'fishing-escape': 'Fishing escape',
+  },
+};
+
+const accommodationFolders = {
+  villa: 'villas',
+  chalet: 'chalets',
+  'boutique-hotel': 'boutique-hotels',
+  apartment: 'apartments',
+  cabin: 'cabins',
+  retreat: 'wellness-retreats',
+};
+
+const tripFolders = {
+  'signature-route': 'signature-routes',
+  'romantic-getaway': 'romantic-getaways',
+  'wine-tour': 'wine-tours',
+  'wellness-retreat': 'wellness-retreats',
+  'yacht-experience': 'yacht-experiences',
+  'fishing-escape': 'fishing-escapes',
+};
+
 const cloneData = (data) => JSON.parse(JSON.stringify(data));
 
 let state = cloneData(seedData);
@@ -139,6 +197,147 @@ const nextInquiryStatus = (status) => {
   if (status === 'proposal_sent') return 'won';
   if (status === 'won') return 'new';
   return 'new';
+};
+
+const slugify = (value) => String(value || '')
+  .normalize('NFD')
+  .replace(/[\u0300-\u036f]/g, '')
+  .toLowerCase()
+  .replace(/[^a-z0-9]+/g, '-')
+  .replace(/^-+|-+$/g, '')
+  .replace(/-{2,}/g, '-');
+
+const normalizeSlug = (value, fallback = 'new-offer') => slugify(value) || fallback;
+
+const yamlString = (value) => `"${String(value || '').replace(/"/g, '\\"')}"`;
+
+const yamlList = (items) => {
+  if (!items.length) return '[]';
+  return `\n${items.map((item) => `  - ${item}`).join('\n')}`;
+};
+
+const getOfferDraft = (form) => {
+  const formData = new FormData(form);
+  const kind = String(formData.get('kind') || 'accommodation');
+  const title = String(formData.get('title') || '').trim();
+  const slug = normalizeSlug(formData.get('slug') || title);
+  const country = String(formData.get('country') || 'slovenia');
+  const region = String(formData.get('region') || 'alps');
+  const type = String(formData.get(kind === 'trip' ? 'trip_type' : 'type') || 'villa');
+  const options = formData.getAll('options').map((option) => String(option));
+  const summary = String(formData.get('summary') || '').trim();
+  const highlights = String(formData.get('highlights') || '')
+    .split('\n')
+    .map((item) => item.trim())
+    .filter(Boolean);
+  const priceFrom = String(formData.get('price_from') || '').trim();
+  const bestFor = String(formData.get('best_for') || '').trim();
+  const folder = kind === 'trip' ? tripFolders[type] : accommodationFolders[type];
+  const path = kind === 'trip'
+    ? `content/offers/${country}/trips/${folder}/${slug}.md`
+    : `content/offers/${country}/accommodation/${folder}/${slug}.md`;
+  const typeLabel = kind === 'trip' ? taxonomyLabels.tripTypes[type] : taxonomyLabels.accommodationTypes[type];
+
+  const fields = kind === 'trip'
+    ? [
+      ['title', yamlString(title)],
+      ['slug', slug],
+      ['status', 'draft'],
+      ['country', country],
+      ['trip_type', type],
+      ['route_regions', yamlList([region])],
+      ['duration', yamlString(priceFrom || 'To be confirmed')],
+      ['best_for', yamlList(bestFor ? bestFor.split(',').map((item) => item.trim()).filter(Boolean) : [])],
+    ]
+    : [
+      ['title', yamlString(title)],
+      ['slug', slug],
+      ['status', 'draft'],
+      ['country', country],
+      ['region', region],
+      ['type', type],
+      ['options', yamlList(options)],
+      ['price_from', yamlString(priceFrom || 'Upon request')],
+      ['best_for', yamlString(bestFor)],
+    ];
+
+  const frontMatter = fields.map(([key, value]) => `${key}: ${value}`).join('\n');
+  const highlightMarkdown = highlights.length
+    ? `\n\n## Highlights\n\n${highlights.map((item) => `- ${item}`).join('\n')}`
+    : '';
+  const body = `---\n${frontMatter}\n---\n\n${summary || 'Add public-facing offer summary here.'}${highlightMarkdown}\n`;
+
+  return {
+    kind,
+    title,
+    slug,
+    country,
+    region,
+    type,
+    options,
+    summary,
+    highlights,
+    priceFrom,
+    bestFor,
+    path,
+    typeLabel,
+    markdown: body,
+  };
+};
+
+const renderOfferDraft = (draft) => {
+  if (markdownOutput) markdownOutput.value = draft.markdown;
+  if (offerPathTarget) offerPathTarget.textContent = draft.path;
+  if (offerPreview) {
+    const regionLabel = taxonomyLabels.regions[draft.region] || draft.region;
+    const countryLabel = taxonomyLabels.countries[draft.country] || draft.country;
+    const meta = draft.kind === 'trip'
+      ? `${countryLabel} route · ${draft.typeLabel}`
+      : `${countryLabel} · ${regionLabel} · ${draft.typeLabel}`;
+    offerPreview.innerHTML = `
+      <span class="status-pill status-pending">Draft</span>
+      <h3>${escapeHtml(draft.title || 'Untitled offer')}</h3>
+      <p>${escapeHtml(draft.summary || 'Add public-facing offer summary here.')}</p>
+      <div class="offer-preview-meta">
+        <span>${escapeHtml(meta)}</span>
+        <span>${escapeHtml(draft.priceFrom || 'Upon request')}</span>
+      </div>
+      ${draft.highlights.length ? `<ul>${draft.highlights.slice(0, 4).map((item) => `<li>${escapeHtml(item)}</li>`).join('')}</ul>` : ''}
+    `;
+  }
+};
+
+const toggleOfferKindFields = () => {
+  const kind = offerBuilderForm?.querySelector('[data-offer-kind]')?.value || 'accommodation';
+  offerBuilderForm?.querySelectorAll('[data-accommodation-field]').forEach((field) => {
+    field.hidden = kind === 'trip';
+  });
+  offerBuilderForm?.querySelectorAll('[data-trip-field]').forEach((field) => {
+    field.hidden = kind !== 'trip';
+  });
+};
+
+const copyMarkdown = () => {
+  const markdown = markdownOutput?.value || '';
+  if (!markdown) return;
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(markdown);
+    return;
+  }
+  markdownOutput?.select();
+  document.execCommand('copy');
+};
+
+const downloadMarkdown = () => {
+  const markdown = markdownOutput?.value || '';
+  if (!markdown) return;
+  const slug = normalizeSlug(offerBuilderForm?.querySelector('[data-slug-input]')?.value || 'offer-draft');
+  const url = URL.createObjectURL(new Blob([markdown], { type: 'text/markdown' }));
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `${slug}.md`;
+  link.click();
+  URL.revokeObjectURL(url);
 };
 
 const renderStats = () => {
@@ -269,6 +468,36 @@ if (adminApp) {
   });
 
   roleSelect?.addEventListener('change', render);
+
+  if (offerBuilderForm) {
+    toggleOfferKindFields();
+
+    const titleInput = offerBuilderForm.querySelector('input[name="title"]');
+    const slugInput = offerBuilderForm.querySelector('[data-slug-input]');
+    let slugEdited = Boolean(slugInput?.value);
+
+    slugInput?.addEventListener('input', () => {
+      slugEdited = true;
+      slugInput.value = normalizeSlug(slugInput.value);
+    });
+
+    titleInput?.addEventListener('input', () => {
+      if (!slugInput || slugEdited) return;
+      slugInput.value = normalizeSlug(titleInput.value, '');
+    });
+
+    offerBuilderForm.querySelector('[data-offer-kind]')?.addEventListener('change', toggleOfferKindFields);
+
+    offerBuilderForm.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const draft = getOfferDraft(offerBuilderForm);
+      if (slugInput) slugInput.value = draft.slug;
+      renderOfferDraft(draft);
+    });
+  }
+
+  document.querySelector('[data-copy-markdown]')?.addEventListener('click', copyMarkdown);
+  document.querySelector('[data-download-markdown]')?.addEventListener('click', downloadMarkdown);
 
   document.querySelector('[data-property-form]')?.addEventListener('submit', (event) => {
     event.preventDefault();

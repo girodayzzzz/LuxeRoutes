@@ -92,6 +92,7 @@
         <div class="admin-tabs" role="tablist" aria-label="Panel sections">
           <button class="is-active" type="button" role="tab" aria-selected="true" data-admin-tab="overview">Overview</button>
           <button type="button" role="tab" aria-selected="false" data-admin-tab="properties">Properties</button>
+          <button type="button" role="tab" aria-selected="false" data-admin-tab="offer-builder">Offer Builder</button>
           <button type="button" role="tab" aria-selected="false" data-admin-tab="people">People</button>
           <button type="button" role="tab" aria-selected="false" data-admin-tab="inquiries">Inquiries</button>
           <button type="button" role="tab" aria-selected="false" data-admin-tab="settings">Workflow</button>
@@ -172,6 +173,106 @@
                   <tbody data-property-table></tbody>
                 </table>
               </div>
+            </article>
+          </div>
+        </section>
+
+
+        <section class="admin-panel" data-panel="offer-builder" aria-label="Offer builder panel">
+          <div class="admin-grid builder-layout">
+            <article class="admin-card">
+              <div class="card-head">
+                <p class="eyebrow">Content workspace</p>
+                <span class="status-pill">Markdown export</span>
+              </div>
+              <h3>Create offer draft</h3>
+              <p class="admin-helper">Build a taxonomy-safe offer file for <code>content/offers</code>, preview the public card copy, then copy or download the Markdown draft.</p>
+              <form class="admin-form offer-builder-form" data-offer-builder-form>
+                <label>Offer kind
+                  <select name="kind" data-offer-kind required>
+                    <option value="accommodation">Accommodation</option>
+                    <option value="trip">Trip / Route</option>
+                  </select>
+                </label>
+                <label>Title<input name="title" type="text" placeholder="Lake View Villa Bled" required></label>
+                <label>Country
+                  <select name="country" required>
+                    <option value="slovenia">Slovenia</option>
+                    <option value="croatia">Croatia</option>
+                    <option value="italy">Italy</option>
+                    <option value="austria">Austria</option>
+                    <option value="switzerland">Switzerland</option>
+                    <option value="france">France</option>
+                  </select>
+                </label>
+                <label>Region
+                  <select name="region" required>
+                    <option value="alps">Alps</option>
+                    <option value="adriatic">Adriatic coast</option>
+                    <option value="lakes">Lakes</option>
+                    <option value="wine-country">Wine country</option>
+                    <option value="city">City</option>
+                    <option value="countryside">Countryside</option>
+                    <option value="riviera">Riviera</option>
+                  </select>
+                </label>
+                <label data-accommodation-field>Accommodation type
+                  <select name="type">
+                    <option value="villa">Private villa</option>
+                    <option value="chalet">Chalet</option>
+                    <option value="boutique-hotel">Boutique hotel</option>
+                    <option value="apartment">Apartment</option>
+                    <option value="cabin">Cabin</option>
+                    <option value="retreat">Wellness retreat</option>
+                  </select>
+                </label>
+                <label data-trip-field hidden>Trip type
+                  <select name="trip_type">
+                    <option value="signature-route">Signature route</option>
+                    <option value="romantic-getaway">Romantic getaway</option>
+                    <option value="wine-tour">Wine tour</option>
+                    <option value="wellness-retreat">Wellness retreat</option>
+                    <option value="yacht-experience">Yacht experience</option>
+                    <option value="fishing-escape">Fishing escape</option>
+                  </select>
+                </label>
+                <label>Slug<input name="slug" type="text" placeholder="lake-view-villa-bled" data-slug-input required></label>
+                <label>Price / duration note<input name="price_from" type="text" placeholder="From €620 / night or 5 days"></label>
+                <label>Best for<input name="best_for" type="text" placeholder="Families, couples, slow luxury"></label>
+                <div class="full admin-fieldset">
+                  <span>Options</span>
+                  <div class="admin-checkbox-grid">
+                    <label><input type="checkbox" name="options" value="pool"> Pool</label>
+                    <label><input type="checkbox" name="options" value="spa"> Spa / sauna</label>
+                    <label><input type="checkbox" name="options" value="sea-view"> Sea view</label>
+                    <label><input type="checkbox" name="options" value="family"> Family ready</label>
+                    <label><input type="checkbox" name="options" value="pet-friendly"> Pet friendly</label>
+                    <label><input type="checkbox" name="options" value="private-chef"> Private chef</label>
+                  </div>
+                </div>
+                <label class="full">Short description<textarea name="summary" rows="4" placeholder="A polished public-facing summary for the offer card and Markdown body." required></textarea></label>
+                <label class="full">Highlights<textarea name="highlights" rows="4" placeholder="One highlight per line: private pool, lake access, chef partner..."></textarea></label>
+                <div class="button-row full">
+                  <button class="btn btn-primary" type="submit">Generate Markdown</button>
+                  <button class="btn btn-secondary" type="button" data-copy-markdown>Copy Markdown</button>
+                  <button class="btn btn-secondary" type="button" data-download-markdown>Download .md</button>
+                </div>
+              </form>
+            </article>
+            <article class="admin-card offer-output-card">
+              <div class="card-head">
+                <p class="eyebrow">Preview</p>
+                <span class="status-pill status-pending" data-offer-path>Draft path</span>
+              </div>
+              <div class="offer-preview-card" data-offer-preview>
+                <span class="status-pill">Waiting for draft</span>
+                <h3>Your offer preview will appear here.</h3>
+                <p>Fill in the form to generate a content-ready Markdown draft.</p>
+              </div>
+              <label class="markdown-output-label">Generated Markdown
+                <textarea class="markdown-output" data-markdown-output rows="18" readonly placeholder="Generated Markdown will appear here after you submit the builder form."></textarea>
+              </label>
+              <p class="admin-helper">Static sites cannot write files directly from the browser, so download or copy this draft into the generated path before publishing.</p>
             </article>
           </div>
         </section>
