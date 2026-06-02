@@ -188,6 +188,10 @@ textarea { resize: vertical; }
 .form-context-card strong { display: block; margin-top: .35rem; font-family: "Playfair Display", serif; font-size: 1.25rem; }
 .form-context-card small { display: block; margin-top: .35rem; color: var(--color-muted-strong); }
 
+.form-status.is-error { color: #ffd0b8; }
+.luxury-form[aria-busy="true"] { opacity: .86; }
+.luxury-form button[disabled] { cursor: wait; opacity: .7; transform: none; box-shadow: none; }
+
 .legal-copy .container { max-width: 900px; }
 .legal-copy h2 { font-size: clamp(1.55rem, 3vw, 2.2rem); margin-top: 2.2rem; }
 .legal-copy p { margin-top: 1rem; color: var(--color-muted-strong); }
@@ -2970,4 +2974,61 @@ body.home-page {
   .stack-item,
   .card-head { align-items: start; flex-direction: column; }
   .admin-toolbar .btn { width: 100%; }
+}
+
+.reassurance-section {
+  background:
+    radial-gradient(circle at 18% 18%, rgba(198,161,91,.14), transparent 28rem),
+    linear-gradient(180deg, rgba(6,7,10,.98), rgba(13,18,28,.94));
+  border-bottom: 1px solid rgba(241,215,150,.1);
+}
+.reassurance-grid,
+.faq-grid {
+  display: grid;
+  grid-template-columns: minmax(0, .82fr) minmax(320px, 1.18fr);
+  gap: clamp(2rem, 5vw, 4rem);
+  align-items: start;
+}
+.reassurance-grid > div:first-child p:not(.eyebrow),
+.faq-grid > div:first-child p:not(.eyebrow) {
+  margin-top: 1rem;
+  color: var(--color-muted-strong);
+}
+.reassurance-cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+.reassurance-cards article,
+.faq-list details {
+  border: 1px solid rgba(241,215,150,.2);
+  border-radius: 24px;
+  background: linear-gradient(180deg, rgba(24,32,46,.9), rgba(8,11,17,.86));
+  box-shadow: var(--shadow-soft);
+}
+.reassurance-cards article { padding: 1.35rem; }
+.reassurance-cards span {
+  color: var(--color-gold-light);
+  font-size: .7rem;
+  font-weight: 900;
+  letter-spacing: .18em;
+}
+.reassurance-cards h3 { margin-top: 1.1rem; font-size: clamp(1.25rem, 2vw, 1.7rem); }
+.reassurance-cards p { margin-top: .75rem; color: var(--color-muted-strong); }
+.faq-section { background: linear-gradient(180deg, rgba(9,12,19,.98), rgba(6,7,10,.98)); }
+.faq-list { display: grid; gap: 1rem; }
+.faq-list details { padding: 1.1rem 1.25rem; }
+.faq-list summary {
+  cursor: pointer;
+  color: var(--color-text);
+  font-weight: 900;
+  list-style-position: outside;
+}
+.faq-list details[open] summary { color: var(--color-gold-light); }
+.faq-list p { margin-top: .8rem; color: var(--color-muted-strong); }
+
+@media (max-width: 1020px) {
+  .reassurance-grid,
+  .faq-grid,
+  .reassurance-cards { grid-template-columns: 1fr; }
 }
