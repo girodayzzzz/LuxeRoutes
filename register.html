@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Account Login | LuxeRoutes</title>
-  <meta name="description" content="Access your LuxeRoutes account for private travel briefs, saved profile details, and approved owner or manager collaboration." />
+  <title>Create Account | LuxeRoutes</title>
+  <meta name="description" content="Create your LuxeRoutes customer, owner, or manager account profile." />
   <meta name="robots" content="noindex, nofollow" />
-  <meta property="og:title" content="Account Login | LuxeRoutes" />
-  <meta property="og:description" content="Login to LuxeRoutes using Cloudflare-protected email access." />
+  <meta property="og:title" content="Create Account | LuxeRoutes" />
+  <meta property="og:description" content="Register a LuxeRoutes profile with business context for owner and manager review." />
   <meta property="og:type" content="website" />
-  <meta property="og:url" content="https://luxeroutes.eu/account.html" />
+  <meta property="og:url" content="https://luxeroutes.eu/register.html" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@600;700;800&display=swap" rel="stylesheet" />
@@ -48,12 +48,12 @@
     <section class="admin-hero">
       <div class="container admin-hero-grid">
         <div>
-          <p class="eyebrow">LuxeRoutes account</p>
-          <h1>Login to your LuxeRoutes account.</h1>
-          <p class="admin-lead">Use Cloudflare email verification to open your private LuxeRoutes profile, see your saved account status, or continue into approved owner and manager collaboration.</p>
+          <p class="eyebrow">LuxeRoutes registration</p>
+          <h1>Create your LuxeRoutes account.</h1>
+          <p class="admin-lead">Register a customer profile now, or request owner or manager access with business context so the LuxeRoutes admin team can review your role.</p>
           <div class="button-row">
-            <a class="btn btn-primary" href="account.html" data-account-login-link>Login with Email</a>
-            <a class="btn btn-secondary" href="register.html">Create Account</a>
+            <a class="btn btn-primary" href="#account-workspace" data-account-login-link>Continue Registration</a>
+            <a class="btn btn-secondary" href="account.html">Login instead</a>
           </div>
         </div>
         <aside class="admin-login-card" aria-label="Account login status">
@@ -64,11 +64,7 @@
             <span class="status-pill status-pending" data-account-role>Verifying</span>
             <span data-account-email>Session pending</span>
           </div>
-          <ul class="login-checklist">
-            <li>Verified email login for customers, owners, and managers.</li>
-            <li>Owner and manager requests wait for admin approval.</li>
-            <li>New profiles are created on the registration page.</li>
-          </ul>
+          <p class="admin-helper">Customers are activated immediately. Owner and manager requests stay pending until an admin approves them in People → Registrations.</p>
         </aside>
       </div>
     </section>
@@ -77,28 +73,39 @@
       <div class="container">
         <div class="admin-toolbar">
           <div>
-            <p class="eyebrow">Profile</p>
-            <h2>Your LuxeRoutes profile</h2>
-            <p>Review the profile saved for your verified email. Create a new account if no profile has been registered yet.</p>
+            <p class="eyebrow">Registration</p>
+            <h2>Create your LuxeRoutes profile</h2>
+            <p>Business fields help admins understand owner and manager requests before approving access.</p>
           </div>
-          <a class="btn btn-secondary" href="register.html">Create Account</a>
+          <a class="btn btn-secondary" href="account.html">Account Login</a>
         </div>
 
         <div class="admin-grid two">
           <article class="admin-card">
-            <div class="card-head"><p class="eyebrow">Saved profile</p><span class="status-pill status-approved">Account status</span></div>
-            <h3>Current access</h3>
-            <div class="stack-list" data-account-profile></div>
+            <div class="card-head"><p class="eyebrow">Register</p><span class="status-pill">Customer by default</span></div>
+            <h3>Account details</h3>
+            <form class="admin-form" data-account-form>
+              <label>Email<input name="email" type="email" placeholder="you@example.com" required data-account-email-input></label>
+              <label>Full name<input name="name" type="text" placeholder="Your name" required></label>
+              <label>Account type
+                <select name="requested_role">
+                  <option value="customer">Customer / Traveler</option>
+                  <option value="owner">Property Owner</option>
+                  <option value="manager">Regional Manager</option>
+                </select>
+              </label>
+              <label>Company name<input name="company_name" type="text" placeholder="Company or property group"></label>
+              <label>Company website<input name="company_website" type="url" placeholder="https://example.com"></label>
+              <label class="full">Business context<textarea name="business_context" rows="4" placeholder="Tell us about your properties, region, portfolio, or partnership context."></textarea></label>
+              <label class="full">Notes<textarea name="notes" rows="4" placeholder="Anything else our admin team should know?"></textarea></label>
+              <button class="btn btn-primary" type="submit">Save Profile</button>
+            </form>
           </article>
 
           <article class="admin-card">
-            <div class="card-head"><p class="eyebrow">Next step</p><span class="status-pill">Email first</span></div>
-            <h3>Need a profile?</h3>
-            <p class="admin-helper">Register as a customer, owner, or manager on the dedicated registration page. Customers become active immediately; owner and manager requests remain pending until an admin approves them.</p>
-            <div class="button-row">
-              <a class="btn btn-primary" href="register.html">Create Account</a>
-              <a class="btn btn-secondary" href="plan-trip.html">Send Travel Brief</a>
-            </div>
+            <div class="card-head"><p class="eyebrow">Access model</p><span class="status-pill status-approved">Email first</span></div>
+            <h3>Saved registration</h3>
+            <div class="stack-list" data-account-profile></div>
           </article>
         </div>
       </div>
