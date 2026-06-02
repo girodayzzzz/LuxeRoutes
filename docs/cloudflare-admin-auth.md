@@ -10,6 +10,8 @@ Implemented in this repository:
 - `admin-panel.html` + `admin-panel.js` — operations panel. It now tries to load and save access grants from `/api/admin/grants`; local preview still works on `localhost`.
 - `functions/api/account.js` — Cloudflare Pages Function for reading/upserting the verified visitor profile.
 - `functions/api/admin/grants.js` — Cloudflare Pages Function for admin-only role grant reads/writes.
+- `functions/api/_utils.js` — shared API helpers; it also returns 404 if Pages maps it as `/api/_utils` during function bundling.
+- `_routes.json` — explicitly invokes Pages Functions only for `/api/*`, keeping static pages on the asset path.
 - `migrations/0001_auth.sql` — D1 schema for `profiles` and `access_grants`.
 - `wrangler.toml` — keeps Pages build output at the repository root and intentionally omits placeholder D1 IDs; bind `DB` in the Pages dashboard or add a real D1 UUID only after creation.
 
