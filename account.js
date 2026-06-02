@@ -6,6 +6,7 @@ const accountForm = document.querySelector('[data-account-form]');
 const accountEmailInput = document.querySelector('[data-account-email-input]');
 const accountProfile = document.querySelector('[data-account-profile]');
 const accountLoginLink = document.querySelector('[data-account-login-link]');
+const loginForm = document.querySelector('[data-login-form]');
 const isRegisterPage = () => document.body.classList.contains('account-page') && Boolean(accountForm);
 const isDashboardPage = () => document.body.classList.contains('account-dashboard-page');
 const isLoginPage = () => document.body.classList.contains('login-page');
@@ -313,6 +314,35 @@ accountForm?.addEventListener('submit', async (event) => {
       approved: false,
     });
   }
+});
+
+loginForm?.addEventListener('submit', (event) => {
+  event.preventDefault();
+  const formData = new FormData(loginForm);
+  const email = String(formData.get('email') || accountIdentity?.email || '').trim().toLowerCase();
+
+  if (!email) return;
+
+  if (accountIdentity || isAccountLocalPreview()) {
+    const storedProfile = loadAccountProfile();
+    saveAccountSession({
+      identity: accountIdentity || { email },
+      profile: storedProfile?.email === email ? storedProfile : { email, name: 'LuxeRoutes guest', defaultRole: 'customer', status: 'active' },
+      role: 'customer',
+    });
+  }
+
+  setAccountStatus({
+    heading: 'Continuing securely',
+    status: isAccountLocalPreview()
+      ? 'Local preview session saved. Opening the account dashboard now.'
+      : 'Opening the protected account area. Cloudflare Access may ask you to verify this email before continuing.',
+    email,
+    role: isAccountLocalPreview() ? 'Preview login' : 'Email login',
+    approved: true,
+  });
+
+  window.location.href = 'account.html';
 });
 
 initialiseAccount();

@@ -17,7 +17,7 @@
   <link rel="manifest" href="site.webmanifest" />
   <link rel="stylesheet" href="styles.css" />
 </head>
-<body class="admin-page account-page">
+<body class="admin-page account-page register-page auth-page">
   <a class="skip-link" href="#main-content">Skip to content</a>
   <header class="site-header" data-header>
     <div class="header-top" aria-label="LuxeRoutes account highlights">
@@ -46,69 +46,68 @@
   </header>
 
   <main id="main-content">
-    <section class="admin-hero">
-      <div class="container admin-hero-grid">
-        <div>
-          <p class="eyebrow">LuxeRoutes registration</p>
-          <h1>Create your LuxeRoutes account.</h1>
-          <p class="admin-lead">Register a customer profile now, or request owner or manager access with business context so the LuxeRoutes admin team can review your role.</p>
-          <div class="button-row">
-            <a class="btn btn-primary" href="#account-workspace" data-account-login-link>Continue Registration</a>
-            <a class="btn btn-secondary" href="login.html">Login instead</a>
+    <section class="auth-section auth-register-section">
+      <div class="container auth-shell auth-shell-wide">
+        <div class="auth-copy">
+          <p class="eyebrow">Create private access</p>
+          <h1>Start your LuxeRoutes account.</h1>
+          <p class="admin-lead">Create a traveler profile now, or request owner or manager access so the LuxeRoutes team can review your partner role.</p>
+          <div class="auth-benefits" aria-label="Registration benefits">
+            <article>
+              <span>01</span>
+              <strong>Customers are active immediately</strong>
+              <p>Traveler accounts can continue to the dashboard after saving a verified profile.</p>
+            </article>
+            <article>
+              <span>02</span>
+              <strong>Partner roles stay curated</strong>
+              <p>Owner and manager requests stay pending until an admin approves the verified email.</p>
+            </article>
+            <article>
+              <span>03</span>
+              <strong>Built for luxury operations</strong>
+              <p>Business context helps the team review properties, regions, and partnership fit faster.</p>
+            </article>
           </div>
         </div>
-        <aside class="admin-login-card" aria-label="Account login status">
-          <p class="eyebrow">Cloudflare email login</p>
-          <h2 data-account-heading>Checking session</h2>
-          <p data-account-status>Checking whether Cloudflare Access already verified your email.</p>
-          <div class="admin-auth-meta">
-            <span class="status-pill status-pending" data-account-role>Verifying</span>
-            <span data-account-email>Session pending</span>
+
+        <aside class="auth-card auth-register-card" aria-label="LuxeRoutes registration form" id="account-workspace">
+          <div class="auth-card-head">
+            <p class="eyebrow">Account registration</p>
+            <h2>Create your profile</h2>
+            <p>Use the same email you verify through Cloudflare. Business fields are optional for travelers and helpful for partner access.</p>
           </div>
-          <p class="admin-helper">Customers are activated immediately. Owner and manager requests stay pending until an admin approves them in People → Registrations.</p>
-        </aside>
-      </div>
-    </section>
 
-    <section class="section admin-workspace" id="account-workspace">
-      <div class="container">
-        <div class="admin-toolbar">
-          <div>
-            <p class="eyebrow">Registration</p>
-            <h2>Create your LuxeRoutes profile</h2>
-            <p>Business fields help admins understand owner and manager requests before approving access.</p>
-          </div>
-          <a class="btn btn-secondary" href="login.html">Login</a>
-        </div>
+          <form class="auth-form auth-register-form admin-form" data-account-form>
+            <label>Email<input name="email" type="email" placeholder="you@example.com" autocomplete="email" required data-account-email-input></label>
+            <label>Full name<input name="name" type="text" placeholder="Your name" autocomplete="name" required></label>
+            <label>Account type
+              <select name="requested_role">
+                <option value="customer">Customer / Traveler</option>
+                <option value="owner">Property Owner</option>
+                <option value="manager">Regional Manager</option>
+              </select>
+            </label>
+            <label>Company name<input name="company_name" type="text" placeholder="Company or property group" autocomplete="organization"></label>
+            <label>Company website<input name="company_website" type="url" placeholder="https://example.com"></label>
+            <label class="full">Business context<textarea name="business_context" rows="4" placeholder="Tell us about your properties, region, portfolio, or partnership context."></textarea></label>
+            <label class="full">Notes<textarea name="notes" rows="4" placeholder="Anything else our admin team should know?"></textarea></label>
+            <button class="btn btn-primary" type="submit">Create Account</button>
+          </form>
 
-        <div class="admin-grid two">
-          <article class="admin-card">
-            <div class="card-head"><p class="eyebrow">Register</p><span class="status-pill">Customer by default</span></div>
-            <h3>Account details</h3>
-            <form class="admin-form" data-account-form>
-              <label>Email<input name="email" type="email" placeholder="you@example.com" required data-account-email-input></label>
-              <label>Full name<input name="name" type="text" placeholder="Your name" required></label>
-              <label>Account type
-                <select name="requested_role">
-                  <option value="customer">Customer / Traveler</option>
-                  <option value="owner">Property Owner</option>
-                  <option value="manager">Regional Manager</option>
-                </select>
-              </label>
-              <label>Company name<input name="company_name" type="text" placeholder="Company or property group"></label>
-              <label>Company website<input name="company_website" type="url" placeholder="https://example.com"></label>
-              <label class="full">Business context<textarea name="business_context" rows="4" placeholder="Tell us about your properties, region, portfolio, or partnership context."></textarea></label>
-              <label class="full">Notes<textarea name="notes" rows="4" placeholder="Anything else our admin team should know?"></textarea></label>
-              <button class="btn btn-primary" type="submit">Save Profile</button>
-            </form>
-          </article>
-
-          <article class="admin-card">
-            <div class="card-head"><p class="eyebrow">Access model</p><span class="status-pill status-approved">Email first</span></div>
-            <h3>Saved registration</h3>
+          <div class="auth-status-card" aria-label="Registration status">
+            <div class="card-head compact-head">
+              <p class="eyebrow">Verified email</p>
+              <span class="status-pill status-pending" data-account-role>Verifying</span>
+            </div>
+            <h3 data-account-heading>Checking session</h3>
+            <p data-account-status>Checking whether Cloudflare Access already verified your email.</p>
+            <div class="admin-auth-meta"><span data-account-email>Session pending</span></div>
             <div class="stack-list" data-account-profile></div>
-          </article>
-        </div>
+          </div>
+
+          <p class="admin-helper account-switch-link">Already have an account? <a href="login.html">Login instead</a>.</p>
+        </aside>
       </div>
     </section>
   </main>
