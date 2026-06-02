@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Account Login | LuxeRoutes</title>
+  <meta name="description" content="Create or access your LuxeRoutes account for private travel briefs, owner submissions, and manager collaboration." />
+  <meta name="robots" content="noindex, nofollow" />
+  <meta property="og:title" content="Account Login | LuxeRoutes" />
+  <meta property="og:description" content="Login or register with LuxeRoutes using Cloudflare-protected email access." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://luxeroutes.eu/account.html" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@600;700;800&display=swap" rel="stylesheet" />
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <link rel="manifest" href="site.webmanifest" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body class="admin-page account-page">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+  <header class="site-header" data-header>
+    <div class="header-top" aria-label="LuxeRoutes account highlights">
+      <div class="container header-top-inner">
+        <span>Private LuxeRoutes Account</span>
+        <a href="mailto:info@luxeroutes.eu">info@luxeroutes.eu</a>
+        <span>Customer · Owner · Manager</span>
+      </div>
+    </div>
+    <div class="container nav-shell">
+      <a class="brand" href="index.html" aria-label="LuxeRoutes home"><img src="logo.svg" alt="LuxeRoutes wordmark" width="620" height="160" loading="eager" decoding="async" /></a>
+      <button class="menu-toggle" type="button" aria-label="Open navigation" aria-controls="primary-navigation" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+      <nav id="primary-navigation" class="primary-nav" aria-label="Primary navigation">
+        <a href="index.html" class="nav-link">Home</a>
+        <a href="offers.html" class="nav-link">Offers</a>
+        <a href="partners.html" class="nav-link">Partners</a>
+        <a href="managers.html" class="nav-link">Managers</a>
+        <a href="account.html" class="nav-link">Account</a>
+        <a href="admin-panel.html" class="nav-link">Admin Panel</a>
+        <a class="btn btn-primary nav-cta" href="plan-trip.html">Plan a Trip</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main-content">
+    <section class="admin-hero">
+      <div class="container admin-hero-grid">
+        <div>
+          <p class="eyebrow">LuxeRoutes account</p>
+          <h1>Register or login with your email.</h1>
+          <p class="admin-lead">Every visitor can create a customer account with Cloudflare email access. Admins can later upgrade the same email to owner, manager, or admin access inside the operations panel.</p>
+          <div class="button-row">
+            <a class="btn btn-primary" href="#account-workspace">Open Account</a>
+            <a class="btn btn-secondary" href="plan-trip.html">Send Travel Brief</a>
+          </div>
+        </div>
+        <aside class="admin-login-card" aria-label="Account login status">
+          <p class="eyebrow">Cloudflare email login</p>
+          <h2 data-account-heading>Checking session</h2>
+          <p data-account-status>Checking whether Cloudflare Access already verified your email.</p>
+          <div class="admin-auth-meta">
+            <span class="status-pill status-pending" data-account-role>Verifying</span>
+            <span data-account-email>Session pending</span>
+          </div>
+          <p class="admin-helper">When Cloudflare Access is enabled for this page, opening it sends every visitor through email verification. That gives LuxeRoutes a verified customer email before any role upgrade.</p>
+        </aside>
+      </div>
+    </section>
+
+    <section class="section admin-workspace" id="account-workspace">
+      <div class="container">
+        <div class="admin-toolbar">
+          <div>
+            <p class="eyebrow">Profile</p>
+            <h2>Your LuxeRoutes profile</h2>
+            <p>Save basic account details now. In production this profile should be stored in Cloudflare D1 and connected to admin role grants.</p>
+          </div>
+          <a class="btn btn-secondary" href="admin-panel.html">Admin Access</a>
+        </div>
+
+        <div class="admin-grid two">
+          <article class="admin-card">
+            <div class="card-head"><p class="eyebrow">Register</p><span class="status-pill">Customer by default</span></div>
+            <h3>Create your account profile</h3>
+            <form class="admin-form" data-account-form>
+              <label>Email<input name="email" type="email" placeholder="you@example.com" required data-account-email-input></label>
+              <label>Full name<input name="name" type="text" placeholder="Your name" required></label>
+              <label>Account type
+                <select name="requested_role">
+                  <option value="customer">Customer / Traveler</option>
+                  <option value="owner">Property Owner</option>
+                  <option value="manager">Regional Manager</option>
+                </select>
+              </label>
+              <label class="full">Notes<textarea name="notes" rows="5" placeholder="Tell us what you need: trip planning, property onboarding, manager collaboration..."></textarea></label>
+              <button class="btn btn-primary" type="submit">Save Profile</button>
+            </form>
+          </article>
+
+          <article class="admin-card">
+            <div class="card-head"><p class="eyebrow">Access model</p><span class="status-pill status-approved">Email first</span></div>
+            <h3>How roles will work</h3>
+            <ul class="permission-list">
+              <li><strong>Customer</strong><span>Everyone can register/login and submit travel preferences.</span></li>
+              <li><strong>Owner</strong><span>Admin grants owner access to a verified email and connects properties.</span></li>
+              <li><strong>Manager</strong><span>Admin grants manager access to a verified email and assigns regions or listings.</span></li>
+              <li><strong>Admin</strong><span>Only trusted internal emails can approve, publish, and manage access.</span></li>
+            </ul>
+            <div class="stack-list" data-account-profile></div>
+          </article>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-grid">
+      <div>
+        <a class="footer-logo" href="index.html"><img src="logo.svg" alt="LuxeRoutes" width="620" height="160" loading="lazy" decoding="async" /></a>
+        <p>Private European travel accounts for customers, owners, managers, and admins.</p>
+      </div>
+      <div>
+        <h3>Account</h3>
+        <ul>
+          <li><a href="account.html">Login / Register</a></li>
+          <li><a href="plan-trip.html">Plan a Trip</a></li>
+          <li><a href="partners.html">Partners</a></li>
+        </ul>
+      </div>
+      <a class="btn btn-primary" href="plan-trip.html">Plan a Trip</a>
+    </div>
+    <div class="container footer-bottom">
+      <p>© <span data-current-year>2026</span> LuxeRoutes. All rights reserved.</p>
+      <p>Email-first account prototype.</p>
+    </div>
+  </footer>
+  <script src="script.js"></script>
+  <script src="account.js"></script>
+</body>
+</html>
