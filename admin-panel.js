@@ -145,6 +145,8 @@ const cloneData = (data) => JSON.parse(JSON.stringify(data));
 let state = cloneData(seedData);
 let currentRole = 'admin';
 let currentIdentity = null;
+let remoteProfiles = [];
+let remoteAccessEnabled = false;
 
 const isLocalPreview = () => ['localhost', '127.0.0.1', ''].includes(window.location.hostname);
 const currentPanelRole = () => roleSelect?.value || currentRole;
@@ -191,6 +193,13 @@ const roleStatusClass = (role) => {
   if (role === 'manager' || role === 'owner') return 'status-approved';
   return 'status-pending';
 };
+
+const toUiGrant = (grant) => ({
+  email: grant.email,
+  role: grant.role,
+  note: grant.note || 'Cloudflare D1 access grant',
+  status: grant.status === 'active' ? 'Active' : grant.status,
+});
 
 const getLocalAccountProfile = () => {
   const stored = localStorage.getItem(accountProfileStorageKey);
@@ -460,7 +469,15 @@ const renderPeople = () => {
     const profileHint = accountProfile?.email
       ? `<div class="stack-item"><div><strong>Latest local registration</strong><span>${escapeHtml(accountProfile.email)} · requested ${escapeHtml(formatRole(accountProfile.requestedRole || 'customer'))}</span></div><span class="status-pill status-pending">Pending</span></div>`
       : '';
-    accessGrantList.innerHTML = `${profileHint}${state.accessGrants.map((grant) => `
+    const remoteProfileHint = remoteProfiles
+      .filter((profile) => profile.status === 'pending_admin_grant' && !state.accessGrants.some((grant) => grant.email === profile.email && grant.role !== 'customer'))
+      .map((profile) => `
+        <div class="stack-item">
+          <div><strong>${escapeHtml(profile.name || profile.email)}</strong><span>${escapeHtml(profile.email)} · requested ${escapeHtml(formatRole(profile.requestedRole || 'customer'))}</span></div>
+          <span class="status-pill status-pending">Pending D1 profile</span>
+        </div>
+      `).join('');
+    accessGrantList.innerHTML = `${profileHint}${remoteProfileHint}${state.accessGrants.map((grant) => `
       <div class="stack-item">
         <div><strong>${escapeHtml(grant.email)}</strong><span>${escapeHtml(grant.note || 'No access note')}</span></div>
         <span class="status-pill ${roleStatusClass(grant.role)}">${escapeHtml(formatRole(grant.role))}</span>
@@ -520,6 +537,54 @@ const getCloudflareIdentity = async () => {
   } catch (error) {
     return null;
   }
+};
+
+const loadRemoteAccessGrants = async () => {
+  if (!currentIdentity || isLocalPreview()) return;
+
+  try {
+    const response = await fetch('/api/admin/grants', {
+      headers: { Accept: 'application/json' },
+      credentials: 'same-origin',
+    });
+
+    if (!response.ok) {
+      remoteAccessEnabled = false;
+      return;
+    }
+
+    const data = await response.json();
+    remoteAccessEnabled = true;
+    remoteProfiles = Array.isArray(data.profiles) ? data.profiles : [];
+    state.accessGrants = Array.isArray(data.grants) ? data.grants.map(toUiGrant) : state.accessGrants;
+    saveState();
+    render();
+  } catch (error) {
+    remoteAccessEnabled = false;
+  }
+};
+
+const saveRemoteAccessGrant = async ({ email, role, note }) => {
+  if (!currentIdentity || isLocalPreview()) return null;
+
+  const response = await fetch('/api/admin/grants', {
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    credentials: 'same-origin',
+    body: JSON.stringify({ email, role, note }),
+  });
+
+  if (!response.ok) {
+    const message = await response.json().catch(() => ({}));
+    throw new Error(message.error || 'Unable to save access grant in D1.');
+  }
+
+  const data = await response.json();
+  remoteAccessEnabled = true;
+  return data.grant ? toUiGrant(data.grant) : null;
 };
 
 const unlockWorkspace = ({ role = 'admin', identity = null, localPreview = false } = {}) => {
@@ -582,6 +647,7 @@ const initialiseAdminPanel = async () => {
 
   loadState();
   render();
+  await loadRemoteAccessGrants();
 
   document.querySelectorAll('[data-admin-tab]').forEach((button) => {
     button.addEventListener('click', () => {
@@ -632,7 +698,7 @@ const initialiseAdminPanel = async () => {
   document.querySelector('[data-copy-markdown]')?.addEventListener('click', copyMarkdown);
   document.querySelector('[data-download-markdown]')?.addEventListener('click', downloadMarkdown);
 
-  document.querySelector('[data-access-grant-form]')?.addEventListener('submit', (event) => {
+  document.querySelector('[data-access-grant-form]')?.addEventListener('submit', async (event) => {
     event.preventDefault();
     if (!canApprove()) return;
 
@@ -643,13 +709,24 @@ const initialiseAdminPanel = async () => {
     const note = String(formData.get('note') || '').trim();
     if (!email) return;
 
-    const existingGrant = state.accessGrants.find((grant) => grant.email.toLowerCase() === email);
-    if (existingGrant) {
-      existingGrant.role = role;
-      existingGrant.note = note || existingGrant.note;
-      existingGrant.status = 'Active';
-    } else {
-      state.accessGrants.unshift({ email, role, note, status: 'Active' });
+    try {
+      const remoteGrant = await saveRemoteAccessGrant({ email, role, note });
+      const existingGrant = state.accessGrants.find((grant) => grant.email.toLowerCase() === email);
+      if (existingGrant) {
+        existingGrant.role = remoteGrant?.role || role;
+        existingGrant.note = remoteGrant?.note || note || existingGrant.note;
+        existingGrant.status = remoteGrant?.status || 'Active';
+      } else {
+        state.accessGrants.unshift(remoteGrant || { email, role, note, status: 'Active' });
+      }
+    } catch (error) {
+      setAuthCard({
+        status: `${error.message} Check the D1 binding and that your email has an admin access_grant.`,
+        email: currentIdentity?.email || 'Cloudflare Access required',
+        role: 'D1 warning',
+        approved: false,
+      });
+      return;
     }
 
     saveState();
