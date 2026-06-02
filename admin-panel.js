@@ -1,6 +1,11 @@
 const adminApp = document.querySelector('[data-admin-app]');
 const roleSelect = document.querySelector('[data-role-select]');
+const rolePreview = document.querySelector('[data-role-preview]');
+const authStatus = document.querySelector('[data-auth-status]');
+const authEmail = document.querySelector('[data-auth-email]');
+const authRole = document.querySelector('[data-auth-role]');
 const storageKey = 'luxeroutes-admin-panel-v1';
+const accountProfileStorageKey = 'luxeroutes-account-profile-v1';
 const offerBuilderForm = document.querySelector('[data-offer-builder-form]');
 const markdownOutput = document.querySelector('[data-markdown-output]');
 const offerPreview = document.querySelector('[data-offer-preview]');
@@ -56,6 +61,11 @@ const seedData = {
     { id: 'inq-001', guest: 'Sophia Keller', interest: 'Lake View Apartment Bled', dates: '14–18 Aug', status: 'new', next: 'Confirm availability with owner' },
     { id: 'inq-002', guest: 'Marco Laurent', interest: 'Adriatic Stone Villa', dates: 'Flexible September', status: 'proposal_sent', next: 'Follow up on proposed route' },
     { id: 'inq-003', guest: 'Amelia Grant', interest: 'Dolomites chalet ideas', dates: 'Winter holiday', status: 'researching', next: 'Wait for manager notes' },
+  ],
+  accessGrants: [
+    { email: 'traveler@example.com', role: 'customer', note: 'Default public account role', status: 'Active' },
+    { email: 'partners@dalmatia.example', role: 'owner', note: 'Owner access for Adriatic Stone Villa', status: 'Active' },
+    { email: 'maja@example.com', role: 'manager', note: 'Manager access for Slovenia listings', status: 'Active' },
   ],
 };
 
@@ -133,6 +143,11 @@ const tripFolders = {
 const cloneData = (data) => JSON.parse(JSON.stringify(data));
 
 let state = cloneData(seedData);
+let currentRole = 'admin';
+let currentIdentity = null;
+
+const isLocalPreview = () => ['localhost', '127.0.0.1', ''].includes(window.location.hostname);
+const currentPanelRole = () => roleSelect?.value || currentRole;
 
 const saveState = () => {
   localStorage.setItem(storageKey, JSON.stringify(state));
@@ -151,6 +166,7 @@ const loadState = () => {
     owners: Array.isArray(parsed.owners) ? parsed.owners : cloneData(seedData.owners),
     managers: Array.isArray(parsed.managers) ? parsed.managers : cloneData(seedData.managers),
     inquiries: Array.isArray(parsed.inquiries) ? parsed.inquiries : cloneData(seedData.inquiries),
+    accessGrants: Array.isArray(parsed.accessGrants) ? parsed.accessGrants : cloneData(seedData.accessGrants),
   };
 };
 
@@ -163,6 +179,31 @@ const escapeHtml = (value) => String(value || '').replace(/[&<>"]/g, (character)
 
 const formatStatus = (status) => statusLabels[status] || inquiryStatusLabels[status] || status;
 
+const formatRole = (role) => ({
+  admin: 'Admin',
+  manager: 'Manager',
+  owner: 'Owner',
+  customer: 'Customer',
+}[role] || role);
+
+const roleStatusClass = (role) => {
+  if (role === 'admin') return 'status-warning';
+  if (role === 'manager' || role === 'owner') return 'status-approved';
+  return 'status-pending';
+};
+
+const getLocalAccountProfile = () => {
+  const stored = localStorage.getItem(accountProfileStorageKey);
+  if (!stored) return null;
+
+  try {
+    return JSON.parse(stored);
+  } catch (error) {
+    return null;
+  }
+};
+
+
 const statusClass = (status) => {
   if (status === 'published' || status === 'approved' || status === 'won') return 'status-approved';
   if (status === 'pending_review' || status === 'new' || status === 'researching') return 'status-pending';
@@ -170,8 +211,8 @@ const statusClass = (status) => {
   return '';
 };
 
-const canApprove = () => roleSelect?.value === 'admin';
-const canReview = () => roleSelect?.value === 'admin' || roleSelect?.value === 'manager';
+const canApprove = () => currentPanelRole() === 'admin';
+const canReview = () => currentPanelRole() === 'admin' || currentPanelRole() === 'manager';
 
 const nextPropertyStatus = (status) => {
   if (status === 'draft') return 'pending_review';
@@ -394,6 +435,7 @@ const renderPropertyTable = () => {
 const renderPeople = () => {
   const ownerList = document.querySelector('[data-owner-list]');
   const managerList = document.querySelector('[data-manager-list]');
+  const accessGrantList = document.querySelector('[data-access-grant-list]');
 
   if (ownerList) {
     ownerList.innerHTML = state.owners.map((owner) => `
@@ -412,6 +454,19 @@ const renderPeople = () => {
       </div>
     `).join('');
   }
+
+  if (accessGrantList) {
+    const accountProfile = getLocalAccountProfile();
+    const profileHint = accountProfile?.email
+      ? `<div class="stack-item"><div><strong>Latest local registration</strong><span>${escapeHtml(accountProfile.email)} · requested ${escapeHtml(formatRole(accountProfile.requestedRole || 'customer'))}</span></div><span class="status-pill status-pending">Pending</span></div>`
+      : '';
+    accessGrantList.innerHTML = `${profileHint}${state.accessGrants.map((grant) => `
+      <div class="stack-item">
+        <div><strong>${escapeHtml(grant.email)}</strong><span>${escapeHtml(grant.note || 'No access note')}</span></div>
+        <span class="status-pill ${roleStatusClass(grant.role)}">${escapeHtml(formatRole(grant.role))}</span>
+      </div>
+    `).join('')}` || '<p class="empty-state">No access grants yet.</p>';
+  }
 };
 
 const renderInquiryTable = () => {
@@ -425,19 +480,89 @@ const renderInquiryTable = () => {
       <td>${escapeHtml(inquiry.dates)}</td>
       <td><span class="status-pill ${statusClass(inquiry.status)}">${formatStatus(inquiry.status)}</span></td>
       <td>${escapeHtml(inquiry.next)}</td>
-      <td><button class="mini-action" type="button" data-inquiry-action="${inquiry.id}" ${roleSelect?.value === 'owner' ? 'disabled' : ''}>Advance</button></td>
+      <td><button class="mini-action" type="button" data-inquiry-action="${inquiry.id}" ${currentPanelRole() === 'owner' ? 'disabled' : ''}>Advance</button></td>
     </tr>
   `).join('');
 };
 
 const renderRoleAccess = () => {
-  const role = roleSelect?.value || 'admin';
+  const role = currentPanelRole();
   document.body.dataset.panelRole = role;
   document.querySelectorAll('[data-admin-tab]').forEach((button) => {
     const tab = button.dataset.adminTab;
     const restrictedForOwner = role === 'owner' && ['people', 'settings'].includes(tab);
     button.disabled = restrictedForOwner;
   });
+};
+
+
+const setAuthCard = ({ status, email, role, approved }) => {
+  if (authStatus) authStatus.textContent = status;
+  if (authEmail) authEmail.textContent = email || 'No verified session';
+  if (authRole) {
+    authRole.textContent = role || 'Blocked';
+    authRole.classList.toggle('status-approved', Boolean(approved));
+    authRole.classList.toggle('status-warning', !approved);
+    authRole.classList.toggle('status-pending', false);
+  }
+};
+
+const getCloudflareIdentity = async () => {
+  try {
+    const response = await fetch('/.cloudflare/access/get-identity', {
+      headers: { Accept: 'application/json' },
+      credentials: 'same-origin',
+    });
+
+    if (!response.ok) return null;
+    const identity = await response.json();
+    return identity?.email ? identity : null;
+  } catch (error) {
+    return null;
+  }
+};
+
+const unlockWorkspace = ({ role = 'admin', identity = null, localPreview = false } = {}) => {
+  currentRole = role;
+  currentIdentity = identity;
+  if (adminApp) adminApp.hidden = false;
+  if (rolePreview) rolePreview.hidden = !localPreview;
+  setAuthCard({
+    status: localPreview
+      ? 'Local preview mode is active. Production access should be enforced by Cloudflare Access.'
+      : 'Cloudflare Access session approved. Admin workspace is unlocked.',
+    email: identity?.email || (localPreview ? 'localhost preview' : ''),
+    role: localPreview ? 'Local preview' : role.toUpperCase(),
+    approved: true,
+  });
+};
+
+const lockWorkspace = () => {
+  if (adminApp) adminApp.hidden = true;
+  if (rolePreview) rolePreview.hidden = true;
+  setAuthCard({
+    status: 'Admin workspace is locked. Add a Cloudflare Access policy for /admin-panel.html and sign in with an approved admin email.',
+    email: 'Cloudflare Access required',
+    role: 'Locked',
+    approved: false,
+  });
+};
+
+const initialiseAdminAccess = async () => {
+  const identity = await getCloudflareIdentity();
+
+  if (identity) {
+    unlockWorkspace({ role: 'admin', identity });
+    return true;
+  }
+
+  if (isLocalPreview()) {
+    unlockWorkspace({ role: roleSelect?.value || 'admin', localPreview: true });
+    return true;
+  }
+
+  lockWorkspace();
+  return false;
 };
 
 const render = () => {
@@ -449,7 +574,12 @@ const render = () => {
   renderInquiryTable();
 };
 
-if (adminApp) {
+const initialiseAdminPanel = async () => {
+  if (!adminApp) return;
+
+  const isUnlocked = await initialiseAdminAccess();
+  if (!isUnlocked) return;
+
   loadState();
   render();
 
@@ -467,7 +597,10 @@ if (adminApp) {
     });
   });
 
-  roleSelect?.addEventListener('change', render);
+  roleSelect?.addEventListener('change', () => {
+    currentRole = roleSelect.value;
+    render();
+  });
 
   if (offerBuilderForm) {
     toggleOfferKindFields();
@@ -498,6 +631,31 @@ if (adminApp) {
 
   document.querySelector('[data-copy-markdown]')?.addEventListener('click', copyMarkdown);
   document.querySelector('[data-download-markdown]')?.addEventListener('click', downloadMarkdown);
+
+  document.querySelector('[data-access-grant-form]')?.addEventListener('submit', (event) => {
+    event.preventDefault();
+    if (!canApprove()) return;
+
+    const form = event.currentTarget;
+    const formData = new FormData(form);
+    const email = String(formData.get('email') || '').trim().toLowerCase();
+    const role = String(formData.get('role') || 'customer');
+    const note = String(formData.get('note') || '').trim();
+    if (!email) return;
+
+    const existingGrant = state.accessGrants.find((grant) => grant.email.toLowerCase() === email);
+    if (existingGrant) {
+      existingGrant.role = role;
+      existingGrant.note = note || existingGrant.note;
+      existingGrant.status = 'Active';
+    } else {
+      state.accessGrants.unshift({ email, role, note, status: 'Active' });
+    }
+
+    saveState();
+    form.reset();
+    render();
+  });
 
   document.querySelector('[data-property-form]')?.addEventListener('submit', (event) => {
     event.preventDefault();
@@ -545,7 +703,7 @@ if (adminApp) {
     }
 
     const inquiryButton = event.target.closest('[data-inquiry-action]');
-    if (inquiryButton && roleSelect?.value !== 'owner') {
+    if (inquiryButton && currentPanelRole() !== 'owner') {
       const inquiry = state.inquiries.find((item) => item.id === inquiryButton.dataset.inquiryAction);
       if (inquiry) {
         inquiry.status = nextInquiryStatus(inquiry.status);
@@ -561,4 +719,6 @@ if (adminApp) {
     saveState();
     render();
   });
-}
+};
+
+initialiseAdminPanel();

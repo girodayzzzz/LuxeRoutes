@@ -39,6 +39,7 @@
         <a href="partners.html" class="nav-link">Partners</a>
         <a href="managers.html" class="nav-link">Managers</a>
         <a href="admin-panel.html" class="nav-link">Admin Panel</a>
+        <a href="account.html" class="nav-link">Account</a>
         <a class="btn btn-primary nav-cta" href="plan-trip.html">Plan a Trip</a>
       </nav>
     </div>
@@ -56,11 +57,16 @@
             <a class="btn btn-secondary" href="#owner-submission">Submit Property</a>
           </div>
         </div>
-        <aside class="admin-login-card" aria-label="Demo role selector">
-          <p class="eyebrow">Workspace mode</p>
-          <h2>Choose a role</h2>
-          <p>This static MVP stores demo data in your browser. A production version should connect this workflow to authenticated accounts and a database.</p>
-          <label>Current role
+        <aside class="admin-login-card" aria-label="Cloudflare Access admin gate" data-auth-card>
+          <p class="eyebrow">Cloudflare Access</p>
+          <h2>Admin protected area</h2>
+          <p data-auth-status>Checking whether Cloudflare Access has approved this browser session.</p>
+          <div class="admin-auth-meta">
+            <span class="status-pill status-pending" data-auth-role>Verifying</span>
+            <span data-auth-email>Session pending</span>
+          </div>
+          <p class="admin-helper">Everyone can register through the public Account page. Keep this admin panel protected, then grant owner, manager, customer, or admin roles by verified email.</p>
+          <label data-role-preview hidden>Local preview role
             <select data-role-select>
               <option value="admin">Admin</option>
               <option value="manager">Manager</option>
@@ -71,7 +77,7 @@
       </div>
     </section>
 
-    <section class="section admin-workspace" id="workspace" data-admin-app>
+    <section class="section admin-workspace" id="workspace" data-admin-app hidden>
       <div class="container">
         <div class="admin-toolbar">
           <div>
@@ -288,6 +294,25 @@
               <div class="card-head"><p class="eyebrow">Managers</p><span class="status-pill">Regional team</span></div>
               <h3>Manager directory</h3>
               <div data-manager-list class="stack-list"></div>
+            </article>
+            <article class="admin-card">
+              <div class="card-head"><p class="eyebrow">Access grants</p><span class="status-pill status-approved">Email roles</span></div>
+              <h3>Grant access by email</h3>
+              <p class="admin-helper">Everyone can register as a customer. Use this admin-only workflow to promote verified emails to owner, manager, or admin access.</p>
+              <form class="admin-form" data-access-grant-form>
+                <label>Email<input name="email" type="email" placeholder="person@example.com" required></label>
+                <label>Role
+                  <select name="role">
+                    <option value="customer">Customer</option>
+                    <option value="owner">Owner</option>
+                    <option value="manager">Manager</option>
+                    <option value="admin">Admin</option>
+                  </select>
+                </label>
+                <label class="full">Access note<textarea name="note" rows="3" placeholder="Example: owner for Villa Bled, manager for Slovenia, VIP customer..."></textarea></label>
+                <button class="btn btn-primary" type="submit">Save Access Grant</button>
+              </form>
+              <div data-access-grant-list class="stack-list access-grant-list"></div>
             </article>
           </div>
         </section>

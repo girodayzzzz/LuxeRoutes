@@ -1,0 +1,5 @@
+/admin /admin-panel.html 302
+/admin/* /admin-panel.html 302
+/login /account.html 302
+/register /account.html 302
+/account /account.html 302
