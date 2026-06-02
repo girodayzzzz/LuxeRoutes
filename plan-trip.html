@@ -84,6 +84,7 @@
             <li>Destination flow and travel pace</li>
             <li>Curated stays matched to your style</li>
             <li>Private transfers and experience logic</li>
+            <li>Food, wine, wellness, yacht, nature, or romance add-ons</li>
             <li>Clear next steps before confirmation</li>
           </ul>
         </aside>
@@ -105,6 +106,21 @@
       </div>
     </section>
 
+    <section class="section trip-ideas-section">
+      <div class="container section-heading split-heading">
+        <div>
+          <p class="eyebrow">Route ideas</p>
+          <h2>Quick inspiration you can choose from or mix together.</h2>
+        </div>
+        <p>If you do not know exactly what to request yet, pick one of these directions in the form and add a few personal notes. LuxeRoutes can turn it into a first route concept.</p>
+      </div>
+      <div class="container card-grid three trip-idea-grid">
+        <article class="plain-card trip-idea-card"><span>Signature</span><h3>Slovenia + Croatia coast</h3><p>Lake Bled, Ljubljana, Istria, private transfers, wine stops, boutique stays, and Adriatic sea time.</p></article>
+        <article class="plain-card trip-idea-card"><span>Romance</span><h3>Italy food, wine & villas</h3><p>Elegant countryside stays, slow lunches, cellar tastings, scenic drives, and a refined celebration rhythm.</p></article>
+        <article class="plain-card trip-idea-card"><span>Wellness</span><h3>Alpine reset route</h3><p>Austria, Slovenia, or Switzerland with spa hotels, mountain air, private drivers, and low-stress pacing.</p></article>
+      </div>
+    </section>
+
     <section id="trip-brief" class="section plan-brief-section">
       <div class="container form-shell plan-form-shell">
         <div>
@@ -112,16 +128,30 @@
           <h2>Plan your route</h2>
           <p>Use this brief for holidays, honeymoons, family escapes, celebration trips, and multi-country European journeys. Your email client will open with the details ready to send to LuxeRoutes.</p>
         </div>
-        <form class="luxury-form" data-inquiry-form data-form-type="Private LuxeRoutes trip brief" data-recipient="hello@luxeroutes.eu">
+        <form class="luxury-form trip-brief-form" data-inquiry-form data-form-type="Private LuxeRoutes trip brief" data-recipient="hello@luxeroutes.eu">
           <input type="hidden" name="source_page" value="Plan a Trip">
           <label class="honeypot" aria-hidden="true">Leave this field empty<input name="website" type="text" tabindex="-1" autocomplete="off"></label>
           <label>Name<input name="name" type="text" autocomplete="name" required></label>
           <label>Email<input name="email" type="email" autocomplete="email" required></label>
+          <label>Phone / WhatsApp<input name="phone" type="tel" autocomplete="tel" placeholder="Optional, for faster coordination"></label>
           <label>Preferred dates<input name="preferred_dates" type="text" placeholder="e.g. 12–21 September 2026" required></label>
           <label>Travelers<input name="travelers" type="text" placeholder="e.g. 2 adults, 1 child" required></label>
+          <label>Nights<input name="nights" type="text" placeholder="e.g. 7–10 nights"></label>
           <label>Preferred regions<input name="preferred_regions" type="text" placeholder="Slovenia, Croatia, Italy..." required></label>
           <label>Approx. budget<input name="approx_budget" type="text" placeholder="Optional range per trip"></label>
-          <label class="full">Trip style<select name="trip_style" required><option value="">Select trip style</option><option>Romantic escape</option><option>Family journey</option><option>Food and wine route</option><option>Wellness retreat</option><option>Adventure and nature</option><option>Multi-country signature route</option></select></label>
+          <label>Departure city / airport<input name="departure_city" type="text" placeholder="Optional"></label>
+          <label>Stay preference<select name="stay_preference"><option value="">Select preference</option><option>Luxury hotel</option><option>Private villa</option><option>Boutique apartment</option><option>Chalet or cabin</option><option>Mix of curated stays</option></select></label>
+          <label>Transfer preference<select name="transfer_preference"><option value="">Select preference</option><option>Private driver</option><option>Self-drive route</option><option>Train plus private transfers</option><option>Yacht or sea transfer</option><option>Not sure yet</option></select></label>
+          <label class="full">Trip style<select name="trip_style" required><option value="">Select trip style</option><option>Romantic escape</option><option>Family journey</option><option>Food and wine route</option><option>Wellness retreat</option><option>Adventure and nature</option><option>Multi-country signature route</option><option>Business or partner trip</option></select></label>
+          <fieldset class="full form-options">
+            <legend>Experiences to include</legend>
+            <label><input type="checkbox" name="experience_interests" value="Wine tasting"> Wine tasting</label>
+            <label><input type="checkbox" name="experience_interests" value="Private transfers"> Private transfers</label>
+            <label><input type="checkbox" name="experience_interests" value="Yacht or coast day"> Yacht or coast day</label>
+            <label><input type="checkbox" name="experience_interests" value="Wellness and spa"> Wellness and spa</label>
+            <label><input type="checkbox" name="experience_interests" value="Nature or adventure"> Nature or adventure</label>
+            <label><input type="checkbox" name="experience_interests" value="Restaurants and local hosts"> Restaurants and local hosts</label>
+          </fieldset>
           <label class="full">What should the trip feel like?<textarea name="message" rows="7" placeholder="Tell us about the occasion, preferred pace, must-see places, hotel style, transfers, experiences, or anything you want to avoid." required></textarea></label>
           <button class="btn btn-primary" type="submit">Send Trip Brief</button>
         </form>
@@ -142,8 +172,11 @@
       <div class="footer-about">
         <a class="footer-brand" href="index.html"><img src="logo.svg" alt="LuxeRoutes wordmark" /></a>
         <p>Curated luxury stays, refined destinations, and private travel experiences across Europe — designed with discretion, pace, and taste.</p>
-        <div class="footer-contact-card">
-          <span>Concierge desk</span>
+        <div class="footer-contact-card company-card">
+          <span>Operated by</span>
+          <strong>Dayzzzz S.P.</strong>
+          <small>Tibi Topolinjak Munda · VAT: SI23492783</small>
+          <small>Spodnji Ključarovci 15A, 2274 Velika Nedelja, Slovenia</small>
           <a href="mailto:hello@luxeroutes.eu">hello@luxeroutes.eu</a>
         </div>
       </div>
@@ -186,7 +219,7 @@
       </div>
     </div>
     <div class="container footer-bottom">
-      <p>© 2026 LuxeRoutes. All rights reserved.</p>
+      <p>© <span data-current-year>2026</span> LuxeRoutes. All rights reserved.</p>
       <p>Designed for bespoke European travel planning.</p>
     </div>
   </footer>

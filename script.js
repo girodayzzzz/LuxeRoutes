@@ -1,4 +1,9 @@
 const header = document.querySelector('[data-header]');
+
+document.querySelectorAll('[data-current-year]').forEach((year) => {
+  year.textContent = String(new Date().getFullYear());
+});
+
 const updateHeaderState = () => {
   if (!header) return;
   header.classList.toggle('scrolled', window.scrollY > 18);
@@ -11,8 +16,10 @@ document.querySelectorAll('.primary-nav a[href]').forEach((link) => {
   const href = link.getAttribute('href');
   if (href === currentPage) {
     link.classList.add('active');
+    link.setAttribute('aria-current', 'page');
+
     const parentLink = link.closest('.nav-item')?.querySelector(':scope > .nav-link');
-    if (parentLink) parentLink.classList.add('active');
+    if (parentLink && parentLink !== link) parentLink.classList.add('active');
   }
 });
 
@@ -35,6 +42,11 @@ if (toggle && nav) {
   });
 
   nav.querySelectorAll('a').forEach((link) => link.addEventListener('click', closeMenu));
+  document.addEventListener('click', (event) => {
+    if (!nav.classList.contains('open')) return;
+    if (nav.contains(event.target) || toggle.contains(event.target)) return;
+    closeMenu();
+  });
   document.addEventListener('keydown', (event) => {
     if (event.key === 'Escape') closeMenu();
   });

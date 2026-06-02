@@ -2505,3 +2505,86 @@ body.home-page {
   align-items: center;
   justify-content: center;
 }
+
+.company-card strong {
+  color: var(--color-text);
+  font-size: .98rem;
+}
+.company-card small {
+  max-width: 300px;
+  color: rgba(248, 243, 233, .68);
+  line-height: 1.45;
+}
+.company-details-section {
+  padding-top: clamp(2rem, 4vw, 3rem);
+}
+.company-details-grid {
+  align-items: stretch;
+}
+.company-facts dl {
+  display: grid;
+  gap: .9rem;
+  margin: 0;
+}
+.company-facts dl div {
+  display: grid;
+  grid-template-columns: 120px minmax(0, 1fr);
+  gap: 1rem;
+  padding-bottom: .85rem;
+  border-bottom: 1px solid rgba(241, 215, 150, .12);
+}
+.company-facts dt {
+  color: var(--color-gold-light);
+  font-size: .74rem;
+  font-weight: 900;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+.company-facts dd {
+  margin: 0;
+  color: var(--color-muted-strong);
+}
+.company-facts a { color: var(--color-gold-light); font-weight: 900; }
+.trip-idea-grid { align-items: stretch; }
+.trip-idea-card span {
+  display: inline-flex;
+  margin-bottom: .85rem;
+  color: var(--color-gold-light);
+  font-size: .74rem;
+  font-weight: 900;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+.form-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .75rem 1rem;
+  margin: 0;
+  padding: 1rem;
+  border: 1px solid rgba(241, 215, 150, .25);
+  border-radius: 18px;
+  background: rgba(5, 8, 13, .46);
+}
+.form-options legend {
+  padding: 0 .35rem;
+  color: var(--color-text);
+  font-weight: 900;
+}
+.form-options label {
+  display: flex;
+  grid-template-columns: none;
+  align-items: center;
+  gap: .55rem;
+  color: var(--color-muted-strong);
+  font-weight: 700;
+}
+.form-options input {
+  width: 1rem;
+  height: 1rem;
+  padding: 0;
+  accent-color: var(--color-gold);
+}
+@media (max-width: 700px) {
+  .company-facts dl div,
+  .form-options { grid-template-columns: 1fr; }
+}
