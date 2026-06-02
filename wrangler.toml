@@ -2,8 +2,9 @@ name = "luxeroutes"
 compatibility_date = "2026-06-02"
 pages_build_output_dir = "."
 
-# D1 is intentionally not bound here because Cloudflare Pages can fail while
-# initializing the build environment if database_id contains a placeholder.
-# Bind the production database in the Cloudflare Pages dashboard as `DB`, or
-# add a [[d1_databases]] block only after replacing database_id with the real
-# Cloudflare D1 database UUID from `wrangler d1 create luxeroutes-db`.
+# Cloudflare Pages Functions use this D1 binding at runtime. Keep database_id
+# set to the real Cloudflare D1 UUID; do not replace it with a placeholder.
+[[d1_databases]]
+binding = "DB"
+database_name = "luxeroutes-db"
+database_id = "e526c7bf-7408-4140-906e-5364fff90b64"
