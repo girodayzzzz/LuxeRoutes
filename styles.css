@@ -183,6 +183,7 @@ input:focus, textarea:focus, select:focus { border-color: rgba(241,215,150,.62);
 textarea { resize: vertical; }
 ::placeholder { color: rgba(180,172,158,.72); }
 .form-status { color: var(--color-gold-light); font-weight: 800; margin-top: .2rem; }
+.form-status.is-success { color: #d8f8d2; }
 .form-context-card { border: 1px solid rgba(241,215,150,.24); border-radius: 18px; background: rgba(198,161,91,.09); padding: 1rem; }
 .form-context-card span { display: block; color: var(--color-gold-light); font-size: .74rem; font-weight: 900; letter-spacing: .14em; text-transform: uppercase; }
 .form-context-card strong { display: block; margin-top: .35rem; font-family: "Playfair Display", serif; font-size: 1.25rem; }
@@ -590,6 +591,22 @@ textarea { resize: vertical; }
   text-transform: uppercase;
 }
 .footer-contact-card a { color: var(--color-gold-light); font-weight: 900; }
+.footer-contact-card .footer-social-link {
+  justify-self: start;
+  margin-top: .35rem;
+  padding: .32rem .72rem;
+  border: 1px solid rgba(241,215,150,.24);
+  border-radius: 999px;
+  color: var(--color-text);
+  background: rgba(241,215,150,.08);
+  font-size: .78rem;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+.footer-contact-card .footer-social-link:hover {
+  color: var(--color-ink);
+  background: var(--color-gold);
+}
 .footer-bottom {
   color: rgba(248,243,233,.62);
   font-size: .9rem;
