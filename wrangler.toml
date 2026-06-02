@@ -1,3 +1,11 @@
 name = "luxeroutes"
 compatibility_date = "2026-06-02"
 pages_build_output_dir = "."
+
+# Cloudflare Pages can deploy before D1 exists as long as there is no
+# placeholder D1 binding in this file. After creating luxeroutes-db, bind it
+# in the Cloudflare Pages dashboard as:
+#   Variable name: DB
+#   D1 database: luxeroutes-db
+# If you prefer a wrangler.toml binding, add [[d1_databases]] only with a real
+# Cloudflare database_id. Do not commit REPLACE_WITH_* placeholder values.
