@@ -2,6 +2,7 @@ import { errorJson, getActiveGrant, getIdentityEmail, json, makeId, normalizeEma
 
 const profileSelect = `
   SELECT id, email, full_name AS name, default_role AS defaultRole, requested_role AS requestedRole,
+    company_name AS companyName, company_website AS companyWebsite, business_context AS businessContext,
     notes, status, created_at AS createdAt, updated_at AS updatedAt
   FROM profiles
 `;
@@ -41,6 +42,9 @@ export const onRequestPost = async ({ request, env }) => {
     const email = normalizeEmail(identityEmail || body.email);
     const name = String(body.name || '').trim();
     const requestedRole = ['customer', 'owner', 'manager'].includes(body.requestedRole) ? body.requestedRole : 'customer';
+    const companyName = String(body.companyName || '').trim();
+    const companyWebsite = String(body.companyWebsite || '').trim();
+    const businessContext = String(body.businessContext || '').trim();
     const notes = String(body.notes || '').trim();
     const profileStatus = requestedRole === 'customer' ? 'active' : 'pending_admin_grant';
     const timestamp = nowIso();
@@ -49,11 +53,14 @@ export const onRequestPost = async ({ request, env }) => {
     if (!name) return errorJson('Full name is required.', 400);
 
     await db.prepare(`
-      INSERT INTO profiles (id, email, full_name, default_role, requested_role, notes, status, created_at, updated_at)
-      VALUES (?, ?, ?, 'customer', ?, ?, ?, ?, ?)
+      INSERT INTO profiles (id, email, full_name, default_role, requested_role, company_name, company_website, business_context, notes, status, created_at, updated_at)
+      VALUES (?, ?, ?, 'customer', ?, ?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT(email) DO UPDATE SET
         full_name = excluded.full_name,
         requested_role = excluded.requested_role,
+        company_name = excluded.company_name,
+        company_website = excluded.company_website,
+        business_context = excluded.business_context,
         notes = excluded.notes,
         status = CASE
           WHEN excluded.requested_role = 'customer' THEN 'active'
@@ -61,7 +68,7 @@ export const onRequestPost = async ({ request, env }) => {
           ELSE excluded.status
         END,
         updated_at = excluded.updated_at
-    `).bind(makeId('profile'), email, name, requestedRole, notes, profileStatus, timestamp, timestamp).run();
+    `).bind(makeId('profile'), email, name, requestedRole, companyName, companyWebsite, businessContext, notes, profileStatus, timestamp, timestamp).run();
 
     await db.prepare(`
       INSERT INTO access_grants (id, email, role, note, granted_by_email, status, created_at, updated_at)

@@ -224,6 +224,46 @@ const getLocalAccountProfile = () => {
   }
 };
 
+const normalizeProfileRole = (role) => (['customer', 'owner', 'manager'].includes(role) ? role : 'customer');
+
+const profileCompanySummary = (profile) => [
+  profile.companyName ? `Company: ${escapeHtml(profile.companyName)}` : '',
+  profile.businessContext ? `Context: ${escapeHtml(profile.businessContext)}` : '',
+  profile.companyWebsite ? `Website: ${escapeHtml(profile.companyWebsite)}` : '',
+].filter(Boolean).join(' · ');
+
+const getProfileActiveRole = (profile) => {
+  const grant = state.accessGrants.find((item) => item.email?.toLowerCase() === profile.email?.toLowerCase());
+  return grant?.role || profile.grantedRole || profile.defaultRole || 'customer';
+};
+
+const renderRegistrationCard = (profile) => {
+  const requestedRole = normalizeProfileRole(profile.requestedRole);
+  const currentRole = getProfileActiveRole(profile);
+  const canReviewProfile = ['owner', 'manager'].includes(requestedRole) && profile.status === 'pending_admin_grant' && !profile.localOnly;
+  const companySummary = profileCompanySummary(profile);
+
+  return `
+    <article class="registration-card">
+      <div class="registration-meta">
+        <strong>${escapeHtml(profile.name || profile.email || 'Unnamed account')}</strong>
+        <span>${escapeHtml(profile.email)}</span>
+        <span>Requested: ${escapeHtml(formatRole(requestedRole))} · Current: ${escapeHtml(formatRole(currentRole))}</span>
+        <span>Status: <span class="status-pill ${profileStatusClass(profile.status)}">${escapeHtml(profileStatusLabel(profile.status))}</span></span>
+        ${companySummary ? `<span>${companySummary}</span>` : '<span>Company context: not provided</span>'}
+        ${profile.notes ? `<span>Notes: ${escapeHtml(profile.notes)}</span>` : ''}
+        ${profile.localOnly ? '<span>Local preview request — save it through production D1 before final approval.</span>' : ''}
+      </div>
+      ${canReviewProfile ? `
+        <div class="access-request-actions">
+          <button class="mini-action" type="button" data-registration-action="approve" data-registration-email="${escapeHtml(profile.email)}" data-registration-role="${escapeHtml(requestedRole)}" ${!canApprove() ? 'disabled' : ''}>Approve</button>
+          <button class="mini-action mini-action-warning" type="button" data-registration-action="reject" data-registration-email="${escapeHtml(profile.email)}" data-registration-role="${escapeHtml(requestedRole)}" ${!canApprove() ? 'disabled' : ''}>Reject</button>
+        </div>
+      ` : ''}
+    </article>
+  `;
+};
+
 
 const statusClass = (status) => {
   if (status === 'published' || status === 'approved' || status === 'won') return 'status-approved';
@@ -456,7 +496,7 @@ const renderPropertyTable = () => {
 const renderPeople = () => {
   const ownerList = document.querySelector('[data-owner-list]');
   const managerList = document.querySelector('[data-manager-list]');
-  const pendingProfileList = document.querySelector('[data-pending-profile-list]');
+  const registrationList = document.querySelector('[data-registration-list]');
   const accessGrantList = document.querySelector('[data-access-grant-list]');
 
   if (ownerList) {
@@ -477,38 +517,28 @@ const renderPeople = () => {
     `).join('');
   }
 
-  if (pendingProfileList) {
+  if (registrationList) {
     const accountProfile = getLocalAccountProfile();
-    const localPendingProfile = accountProfile?.email && ['owner', 'manager'].includes(accountProfile.requestedRole)
-      ? [{
-        ...accountProfile,
-        id: 'local-preview-request',
-        status: accountProfile.status || 'pending_admin_grant',
-        localOnly: true,
-      }]
-      : [];
-    const remotePendingProfiles = remoteProfiles.filter((profile) => (
-      ['owner', 'manager'].includes(profile.requestedRole)
-      && profile.status === 'pending_admin_grant'
-      && !state.accessGrants.some((grant) => grant.email === profile.email && grant.role === profile.requestedRole)
-    ));
-    const pendingProfiles = isLocalPreview() ? [...localPendingProfile, ...remotePendingProfiles] : remotePendingProfiles;
+    const localProfiles = accountProfile?.email ? [{
+      ...accountProfile,
+      id: 'local-preview-request',
+      status: accountProfile.status || (accountProfile.requestedRole === 'customer' ? 'active' : 'pending_admin_grant'),
+      localOnly: true,
+    }] : [];
+    const profiles = isLocalPreview() ? [...localProfiles, ...remoteProfiles] : remoteProfiles;
+    const roles = ['customer', 'owner', 'manager'];
 
-    pendingProfileList.innerHTML = pendingProfiles.map((profile) => `
-      <div class="stack-item access-request-item">
-        <div>
-          <strong>${escapeHtml(profile.name || profile.email)}</strong>
-          <span>${escapeHtml(profile.email)} · requested ${escapeHtml(formatRole(profile.requestedRole))}${profile.notes ? ` · ${escapeHtml(profile.notes)}` : ''}</span>
-          ${profile.localOnly ? '<span>Local preview request — save it through production D1 before final approval.</span>' : ''}
-        </div>
-        <div class="access-request-actions">
-          <span class="status-pill ${profileStatusClass(profile.status)}">${escapeHtml(profileStatusLabel(profile.status))}</span>
-          <button class="mini-action" type="button" data-pending-role-action="approve" data-pending-email="${escapeHtml(profile.email)}" data-pending-role="${escapeHtml(profile.requestedRole)}" ${!canApprove() || profile.localOnly ? 'disabled' : ''}>Approve</button>
-          <button class="mini-action mini-action-warning" type="button" data-pending-role-action="reject" data-pending-email="${escapeHtml(profile.email)}" data-pending-role="${escapeHtml(profile.requestedRole)}" ${!canApprove() || profile.localOnly ? 'disabled' : ''}>Reject</button>
-        </div>
-      </div>
-    `).join('') || '<p class="empty-state">No pending owner or manager requests right now.</p>';
+    registrationList.innerHTML = roles.map((role) => {
+      const roleProfiles = profiles.filter((profile) => normalizeProfileRole(profile.requestedRole) === role);
+      return `
+        <section class="registration-column" aria-label="${escapeHtml(formatRole(role))} registrations">
+          <div class="card-head"><p class="eyebrow">${escapeHtml(formatRole(role))}</p><span class="status-pill">${roleProfiles.length}</span></div>
+          ${roleProfiles.map(renderRegistrationCard).join('') || '<p class="empty-state">No registrations in this role.</p>'}
+        </section>
+      `;
+    }).join('');
   }
+
 
   if (accessGrantList) {
     accessGrantList.innerHTML = state.accessGrants.map((grant) => `
@@ -736,13 +766,13 @@ const initialiseAdminPanel = async () => {
   document.querySelector('[data-copy-markdown]')?.addEventListener('click', copyMarkdown);
   document.querySelector('[data-download-markdown]')?.addEventListener('click', downloadMarkdown);
 
-  document.querySelector('[data-pending-profile-list]')?.addEventListener('click', async (event) => {
-    const actionButton = event.target.closest('[data-pending-role-action]');
+  document.querySelector('[data-registration-list]')?.addEventListener('click', async (event) => {
+    const actionButton = event.target.closest('[data-registration-action]');
     if (!actionButton || !canApprove()) return;
 
-    const email = String(actionButton.dataset.pendingEmail || '').trim().toLowerCase();
-    const role = String(actionButton.dataset.pendingRole || 'customer');
-    const action = String(actionButton.dataset.pendingRoleAction || 'approve');
+    const email = String(actionButton.dataset.registrationEmail || '').trim().toLowerCase();
+    const role = String(actionButton.dataset.registrationRole || 'customer');
+    const action = String(actionButton.dataset.registrationAction || 'approve');
     const note = action === 'approve'
       ? `Approved ${formatRole(role)} access from admin review`
       : `Rejected ${formatRole(role)} access from admin review`;

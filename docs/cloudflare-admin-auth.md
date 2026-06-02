@@ -6,13 +6,14 @@ This site now includes the first production-ready Cloudflare Pages Functions + D
 
 Implemented in this repository:
 
-- `account.html` + `account.js` — public account/register screen. It now tries to save the profile to `/api/account` and falls back to browser `localStorage` only if the API/D1 binding is missing.
+- `account.html`, `register.html`, and `account.js` — separate public account login/status and registration screens. `account.js` supports both pages, saves profiles to `/api/account`, and falls back to browser `localStorage` only if the API/D1 binding is missing.
 - `admin-panel.html` + `admin-panel.js` — operations panel. It now tries to load and save access grants from `/api/admin/grants`; local preview still works on `localhost`.
 - `functions/api/account.js` — Cloudflare Pages Function for reading/upserting the verified visitor profile.
 - `functions/api/admin/grants.js` — Cloudflare Pages Function for admin-only role grant reads/writes.
 - `functions/api/_utils.js` — shared API helpers; it also returns 404 if Pages maps it as `/api/_utils` during function bundling.
 - `_routes.json` — explicitly invokes Pages Functions only for `/api/*`, keeping static pages on the asset path.
-- `migrations/0001_auth.sql` — D1 schema for `profiles` and `access_grants`.
+- `migrations/0001_auth.sql` — initial D1 schema for `profiles` and `access_grants`.
+- `migrations/0002_profile_business_fields.sql` — adds company name, website, and business context fields for registration review.
 - `wrangler.toml` — keeps Pages build output at the repository root and intentionally omits placeholder D1 IDs; bind `DB` in the Pages dashboard or add a real D1 UUID only after creation.
 
 The property/inquiry workspace is still demo data in browser storage. Move it to D1 later when account and role setup is confirmed.
@@ -21,9 +22,9 @@ The property/inquiry workspace is still demo data in browser storage. Move it to
 
 The repository now separates public customer registration from privileged partner access:
 
-- Customers register on `/account.html` and become `active` automatically.
-- Owners and managers register on `/account.html`, keep the default `customer` access, and wait in the admin panel as `pending_admin_grant`.
-- Admins review pending requests in **Admin Panel → People → Access grants → Review role requests**.
+- Customers register on `/register.html` and become `active` automatically; `/account.html` remains the login/status page.
+- Owners and managers register on `/register.html`, keep the default `customer` access, and wait in the admin panel as `pending_admin_grant`.
+- Admins review pending requests in **Admin Panel → People → Registrations**.
 - **Approve** promotes the verified email to `owner` or `manager` in `access_grants` and marks the profile active.
 - **Reject** keeps/returns the email to `customer` access and marks the profile rejected.
 
@@ -71,12 +72,12 @@ Recommended setup:
    - `/account.html`
    - `/account`
    - `/login`
-   - `/register`
+   - `/register*`
    - `/api/account`
 4. Add an **Allow** policy with **Include: Everyone**.
 5. Use email OTP or your chosen identity provider.
 
-Result: every visitor can login/register with a verified email. A `customer` registration is active immediately. If the visitor requests `owner` or `manager`, the email still receives safe customer access only, while the requested privileged role stays pending for admin review.
+The `/register*` destination covers both `/register` and `/register.html`. Result: every visitor can login on the account page or register with a verified email on the registration page. A `customer` registration is active immediately. If the visitor requests `owner` or `manager`, the email still receives safe customer access only, while the requested privileged role stays pending for admin review.
 
 ## Phase 3 — Admin panel gate
 
@@ -142,7 +143,7 @@ You still need to complete these steps outside the repository in Cloudflare:
 1. Create the D1 database named `luxeroutes-db` if it does not already exist.
 2. Apply `migrations/0001_auth.sql` remotely with Wrangler.
 3. Bind that D1 database to the Pages project with binding name `DB`.
-4. Create a public Cloudflare Access application for `/account.html`, `/account`, `/login`, `/register`, and `/api/account` with an **Everyone** allow policy.
+4. Create a public Cloudflare Access application for `/account.html`, `/account`, `/login`, `/register*`, and `/api/account` with an **Everyone** allow policy.
 5. Create a separate Cloudflare Access application for `/admin-panel.html`, `/admin/*`, and `/api/admin/*` that only allows your trusted admin email addresses.
 6. Seed your first admin email into `access_grants` with the command in Phase 4.
 7. Test with three different emails: one customer, one owner request, and one manager request.

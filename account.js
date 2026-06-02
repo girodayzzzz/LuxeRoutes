@@ -5,6 +5,7 @@ const accountRole = document.querySelector('[data-account-role]');
 const accountForm = document.querySelector('[data-account-form]');
 const accountEmailInput = document.querySelector('[data-account-email-input]');
 const accountProfile = document.querySelector('[data-account-profile]');
+const accountLoginLink = document.querySelector('[data-account-login-link]');
 const accountStorageKey = 'luxeroutes-account-profile-v1';
 let accountIdentity = null;
 let accountApiEnabled = false;
@@ -107,12 +108,18 @@ const renderAccountProfile = (profile, grant = null) => {
 
   const currentRole = grant?.role || profile.defaultRole || 'customer';
   const profileStatus = profile.status || (currentRole === 'customer' ? 'active' : 'pending_admin_grant');
+  const companyDetails = [
+    profile.companyName ? `Company: ${accountEscapeHtml(profile.companyName)}` : '',
+    profile.businessContext ? `Context: ${accountEscapeHtml(profile.businessContext)}` : '',
+    profile.companyWebsite ? `Website: <a href="${accountEscapeHtml(profile.companyWebsite)}" target="_blank" rel="noopener">${accountEscapeHtml(profile.companyWebsite)}</a>` : '',
+  ].filter(Boolean).map((item) => `<span>${item}</span>`).join('');
 
   accountProfile.innerHTML = `
     <div class="stack-item">
       <div>
         <strong>${accountEscapeHtml(profile.name || 'Unnamed account')}</strong>
         <span>${accountEscapeHtml(profile.email)} · Requested: ${accountEscapeHtml(profile.requestedRole || 'customer')} · Current: ${accountEscapeHtml(currentRole)}</span>
+        ${companyDetails}
       </div>
       <span class="status-pill ${accountStatusClass(profileStatus)}">${accountEscapeHtml(accountStatusLabel(profileStatus))}</span>
     </div>
@@ -129,6 +136,15 @@ const setAccountStatus = ({ heading, status, email, role, approved }) => {
     accountRole.classList.toggle('status-approved', Boolean(approved));
     accountRole.classList.toggle('status-warning', !approved);
     accountRole.classList.toggle('status-pending', false);
+  }
+  if (accountLoginLink) {
+    if (accountForm) {
+      accountLoginLink.textContent = 'Continue Registration';
+      accountLoginLink.href = '#account-workspace';
+    } else {
+      accountLoginLink.textContent = email && approved ? 'Manage Account' : 'Login with Email';
+      accountLoginLink.href = email && approved ? '#account-workspace' : 'account.html';
+    }
   }
 };
 
@@ -176,6 +192,9 @@ accountForm?.addEventListener('submit', async (event) => {
     email: String(accountIdentity?.email || formData.get('email') || '').trim().toLowerCase(),
     name: String(formData.get('name') || '').trim(),
     requestedRole: String(formData.get('requested_role') || 'customer'),
+    companyName: String(formData.get('company_name') || '').trim(),
+    companyWebsite: String(formData.get('company_website') || '').trim(),
+    businessContext: String(formData.get('business_context') || '').trim(),
     notes: String(formData.get('notes') || '').trim(),
     status: String(formData.get('requested_role') || 'customer') === 'customer' ? 'active' : 'pending_admin_grant',
     updatedAt: new Date().toISOString(),

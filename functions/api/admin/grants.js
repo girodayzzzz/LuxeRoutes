@@ -13,6 +13,7 @@ export const onRequestGet = async ({ request, env }) => {
 
     const profiles = await auth.db.prepare(`
       SELECT p.id, p.email, p.full_name AS name, p.default_role AS defaultRole, p.requested_role AS requestedRole,
+        p.company_name AS companyName, p.company_website AS companyWebsite, p.business_context AS businessContext,
         p.notes, p.status, p.created_at AS createdAt, p.updated_at AS updatedAt,
         g.role AS grantedRole, g.note AS grantNote, g.status AS grantStatus
       FROM profiles p
@@ -64,6 +65,7 @@ export const onRequestPost = async ({ request, env }) => {
       const [profile, grant] = await Promise.all([
         auth.db.prepare(`
           SELECT id, email, full_name AS name, default_role AS defaultRole, requested_role AS requestedRole,
+            company_name AS companyName, company_website AS companyWebsite, business_context AS businessContext,
             notes, status, created_at AS createdAt, updated_at AS updatedAt
           FROM profiles
           WHERE email = ?
