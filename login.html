@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Create Account | LuxeRoutes</title>
-  <meta name="description" content="Create your LuxeRoutes customer, owner, or manager account profile." />
+  <title>Login | LuxeRoutes</title>
+  <meta name="description" content="Login to LuxeRoutes with verified email access before opening your private account dashboard." />
   <meta name="robots" content="noindex, nofollow" />
-  <meta property="og:title" content="Create Account | LuxeRoutes" />
-  <meta property="og:description" content="Register a LuxeRoutes profile with business context for owner and manager review." />
+  <meta property="og:title" content="Login | LuxeRoutes" />
+  <meta property="og:description" content="Login to LuxeRoutes using Cloudflare-protected email access." />
   <meta property="og:type" content="website" />
-  <meta property="og:url" content="https://luxeroutes.eu/register.html" />
+  <meta property="og:url" content="https://luxeroutes.eu/login.html" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@600;700;800&display=swap" rel="stylesheet" />
@@ -17,12 +17,12 @@
   <link rel="manifest" href="site.webmanifest" />
   <link rel="stylesheet" href="styles.css" />
 </head>
-<body class="admin-page account-page">
+<body class="admin-page account-page login-page">
   <a class="skip-link" href="#main-content">Skip to content</a>
   <header class="site-header" data-header>
-    <div class="header-top" aria-label="LuxeRoutes account highlights">
+    <div class="header-top" aria-label="LuxeRoutes login highlights">
       <div class="container header-top-inner">
-        <span>Private LuxeRoutes Account</span>
+        <span>Private LuxeRoutes Login</span>
         <a href="mailto:info@luxeroutes.eu">info@luxeroutes.eu</a>
         <span>Customer · Owner · Manager</span>
       </div>
@@ -49,15 +49,17 @@
     <section class="admin-hero">
       <div class="container admin-hero-grid">
         <div>
-          <p class="eyebrow">LuxeRoutes registration</p>
-          <h1>Create your LuxeRoutes account.</h1>
-          <p class="admin-lead">Register a customer profile now, or request owner or manager access with business context so the LuxeRoutes admin team can review your role.</p>
+          <p class="eyebrow">LuxeRoutes login</p>
+          <h1>Login with your verified email.</h1>
+          <p class="admin-lead">Use the login page only for email verification. After login, continue to your private account dashboard for accepted offers, settings, coupons, and profile status.</p>
           <div class="button-row">
-            <a class="btn btn-primary" href="#account-workspace" data-account-login-link>Continue Registration</a>
-            <a class="btn btn-secondary" href="login.html">Login instead</a>
+            <a class="btn btn-primary" href="login.html" data-account-login-link>Login with Email</a>
+            <a class="btn btn-secondary" href="register.html">Create Account</a>
+            <a class="btn btn-secondary" href="account.html">Open Account</a>
           </div>
+          <p class="admin-helper account-switch-link">Not registered yet? <a href="register.html">Create your LuxeRoutes account</a>, then return here to login.</p>
         </div>
-        <aside class="admin-login-card" aria-label="Account login status">
+        <aside class="admin-login-card" aria-label="Login status">
           <p class="eyebrow">Cloudflare email login</p>
           <h2 data-account-heading>Checking session</h2>
           <p data-account-status>Checking whether Cloudflare Access already verified your email.</p>
@@ -65,48 +67,30 @@
             <span class="status-pill status-pending" data-account-role>Verifying</span>
             <span data-account-email>Session pending</span>
           </div>
-          <p class="admin-helper">Customers are activated immediately. Owner and manager requests stay pending until an admin approves them in People → Registrations.</p>
+          <ul class="login-checklist">
+            <li>Login stays visible in this browser tab for a few hours.</li>
+            <li>Cloudflare still protects real account and admin actions.</li>
+            <li>New users should register before expecting saved account data.</li>
+          </ul>
+          <p class="admin-helper account-switch-link">Already verified? <a href="account.html">Open your Account dashboard</a>.</p>
         </aside>
       </div>
     </section>
 
-    <section class="section admin-workspace" id="account-workspace">
+    <section class="section admin-workspace" id="login-next-steps">
       <div class="container">
-        <div class="admin-toolbar">
-          <div>
-            <p class="eyebrow">Registration</p>
-            <h2>Create your LuxeRoutes profile</h2>
-            <p>Business fields help admins understand owner and manager requests before approving access.</p>
-          </div>
-          <a class="btn btn-secondary" href="login.html">Login</a>
-        </div>
-
         <div class="admin-grid two">
           <article class="admin-card">
-            <div class="card-head"><p class="eyebrow">Register</p><span class="status-pill">Customer by default</span></div>
-            <h3>Account details</h3>
-            <form class="admin-form" data-account-form>
-              <label>Email<input name="email" type="email" placeholder="you@example.com" required data-account-email-input></label>
-              <label>Full name<input name="name" type="text" placeholder="Your name" required></label>
-              <label>Account type
-                <select name="requested_role">
-                  <option value="customer">Customer / Traveler</option>
-                  <option value="owner">Property Owner</option>
-                  <option value="manager">Regional Manager</option>
-                </select>
-              </label>
-              <label>Company name<input name="company_name" type="text" placeholder="Company or property group"></label>
-              <label>Company website<input name="company_website" type="url" placeholder="https://example.com"></label>
-              <label class="full">Business context<textarea name="business_context" rows="4" placeholder="Tell us about your properties, region, portfolio, or partnership context."></textarea></label>
-              <label class="full">Notes<textarea name="notes" rows="4" placeholder="Anything else our admin team should know?"></textarea></label>
-              <button class="btn btn-primary" type="submit">Save Profile</button>
-            </form>
+            <div class="card-head"><p class="eyebrow">New customer</p><span class="status-pill">Register first</span></div>
+            <h3>Create your profile</h3>
+            <p class="admin-helper">Registration captures your name, verified email, requested role, and optional business context for owner or manager access.</p>
+            <a class="btn btn-primary" href="register.html">Go to Register</a>
           </article>
-
           <article class="admin-card">
-            <div class="card-head"><p class="eyebrow">Access model</p><span class="status-pill status-approved">Email first</span></div>
-            <h3>Saved registration</h3>
-            <div class="stack-list" data-account-profile></div>
+            <div class="card-head"><p class="eyebrow">Returning user</p><span class="status-pill status-approved">Account</span></div>
+            <h3>Continue to account</h3>
+            <p class="admin-helper">Use Account after login for accepted offers, settings, coupons, and your saved access status.</p>
+            <a class="btn btn-secondary" href="account.html">Open Account</a>
           </article>
         </div>
       </div>
@@ -123,16 +107,15 @@
         <h3>Account</h3>
         <ul>
           <li><a href="login.html">Login</a></li>
-          <li><a href="account.html">Account dashboard</a></li>
           <li><a href="register.html">Create account</a></li>
-          <li><a href="plan-trip.html">Plan a Trip</a></li>
+          <li><a href="account.html">Account dashboard</a></li>
         </ul>
       </div>
       <a class="btn btn-primary" href="plan-trip.html">Plan a Trip</a>
     </div>
     <div class="container footer-bottom">
       <p>© <span data-current-year>2026</span> LuxeRoutes. All rights reserved.</p>
-      <p>Email-first account prototype.</p>
+      <p>Email-first account access.</p>
     </div>
   </footer>
   <script src="script.js"></script>

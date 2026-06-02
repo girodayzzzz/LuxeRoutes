@@ -21,7 +21,7 @@ The site is prepared for **Cloudflare email login for everyone** plus **admin-ap
 
 Start with two Cloudflare Access applications:
 
-- Public account app: protect `/account.html`, `/account`, `/login`, `/register`, and `/api/account` with **Include: Everyone** so customers can register/login and LuxeRoutes captures verified emails.
+- Public account app: protect `/login.html`, `/login`, `/register`, `/register.html`, `/account.html`, `/account`, and `/api/account` with **Include: Everyone** so customers can register/login and LuxeRoutes captures verified emails before opening the account dashboard.
 - Admin app: protect `/admin-panel.html`, `/admin/*`, and `/api/admin/*` with approved internal admin emails only.
 
 Admins can then grant `customer`, `owner`, `manager`, or `admin` access by verified email after D1 is created, the `DB` binding is connected, and the first admin row is seeded. See [`docs/cloudflare-admin-auth.md`](docs/cloudflare-admin-auth.md) for the full Cloudflare + D1 plan.
