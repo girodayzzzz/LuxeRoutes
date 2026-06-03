@@ -18,6 +18,7 @@ const loginSessionStatus = document.querySelector('[data-login-session-status]')
 const loginBoxHead = document.querySelector('.login-box-head');
 const loginSecurityList = document.querySelector('.login-security-list');
 const accountSwitchLink = document.querySelector('.account-switch-link');
+const accountLogoutButtons = document.querySelectorAll('[data-account-logout]');
 const isRegisterPage = () => document.body.classList.contains('account-page') && Boolean(accountForm);
 const isDashboardPage = () => document.body.classList.contains('account-dashboard-page');
 const isLoginPage = () => document.body.classList.contains('login-page');
@@ -217,6 +218,45 @@ const saveRemoteAccountProfile = async (profile) => {
   return response.json();
 };
 
+const getLoginRedirectTarget = () => {
+  const redirect = new URLSearchParams(window.location.search).get('redirect');
+  if (!redirect) return 'account.html';
+
+  try {
+    const url = new URL(redirect, window.location.origin);
+    if (url.origin !== window.location.origin) return 'account.html';
+    return `${url.pathname}${url.search}${url.hash}`;
+  } catch (error) {
+    return 'account.html';
+  }
+};
+
+const getAccountRole = (sessionOrAccount = {}) => sessionOrAccount?.role
+  || sessionOrAccount?.grant?.role
+  || sessionOrAccount?.profile?.defaultRole
+  || sessionOrAccount?.profile?.requestedRole
+  || 'customer';
+
+const updateAccountAccessCards = (role = 'customer') => {
+  document.querySelectorAll('[data-account-role-link]').forEach((card) => {
+    card.hidden = card.dataset.accountRoleLink !== role;
+  });
+};
+
+const updateAccountLogout = (active = false) => {
+  accountLogoutButtons.forEach((button) => {
+    button.hidden = !active;
+  });
+};
+
+const logoutAccount = () => {
+  sessionStorage.removeItem(accountSessionKey);
+  accountIdentity = null;
+  updateAccountAccessCards();
+  updateAccountLogout(false);
+  window.location.href = 'login.html';
+};
+
 const updateAccountNav = ({ email = '', role = '', active = false } = {}) => {
   document.querySelectorAll('[data-nav-login]').forEach((link) => {
     link.hidden = active;
@@ -252,7 +292,7 @@ const renderAccountProfile = (profile, grant = null) => {
     return;
   }
 
-  const currentRole = grant?.role || profile.defaultRole || 'customer';
+  const currentRole = grant?.role || profile.defaultRole || profile.requestedRole || 'customer';
   const profileStatus = profile.status || (currentRole === 'customer' ? 'active' : 'pending_admin_grant');
   const companyDetails = [
     profile.companyName ? `Company: ${accountEscapeHtml(profile.companyName)}` : '',
@@ -286,6 +326,8 @@ const setAccountStatus = ({ heading, status, email, role, approved }) => {
     accountRole.classList.toggle('status-pending', false);
   }
   updateAccountNav({ email, role, active: Boolean(email && approved) });
+  updateAccountAccessCards(String(role || '').toLowerCase());
+  updateAccountLogout(Boolean(email && approved));
 
   if (accountLoginLink) {
     if (isRegisterPage()) {
@@ -312,7 +354,7 @@ const initialiseAccount = async () => {
       heading: 'Session restored',
       status: isLoginPage() ? 'You are signed in and can open your LuxeRoutes account.' : 'Your account session is active in this browser.',
       email: cachedEmail,
-      role: cachedSession.role || cachedSession.grant?.role || cachedSession.profile?.defaultRole || 'Customer login',
+      role: getAccountRole(cachedSession),
       approved: true,
     });
     renderAccountProfile(cachedSession.profile || loadAccountProfile(), cachedSession.grant);
@@ -334,7 +376,7 @@ const initialiseAccount = async () => {
           ? 'Your email is verified. Continue to Account for accepted offers, settings, and private updates.'
           : 'Your email is verified. Create your profile to request customer, owner, or manager access.'),
       email: identity.email,
-      role: remoteAccount?.role ? accountEscapeHtml(remoteAccount.role) : 'Customer login',
+      role: remoteAccount?.role ? accountEscapeHtml(remoteAccount.role) : 'customer',
       approved: true,
     });
     setLoginAccountState(true);
@@ -343,7 +385,7 @@ const initialiseAccount = async () => {
       heading: isLoginPage() ? 'Account access' : 'Session still active',
       status: isLoginPage() ? 'Sign in with your email to open your LuxeRoutes account.' : 'Your account session is active in this browser.',
       email: cachedSession.identity?.email || cachedSession.profile?.email,
-      role: cachedSession.role || 'Account',
+      role: getAccountRole(cachedSession),
       approved: true,
     });
     setLoginAccountState(true);
@@ -417,6 +459,8 @@ accountForm?.addEventListener('submit', async (event) => {
     });
   }
 });
+
+accountLogoutButtons.forEach((button) => button.addEventListener('click', logoutAccount));
 
 loginBackButton?.addEventListener('click', resetLoginOtpStep);
 
@@ -510,7 +554,7 @@ loginForm?.addEventListener('submit', async (event) => {
       approved: true,
     });
 
-    window.location.href = 'account.html';
+    window.location.href = getLoginRedirectTarget();
   } catch (error) {
     setAccountStatus({
       heading: 'Verification incomplete',
@@ -525,4 +569,6 @@ loginForm?.addEventListener('submit', async (event) => {
   }
 });
 
+updateAccountAccessCards();
+updateAccountLogout(false);
 initialiseAccount();

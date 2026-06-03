@@ -19,14 +19,45 @@ const readAccountSession = () => {
 
 const getPathPrefix = () => (window.location.pathname.includes('/admin/') ? '../' : '');
 
+const getSessionRole = (session) => session?.role || session?.grant?.role || session?.profile?.defaultRole || '';
+
+const privateAccessRules = {
+  'partners.html': ['owner', 'partner'],
+  'managers.html': ['manager'],
+  'admin-panel.html': ['admin'],
+  'index.html': null,
+  'offers.html': null,
+};
+
+const protectPrivateAccessPage = () => {
+  const pathParts = window.location.pathname.split('/').filter(Boolean);
+  const currentFile = pathParts[pathParts.length - 1] || 'index.html';
+  const allowedRoles = privateAccessRules[currentFile];
+  if (!allowedRoles) return;
+
+  const session = readAccountSession();
+  const isLoggedIn = Boolean(session?.identity?.email || session?.profile?.email);
+  const role = getSessionRole(session);
+  const prefix = getPathPrefix();
+
+  if (!isLoggedIn) {
+    const target = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+    window.location.replace(`${prefix}login.html?redirect=${encodeURIComponent(target)}`);
+    return;
+  }
+
+  if (!allowedRoles.includes(role)) {
+    window.location.replace(`${prefix}account.html`);
+  }
+};
+
+protectPrivateAccessPage();
+
 const updateRoleBasedNavigation = () => {
   const session = readAccountSession();
   const isLoggedIn = Boolean(session?.identity?.email || session?.profile?.email);
-  const role = session?.role || session?.grant?.role || session?.profile?.defaultRole || '';
-  const isAdmin = role === 'admin';
   const prefix = getPathPrefix();
-  const visibleLabels = new Set(['Home', 'Offers', 'Partners', 'Managers', isLoggedIn ? 'Account' : 'Login', 'Plan a Trip']);
-  if (isAdmin) visibleLabels.add('Admin Panel');
+  const visibleLabels = new Set(['Home', 'Destinations', 'Stays', 'Experiences', 'Journal', isLoggedIn ? 'Account' : 'Login', 'Plan a Trip']);
 
   document.querySelectorAll('[data-nav-login]').forEach((link) => {
     link.hidden = isLoggedIn;
@@ -50,13 +81,20 @@ const updateRoleBasedNavigation = () => {
   ]);
 
   adminNavLinks.forEach((link) => {
-    link.hidden = !isAdmin;
+    link.hidden = true;
     link.href = `${prefix}admin/index.html`.replace('../admin/', '');
-    link.setAttribute('aria-label', 'Open LuxeRoutes admin panel');
+    link.setAttribute('aria-label', 'Open LuxeRoutes admin panel from Account');
+  });
+
+  document.querySelectorAll('.primary-nav a[href$="partners.html"], .primary-nav a[href$="managers.html"], .primary-nav a[href$="offers.html"], .primary-nav a[href$="routes.html"]').forEach((link) => {
+    const directNavItem = link.parentElement?.classList.contains('primary-nav');
+    if (!directNavItem && (link.getAttribute('href') || '').match(/(partners|managers)\.html$/)) link.hidden = true;
   });
 
   document.querySelectorAll('.primary-nav > .nav-link, .primary-nav > .nav-item, .primary-nav > .nav-cta').forEach((item) => {
-    const label = item.dataset.navLabel || item.textContent.trim().replace(/\s+/g, ' ');
+    const label = item.dataset.navLabel
+      || item.querySelector?.(':scope > .nav-link')?.textContent.trim().replace(/\s+/g, ' ')
+      || item.textContent.trim().replace(/\s+/g, ' ');
     if (!label) return;
     item.hidden = !visibleLabels.has(label);
   });
