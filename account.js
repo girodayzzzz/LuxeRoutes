@@ -253,10 +253,12 @@ const renderAccountProfile = (profile, grant = null) => {
 };
 
 const setAccountStatus = ({ heading, status, email, role, approved }) => {
+  const canPrefillEmailInput = email && email.includes('@');
+
   if (accountHeading) accountHeading.textContent = heading;
   if (accountStatus) accountStatus.textContent = status;
   if (accountEmail) accountEmail.textContent = email || 'Email pending';
-  if (accountEmailInput && email) accountEmailInput.value = email;
+  if (accountEmailInput && canPrefillEmailInput) accountEmailInput.value = email;
   if (accountRole) {
     accountRole.textContent = role;
     accountRole.classList.toggle('status-approved', Boolean(approved));
