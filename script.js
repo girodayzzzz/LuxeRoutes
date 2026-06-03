@@ -19,9 +19,14 @@ const readAccountSession = () => {
 
 const getPathPrefix = () => (window.location.pathname.includes('/admin/') ? '../' : '');
 
+const accountRoles = ['customer', 'owner', 'manager', 'admin', 'partner'];
+
 const getSessionRole = (session) => session?.role || session?.grant?.role || session?.profile?.defaultRole || '';
 
+const normalizeSessionRole = (role) => (accountRoles.includes(role) ? role : 'customer');
+
 const privateAccessRules = {
+  'account.html': accountRoles,
   'partners.html': ['owner', 'partner'],
   'managers.html': ['manager'],
   'admin-panel.html': ['admin'],
@@ -37,7 +42,7 @@ const protectPrivateAccessPage = () => {
 
   const session = readAccountSession();
   const isLoggedIn = Boolean(session?.identity?.email || session?.profile?.email);
-  const role = getSessionRole(session);
+  const role = normalizeSessionRole(getSessionRole(session));
   const prefix = getPathPrefix();
 
   if (!isLoggedIn) {

@@ -16,8 +16,9 @@
   <link rel="icon" type="image/svg+xml" href="favicon.svg" />
   <link rel="manifest" href="site.webmanifest" />
   <link rel="stylesheet" href="styles.css" />
+  <style>body[data-account-locked="true"] main, body[data-account-locked="true"] footer { display: none !important; }</style>
 </head>
-<body class="admin-page account-page account-dashboard-page">
+<body class="admin-page account-page account-dashboard-page" data-account-locked="true">
   <a class="skip-link" href="#main-content">Skip to content</a>
   <header class="site-header" data-header>
     <div class="header-top" aria-label="LuxeRoutes account highlights">
@@ -40,7 +41,7 @@
         <a href="journal.html" class="nav-link">Journal</a>
         <a class="btn btn-primary nav-cta" href="plan-trip.html">Plan a Trip</a>
         <a href="login.html" class="nav-link" data-nav-login>Login</a>
-        <a href="account.html" class="nav-link" data-nav-account>Account</a>
+        <a href="account.html" class="nav-link" data-nav-account hidden>Account</a>
       </nav>
     </div>
   </header>
@@ -84,6 +85,48 @@
             <a class="btn btn-secondary" href="login.html">Login / refresh session</a>
             <button class="btn btn-secondary" type="button" data-account-logout hidden>Logout</button>
           </div>
+        </div>
+
+        <div class="account-role-panels" aria-live="polite">
+          <article class="admin-card account-role-panel" data-account-role-panel="customer" hidden>
+            <div class="card-head"><p class="eyebrow">Customer dashboard</p><span class="status-pill status-approved">Customer</span></div>
+            <h3>Travel profile and concierge requests</h3>
+            <p class="admin-helper">Customer accounts focus on saved inquiries, accepted proposals, trip preferences, coupons, and direct concierge follow-up.</p>
+            <div class="button-row">
+              <a class="btn btn-primary" href="plan-trip.html">Start a Trip Brief</a>
+              <a class="btn btn-secondary" href="#accepted-offers">View Saved Offers</a>
+            </div>
+          </article>
+
+          <article class="admin-card account-role-panel" data-account-role-panel="owner" hidden>
+            <div class="card-head"><p class="eyebrow">Owner dashboard</p><span class="status-pill status-approved">Owner</span></div>
+            <h3>Property owner access</h3>
+            <p class="admin-helper">Owner accounts see property onboarding, partner collaboration, listing visibility, and offer follow-up tools after admin approval.</p>
+            <div class="button-row">
+              <a class="btn btn-primary" href="partners.html">Open Owner Tools</a>
+              <a class="btn btn-secondary" href="#account-settings">Update Business Profile</a>
+            </div>
+          </article>
+
+          <article class="admin-card account-role-panel" data-account-role-panel="manager" hidden>
+            <div class="card-head"><p class="eyebrow">Manager dashboard</p><span class="status-pill status-approved">Manager</span></div>
+            <h3>Regional manager workspace</h3>
+            <p class="admin-helper">Manager accounts prioritize assigned route requests, partner coordination, regional notes, and operational follow-up.</p>
+            <div class="button-row">
+              <a class="btn btn-primary" href="managers.html">Open Manager Tools</a>
+              <a class="btn btn-secondary" href="#accepted-offers">Review Assigned Items</a>
+            </div>
+          </article>
+
+          <article class="admin-card account-role-panel" data-account-role-panel="admin" hidden>
+            <div class="card-head"><p class="eyebrow">Admin dashboard</p><span class="status-pill status-warning">Admin</span></div>
+            <h3>Administration and access control</h3>
+            <p class="admin-helper">Admin accounts can review users, approve owner or manager access, manage offers, and maintain private account grants.</p>
+            <div class="button-row">
+              <a class="btn btn-primary" href="admin/index.html">Open Admin Panel</a>
+              <a class="btn btn-secondary" href="#account-settings">Review Own Profile</a>
+            </div>
+          </article>
         </div>
 
         <div class="admin-grid two">
