@@ -62,10 +62,6 @@
           </div>
           <div class="login-trust-panel" aria-label="Account protection details">
             <div>
-              <strong>4h</strong>
-              <span>Session window</span>
-            </div>
-            <div>
               <strong>OTP</strong>
               <span>No password stored</span>
             </div>
@@ -98,7 +94,7 @@
               <label>Email address
                 <input name="email" type="email" placeholder="name@example.com" autocomplete="email" required data-login-email data-account-email-input>
               </label>
-              <button class="btn btn-primary" type="submit" data-login-email-submit>Send OTP code</button>
+              <button class="btn btn-primary" type="submit" data-login-email-submit>Send verification code</button>
             </div>
 
             <div class="login-step" data-login-step="otp" hidden>
@@ -114,7 +110,6 @@
             </div>
 
             <label class="auth-checkbox"><input name="remember" type="checkbox" checked> Remember this login for this browser session</label>
-            <p class="otp-helper" data-login-helper>In production, the email API sends the OTP; local preview shows a test code.</p>
           </form>
 
           <ul class="login-security-list" aria-label="Security notes">
@@ -122,14 +117,9 @@
             <li>Owner and manager access stays approval-based.</li>
           </ul>
 
-          <div class="auth-status-card" aria-label="Login status" data-login-session-status>
-            <div class="card-head compact-head">
-              <p class="eyebrow">Login status</p>
-              <span class="status-pill status-pending" data-account-role>Verifying</span>
-            </div>
-            <h3 data-account-heading>Checking session</h3>
-            <p data-account-status>Checking whether your email is verified or an OTP session is still active.</p>
-            <div class="admin-auth-meta"><span data-account-email>Session pending</span></div>
+          <div class="auth-status-card" aria-label="Account access" data-login-session-status>
+            <h3 data-account-heading>Account access</h3>
+            <p data-account-status>Sign in with your email to open your LuxeRoutes account.</p>
           </div>
 
           <p class="admin-helper account-switch-link">Not registered yet? <a href="register.html">Create your LuxeRoutes account</a>.</p>
@@ -149,7 +139,7 @@
         <h3>Account</h3>
         <ul>
           <li><a href="login.html">Login</a></li>
-          <li><a href="account.html">Account dashboard</a></li>
+          <li><a href="account.html">Account</a></li>
         </ul>
       </div>
       <a class="btn btn-primary" href="plan-trip.html">Plan a Trip</a>
