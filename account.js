@@ -69,8 +69,8 @@ const setLoginOtpStep = (email) => {
   }
   if (loginHelper) {
     loginHelper.textContent = isAccountLocalPreview()
-      ? `Local preview: use test OTP code ${loginPreviewOtp}.`
-      : 'Check your email for the one-time code. If the page is protected by Cloudflare Access, the same email is verified there too.';
+      ? `Enter verification code ${loginPreviewOtp} to continue.`
+      : 'Check your email for the one-time code, then enter it below to continue.';
   }
 };
 
@@ -117,7 +117,7 @@ const resetLoginOtpStep = () => {
     loginOtpInput.required = false;
     loginOtpInput.value = '';
   }
-  if (loginHelper) loginHelper.textContent = 'In production, the email API sends the OTP; local preview shows a test code.';
+  if (loginHelper) loginHelper.textContent = 'Enter your email to receive a one-time verification code.';
   accountEmailInput?.focus({ preventScroll: true });
 };
 
@@ -206,7 +206,7 @@ const saveRemoteAccountProfile = async (profile) => {
 
   if (!response.ok) {
     const message = await response.json().catch(() => ({}));
-    throw new Error(message.error || 'Unable to save profile in D1.');
+    throw new Error(message.error || 'Unable to save your profile right now.');
   }
 
   accountApiEnabled = true;
@@ -306,7 +306,7 @@ const initialiseAccount = async () => {
     accountIdentity = cachedSession.identity || (cachedEmail ? { email: cachedEmail } : null);
     setAccountStatus({
       heading: 'Session restored',
-      status: 'Your login view is kept for this browser tab for a few hours. Cloudflare Access still verifies protected account actions in the background.',
+      status: isLoginPage() ? 'You are signed in and can open your LuxeRoutes account.' : 'Your account session is active in this browser.',
       email: cachedEmail,
       role: cachedSession.role || cachedSession.grant?.role || cachedSession.profile?.defaultRole || 'Customer login',
       approved: true,
@@ -325,10 +325,10 @@ const initialiseAccount = async () => {
     setAccountStatus({
       heading: 'Email verified',
       status: remoteAccount?.profile
-        ? 'Cloudflare Access verified your email and loaded your profile from Cloudflare D1.'
+        ? 'Your email is verified and your LuxeRoutes profile is ready.'
         : (isLoginPage()
-          ? 'Cloudflare Access verified your email. Continue to Account for accepted offers, settings, and coupons, or register if you still need a profile.'
-          : 'Cloudflare Access verified your email. Register as a customer, then an admin can grant owner or manager access by this email.'),
+          ? 'Your email is verified. Continue to Account for accepted offers, settings, and private updates.'
+          : 'Your email is verified. Create your profile to request customer, owner, or manager access.'),
       email: identity.email,
       role: remoteAccount?.role ? accountEscapeHtml(remoteAccount.role) : 'Customer login',
       approved: true,
@@ -336,28 +336,28 @@ const initialiseAccount = async () => {
     setLoginAccountState(true);
   } else if (cachedSession?.profile || cachedSession?.identity) {
     setAccountStatus({
-      heading: 'Session still active',
-      status: 'We kept your login session visible in this tab. Reopen Login if Cloudflare asks you to verify again.',
+      heading: isLoginPage() ? 'Account access' : 'Session still active',
+      status: isLoginPage() ? 'Sign in with your email to open your LuxeRoutes account.' : 'Your account session is active in this browser.',
       email: cachedSession.identity?.email || cachedSession.profile?.email,
-      role: cachedSession.role || 'Cached account',
+      role: cachedSession.role || 'Account',
       approved: true,
     });
     setLoginAccountState(true);
   } else if (isAccountLocalPreview()) {
     setAccountStatus({
-      heading: 'Local preview',
-      status: 'Local preview is active. In production, protect login/register/account with Cloudflare Access so visitors verify by email.',
-      email: profile?.email || 'localhost preview',
-      role: 'Preview',
+      heading: isLoginPage() ? 'Account access' : 'Local preview',
+      status: isLoginPage() ? 'Sign in with your email to open your LuxeRoutes account.' : 'Local preview is active for account sign-in testing.',
+      email: profile?.email || 'Email pending',
+      role: 'Account',
       approved: false,
     });
     setLoginAccountState(false);
   } else {
     setAccountStatus({
-      heading: 'Login required',
-      status: 'Use the Login page to verify by email before opening Account. New users should create a profile on Register first.',
-      email: 'Cloudflare Access required',
-      role: 'Not verified',
+      heading: 'Account access',
+      status: 'Sign in with your email to open your LuxeRoutes account.',
+      email: 'Email pending',
+      role: 'Account',
       approved: false,
     });
     setLoginAccountState(false);
@@ -393,9 +393,9 @@ accountForm?.addEventListener('submit', async (event) => {
       heading: 'Profile saved',
       status: accountApiEnabled
         ? (savedProfile.requestedRole === 'customer'
-          ? 'Your customer profile is active in Cloudflare D1.'
-          : 'Your profile is saved in Cloudflare D1 and is waiting for admin approval before owner or manager access is enabled.')
-        : 'Your profile is saved locally.',
+          ? 'Your customer profile is active.'
+          : 'Your profile is saved and waiting for owner or manager approval.')
+        : 'Your profile is saved in this browser.',
       email: savedProfile.email,
       role: remoteAccount.role || 'Pending grant',
       approved: true,
@@ -406,9 +406,9 @@ accountForm?.addEventListener('submit', async (event) => {
     renderAccountProfile(profile);
     setAccountStatus({
       heading: 'Local fallback saved',
-      status: `${error.message} The profile was saved in this browser only; check the D1 binding before production.`,
+      status: `${error.message} Your profile was saved in this browser only.`,
       email: profile.email,
-      role: 'D1 warning',
+      role: 'Profile notice',
       approved: false,
     });
   }
@@ -435,8 +435,8 @@ loginForm?.addEventListener('submit', async (event) => {
       setAccountStatus({
         heading: 'OTP code sent',
         status: isAccountLocalPreview()
-          ? `For local preview, enter test code ${loginPreviewOtp}.`
-          : 'We sent a 6-digit OTP code to your email. Enter it below to continue without a password.',
+          ? `Enter verification code ${loginPreviewOtp} to continue.`
+          : 'We sent a 6-digit verification code to your email. Enter it below to continue.',
         email,
         role: 'Email OTP',
         approved: false,
@@ -469,8 +469,8 @@ loginForm?.addEventListener('submit', async (event) => {
 
   if (isAccountLocalPreview() && otp !== loginPreviewOtp) {
     setAccountStatus({
-      heading: 'Incorrect test code',
-      status: `For local preview, use OTP code ${loginPreviewOtp}.`,
+      heading: 'Incorrect verification code',
+      status: `Use verification code ${loginPreviewOtp} to continue.`,
       email,
       role: 'OTP error',
       approved: false,
