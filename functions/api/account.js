@@ -11,11 +11,11 @@ const getProfile = async (db, email) => db.prepare(`${profileSelect} WHERE email
 
 export const onRequestGet = async ({ request, env }) => {
   try {
-    const db = requireDb(env);
     const email = await getAccountSessionEmail(request, env);
 
     if (!email) return errorJson('Verified email is required.', 401);
 
+    const db = requireDb(env);
     const [profile, grant] = await Promise.all([
       getProfile(db, email),
       getActiveGrant(db, email),
@@ -34,10 +34,10 @@ export const onRequestGet = async ({ request, env }) => {
 
 export const onRequestPost = async ({ request, env }) => {
   try {
-    const db = requireDb(env);
     const identityEmail = await getAccountSessionEmail(request, env);
     const body = await request.json().catch(() => ({}));
-    const email = normalizeEmail(identityEmail || body.email);
+    const submittedEmail = normalizeEmail(body.email);
+    const email = normalizeEmail(identityEmail);
     const name = String(body.name || '').trim();
     const requestedRole = ['customer', 'owner', 'manager'].includes(body.requestedRole) ? body.requestedRole : 'customer';
     const companyName = String(body.companyName || '').trim();
@@ -47,9 +47,13 @@ export const onRequestPost = async ({ request, env }) => {
     const profileStatus = requestedRole === 'customer' ? 'active' : 'pending_admin_grant';
     const timestamp = nowIso();
 
-    if (!email) return errorJson('Email is required.', 400);
+    if (!email) return errorJson('Verified email is required.', 401);
+    if (submittedEmail && submittedEmail !== email) {
+      return errorJson('Profile email must match the verified account email.', 403);
+    }
     if (!name) return errorJson('Full name is required.', 400);
 
+    const db = requireDb(env);
     await db.prepare(`
       INSERT INTO profiles (id, email, full_name, default_role, requested_role, company_name, company_website, business_context, notes, status, created_at, updated_at)
       VALUES (?, ?, ?, 'customer', ?, ?, ?, ?, ?, ?, ?, ?)
