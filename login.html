@@ -38,7 +38,7 @@
         <a href="partners.html" class="nav-link">Partners</a>
         <a href="managers.html" class="nav-link">Managers</a>
         <a href="login.html" class="nav-link" data-nav-login>Login</a>
-        <a href="account.html" class="nav-link" data-nav-account>Account</a>
+        <a href="account.html" class="nav-link" data-nav-account hidden>Account</a>
         <a href="admin-panel.html" class="nav-link">Admin Panel</a>
         <a class="btn btn-primary nav-cta" href="plan-trip.html">Plan a Trip</a>
       </nav>
@@ -83,11 +83,15 @@
             <p>Use the email connected to your LuxeRoutes profile. We will send a one-time verification code to confirm it is you.</p>
           </div>
 
-          <ol class="login-progress" aria-label="Login steps">
-            <li><span>1</span> Email</li>
-            <li><span>2</span> Verify code</li>
-            <li><span>3</span> Account</li>
-          </ol>
+          <div class="auth-status-card login-account-state" aria-label="Account status" data-login-account-state hidden>
+            <div class="card-head compact-head">
+              <p class="eyebrow">Signed in</p>
+              <span class="status-pill status-approved">Account</span>
+            </div>
+            <h3>Your account</h3>
+            <p>You are already signed in.</p>
+            <a class="btn btn-primary" href="account.html">Open account</a>
+          </div>
 
           <form class="auth-form login-otp-form" action="account.html" method="get" data-login-form>
             <div class="login-step is-active" data-login-step="email">
@@ -113,18 +117,12 @@
             <p class="otp-helper" data-login-helper>In production, the email API sends the OTP; local preview shows a test code.</p>
           </form>
 
-          <div class="auth-divider"><span>Need another option?</span></div>
-          <div class="auth-actions">
-            <a class="btn btn-secondary" href="register.html">Create Account</a>
-            <a class="btn btn-secondary" href="account.html">Open Account</a>
-          </div>
-
           <ul class="login-security-list" aria-label="Security notes">
             <li>One-time codes expire after use.</li>
             <li>Owner and manager access stays approval-based.</li>
           </ul>
 
-          <div class="auth-status-card" aria-label="Login status">
+          <div class="auth-status-card" aria-label="Login status" data-login-session-status>
             <div class="card-head compact-head">
               <p class="eyebrow">Login status</p>
               <span class="status-pill status-pending" data-account-role>Verifying</span>
@@ -139,28 +137,6 @@
       </div>
     </section>
 
-    <section class="section auth-next-section" id="login-next-steps">
-      <div class="container auth-mini-grid">
-        <article class="admin-card">
-          <div class="card-head"><p class="eyebrow">New user</p><span class="status-pill">Registration</span></div>
-          <h3>Create profile</h3>
-          <p class="admin-helper">Save your verified email, requested role, and optional details for owner or manager approval.</p>
-          <a class="btn btn-primary" href="register.html">Go to Register</a>
-        </article>
-        <article class="admin-card">
-          <div class="card-head"><p class="eyebrow">Returning user</p><span class="status-pill status-approved">Account</span></div>
-          <h3>Continue to account</h3>
-          <p class="admin-helper">After OTP login, open your account for offers, settings, coupons, and saved access status.</p>
-          <a class="btn btn-secondary" href="account.html">Open Account</a>
-        </article>
-        <article class="admin-card">
-          <div class="card-head"><p class="eyebrow">Partner access</p><span class="status-pill">Approval</span></div>
-          <h3>Owner or manager?</h3>
-          <p class="admin-helper">Registration as owner or manager. Admins approve privileged access after reviewing your profile.</p>
-          <a class="btn btn-secondary" href="register.html#account-workspace">Request Access</a>
-        </article>
-      </div>
-    </section>
   </main>
 
   <footer class="site-footer">
@@ -173,7 +149,6 @@
         <h3>Account</h3>
         <ul>
           <li><a href="login.html">Login</a></li>
-          <li><a href="register.html">Create Account</a></li>
           <li><a href="account.html">Account dashboard</a></li>
         </ul>
       </div>

@@ -13,6 +13,11 @@ const loginOtpEmail = document.querySelector('[data-login-otp-email]');
 const loginOtpInput = document.querySelector('[data-login-otp-input]');
 const loginBackButton = document.querySelector('[data-login-back]');
 const loginHelper = document.querySelector('[data-login-helper]');
+const loginAccountState = document.querySelector('[data-login-account-state]');
+const loginSessionStatus = document.querySelector('[data-login-session-status]');
+const loginBoxHead = document.querySelector('.login-box-head');
+const loginSecurityList = document.querySelector('.login-security-list');
+const accountSwitchLink = document.querySelector('.account-switch-link');
 const isRegisterPage = () => document.body.classList.contains('account-page') && Boolean(accountForm);
 const isDashboardPage = () => document.body.classList.contains('account-dashboard-page');
 const isLoginPage = () => document.body.classList.contains('login-page');
@@ -210,18 +215,29 @@ const saveRemoteAccountProfile = async (profile) => {
 
 const updateAccountNav = ({ email = '', role = '', active = false } = {}) => {
   document.querySelectorAll('[data-nav-login]').forEach((link) => {
-    link.textContent = active ? 'Logged in' : 'Login';
-    link.setAttribute('aria-label', active
-      ? `Email session active for ${email || role || 'signed-in user'}`
-      : 'Login to LuxeRoutes');
+    link.hidden = active;
+    link.textContent = 'Login';
+    link.href = 'login.html';
+    link.setAttribute('aria-label', 'Login to LuxeRoutes');
   });
 
   document.querySelectorAll('[data-nav-account]').forEach((link) => {
-    link.textContent = active ? 'My Account' : 'Account';
+    link.hidden = !active;
+    link.textContent = 'Account';
+    link.href = 'account.html';
     link.setAttribute('aria-label', active
       ? `Open LuxeRoutes account for ${email || role || 'signed-in user'}`
       : 'Open LuxeRoutes account dashboard');
   });
+};
+
+const setLoginAccountState = (active = false) => {
+  if (!isLoginPage()) return;
+
+  [loginBoxHead, loginForm, loginSecurityList, loginSessionStatus, accountSwitchLink].forEach((element) => {
+    if (element) element.hidden = active;
+  });
+  if (loginAccountState) loginAccountState.hidden = !active;
 };
 
 const renderAccountProfile = (profile, grant = null) => {
@@ -283,6 +299,7 @@ const setAccountStatus = ({ heading, status, email, role, approved }) => {
 
 const initialiseAccount = async () => {
   const cachedSession = loadAccountSession();
+  setLoginAccountState(false);
 
   if (cachedSession?.profile || cachedSession?.identity) {
     const cachedEmail = cachedSession.identity?.email || cachedSession.profile?.email;
@@ -295,6 +312,7 @@ const initialiseAccount = async () => {
       approved: true,
     });
     renderAccountProfile(cachedSession.profile || loadAccountProfile(), cachedSession.grant);
+    setLoginAccountState(true);
   }
 
   const identity = await getAccessIdentity();
@@ -315,6 +333,7 @@ const initialiseAccount = async () => {
       role: remoteAccount?.role ? accountEscapeHtml(remoteAccount.role) : 'Customer login',
       approved: true,
     });
+    setLoginAccountState(true);
   } else if (cachedSession?.profile || cachedSession?.identity) {
     setAccountStatus({
       heading: 'Session still active',
@@ -323,14 +342,16 @@ const initialiseAccount = async () => {
       role: cachedSession.role || 'Cached account',
       approved: true,
     });
+    setLoginAccountState(true);
   } else if (isAccountLocalPreview()) {
     setAccountStatus({
       heading: 'Local preview',
       status: 'Local preview is active. In production, protect login/register/account with Cloudflare Access so visitors verify by email.',
       email: profile?.email || 'localhost preview',
       role: 'Preview',
-      approved: true,
+      approved: false,
     });
+    setLoginAccountState(false);
   } else {
     setAccountStatus({
       heading: 'Login required',
@@ -339,6 +360,7 @@ const initialiseAccount = async () => {
       role: 'Not verified',
       approved: false,
     });
+    setLoginAccountState(false);
   }
 
   renderAccountProfile(profile, remoteAccount?.grant || cachedSession?.grant);
@@ -417,7 +439,7 @@ loginForm?.addEventListener('submit', async (event) => {
           : 'We sent a 6-digit OTP code to your email. Enter it below to continue without a password.',
         email,
         role: 'Email OTP',
-        approved: true,
+        approved: false,
       });
     } catch (error) {
       setAccountStatus({
