@@ -6,6 +6,7 @@ const authEmail = document.querySelector('[data-auth-email]');
 const authRole = document.querySelector('[data-auth-role]');
 const storageKey = 'luxeroutes-admin-panel-v1';
 const accountProfileStorageKey = 'luxeroutes-account-profile-v1';
+const adminAccountSessionKey = 'luxeroutes-account-session-v1';
 const offerBuilderForm = document.querySelector('[data-offer-builder-form]');
 const markdownOutput = document.querySelector('[data-markdown-output]');
 const offerPreview = document.querySelector('[data-offer-preview]');
@@ -150,6 +151,40 @@ let remoteAccessEnabled = false;
 
 const isLocalPreview = () => ['localhost', '127.0.0.1', ''].includes(window.location.hostname);
 const currentPanelRole = () => roleSelect?.value || currentRole;
+
+const getAdminPathPrefix = () => (window.location.pathname.includes('/admin/') ? '../' : '');
+
+const loadAdminAccountSession = () => {
+  try {
+    const session = JSON.parse(sessionStorage.getItem(adminAccountSessionKey) || 'null');
+    if (!session?.expiresAt || Date.now() >= session.expiresAt) return null;
+    return session;
+  } catch (error) {
+    return null;
+  }
+};
+
+const getSessionRole = (session) => session?.role || session?.grant?.role || session?.profile?.defaultRole || '';
+
+const redirectNonAdmin = (session = null) => {
+  const prefix = getAdminPathPrefix();
+  const hasAccount = Boolean(session?.identity?.email || session?.profile?.email);
+  window.location.replace(`${prefix}${hasAccount ? 'account.html' : 'login.html'}`);
+};
+
+const loadRemoteAccountRole = async () => {
+  try {
+    const response = await fetch('/api/account', {
+      headers: { Accept: 'application/json' },
+      credentials: 'same-origin',
+    });
+
+    if (!response.ok) return null;
+    return response.json();
+  } catch (error) {
+    return null;
+  }
+};
 
 const saveState = () => {
   localStorage.setItem(storageKey, JSON.stringify(state));
@@ -674,19 +709,39 @@ const lockWorkspace = () => {
   if (adminApp) adminApp.hidden = true;
   if (rolePreview) rolePreview.hidden = true;
   setAuthCard({
-    status: 'Admin workspace is locked. Add a Cloudflare Access policy for /admin-panel.html and sign in with an approved admin email.',
-    email: 'Cloudflare Access required',
+    status: 'Admin workspace is locked. Sign in with an account that has an admin role to open /admin.',
+    email: 'Admin session required',
     role: 'Locked',
     approved: false,
   });
 };
 
 const initialiseAdminAccess = async () => {
-  const identity = await getCloudflareIdentity();
+  const session = loadAdminAccountSession();
+  const sessionRole = getSessionRole(session);
 
-  if (identity) {
-    unlockWorkspace({ role: 'admin', identity });
+  if (sessionRole && sessionRole !== 'admin') {
+    lockWorkspace();
+    redirectNonAdmin(session);
+    return false;
+  }
+
+  if (sessionRole === 'admin') {
+    unlockWorkspace({ role: 'admin', identity: session.identity || { email: session.profile?.email } });
     return true;
+  }
+
+  const identity = await getCloudflareIdentity();
+  if (identity) {
+    const remoteAccount = await loadRemoteAccountRole();
+    if (remoteAccount?.role === 'admin') {
+      unlockWorkspace({ role: 'admin', identity });
+      return true;
+    }
+
+    lockWorkspace();
+    redirectNonAdmin(remoteAccount ? { identity, profile: remoteAccount.profile, role: remoteAccount.role } : null);
+    return false;
   }
 
   if (isLocalPreview()) {
@@ -695,7 +750,36 @@ const initialiseAdminAccess = async () => {
   }
 
   lockWorkspace();
+  redirectNonAdmin(session);
   return false;
+};
+
+
+const adminRoutePanel = () => {
+  const page = window.location.pathname.split('/').pop() || 'index.html';
+  return {
+    'index.html': 'overview',
+    'offers.html': 'offer-builder',
+    'partners.html': 'properties',
+    'users.html': 'people',
+  }[page] || 'overview';
+};
+
+const applyAdminRoutePanel = () => {
+  const activePanel = adminRoutePanel();
+  document.querySelectorAll('[data-admin-tab]').forEach((tab) => {
+    const isActive = tab.dataset.adminTab === activePanel;
+    tab.classList.toggle('is-active', isActive);
+    tab.setAttribute('aria-selected', String(isActive));
+  });
+  document.querySelectorAll('[data-panel]').forEach((panel) => {
+    panel.classList.toggle('is-active', panel.dataset.panel === activePanel);
+  });
+  document.querySelectorAll('.admin-route-nav a').forEach((link) => {
+    const isActive = link.getAttribute('href') === (window.location.pathname.split('/').pop() || 'index.html');
+    link.classList.toggle('is-active', isActive);
+    if (isActive) link.setAttribute('aria-current', 'page');
+  });
 };
 
 const render = () => {
@@ -705,6 +789,7 @@ const render = () => {
   renderPropertyTable();
   renderPeople();
   renderInquiryTable();
+  applyAdminRoutePanel();
 };
 
 const initialiseAdminPanel = async () => {

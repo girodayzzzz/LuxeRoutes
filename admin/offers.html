@@ -3,20 +3,21 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Admin Panel | LuxeRoutes Operations</title>
+  <title>Admin Offers | LuxeRoutes Admin</title>
   <meta name="description" content="LuxeRoutes internal admin, manager, and owner workspace for property submissions, partner reviews, inquiries, and publishing workflows." />
   <meta name="robots" content="noindex, nofollow" />
   <meta property="og:title" content="Admin Panel | LuxeRoutes" />
   <meta property="og:description" content="Operational workspace for LuxeRoutes property partners, managers, owners, and admins." />
   <meta property="og:type" content="website" />
-  <meta property="og:url" content="https://luxeroutes.eu/admin-panel.html" />
+  <meta property="og:url" content="https://luxeroutes.eu/admin/offers.html" />
   <meta name="twitter:card" content="summary" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@600;700;800&display=swap" rel="stylesheet" />
-  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
-  <link rel="manifest" href="site.webmanifest" />
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+  <link rel="manifest" href="../site.webmanifest" />
+  <link rel="stylesheet" href="../styles.css" />
+  <link rel="stylesheet" href="admin.css" />
 </head>
 <body class="admin-page">
   <a class="skip-link" href="#main-content">Skip to content</a>
@@ -29,19 +30,19 @@
       </div>
     </div>
     <div class="container nav-shell">
-      <a class="brand" href="index.html" aria-label="LuxeRoutes home"><img src="logo.svg" alt="LuxeRoutes wordmark"  width="620" height="160" loading="eager" decoding="async" /></a>
+      <a class="brand" href="../index.html" aria-label="LuxeRoutes home"><img src="../logo.svg" alt="LuxeRoutes wordmark"  width="620" height="160" loading="eager" decoding="async" /></a>
       <button class="menu-toggle" type="button" aria-label="Open navigation" aria-controls="primary-navigation" aria-expanded="false">
         <span></span><span></span><span></span>
       </button>
       <nav id="primary-navigation" class="primary-nav" aria-label="Primary navigation">
-        <a href="index.html" class="nav-link">Home</a>
-        <a href="offers.html" class="nav-link">Offers</a>
-        <a href="partners.html" class="nav-link">Partners</a>
-        <a href="managers.html" class="nav-link">Managers</a>
-        <a href="admin/index.html" class="nav-link" data-nav-admin hidden>Admin Panel</a>
-        <a href="login.html" class="nav-link" data-nav-login>Login</a>
-        <a href="account.html" class="nav-link" data-nav-account hidden>Account</a>
-        <a class="btn btn-primary nav-cta" href="plan-trip.html">Plan a Trip</a>
+        <a href="../index.html" class="nav-link">Home</a>
+        <a href="../offers.html" class="nav-link">Offers</a>
+        <a href="../partners.html" class="nav-link">Partners</a>
+        <a href="../managers.html" class="nav-link">Managers</a>
+        <a href="index.html" class="nav-link" data-nav-admin hidden>Admin Panel</a>
+        <a href="../login.html" class="nav-link" data-nav-login>Login</a>
+        <a href="../account.html" class="nav-link" data-nav-account hidden>Account</a>
+        <a class="btn btn-primary nav-cta" href="../plan-trip.html">Plan a Trip</a>
       </nav>
     </div>
   </header>
@@ -50,12 +51,12 @@
     <section class="admin-hero">
       <div class="container admin-hero-grid">
         <div>
-          <p class="eyebrow">LuxeRoutes operations</p>
-          <h1>Admin, manager, and owner panel.</h1>
+          <p class="eyebrow">LuxeRoutes internal admin</p>
+          <h1>Offer content and listing workflow.</h1>
           <p class="admin-lead">A first operational dashboard for approving properties, managing owners, assigning regional managers, and tracking inquiries before a full backend is connected.</p>
           <div class="button-row">
             <a class="btn btn-primary" href="#workspace">Open Workspace</a>
-            <a class="btn btn-secondary" href="login.html">Login</a>
+            <a class="btn btn-secondary" href="../login.html">Login</a>
             <a class="btn btn-secondary" href="#owner-submission">Submit Property</a>
           </div>
         </div>
@@ -65,10 +66,10 @@
           <p data-auth-status>Checking whether Cloudflare Access has approved this browser session.</p>
           <div class="admin-auth-meta">
             <span class="status-pill status-pending" data-auth-role>Verifying</span>
-            <span data-auth-email>Email pending</span>
+            <span data-auth-email>Session pending</span>
           </div>
           <p class="admin-helper">Everyone can register through the public Account page. Keep this admin panel protected, then grant owner, manager, customer, or admin roles by verified email.</p>
-          <p class="admin-helper account-switch-link">Need to start from the public flow? <a href="login.html">Open Login</a>, <a href="register.html">Create Account</a>, or continue to <a href="account.html">Account</a>.</p>
+          <p class="admin-helper account-switch-link">Need to start from the public flow? <a href="../login.html">Open Login</a>, <a href="../register.html">Create Account</a>, or continue to <a href="../account.html">Account</a>.</p>
           <label data-role-preview hidden>Local preview role
             <select data-role-select>
               <option value="admin">Admin</option>
@@ -88,6 +89,13 @@
             <h2>Property operations center</h2>
             <p>Review submitted stays, move listings through approval, and keep partner inquiries organized.</p>
           </div>
+          
+          <nav class="admin-route-nav" aria-label="Admin sections">
+            <a href="index.html">Overview</a>
+            <a href="offers.html">Offers</a>
+            <a href="partners.html">Partners</a>
+            <a href="users.html">Users</a>
+          </nav>
           <button class="btn btn-secondary" type="button" data-reset-demo>Reset Demo Data</button>
         </div>
 
@@ -399,14 +407,14 @@
         <h2>Keep every property curated before it goes public.</h2>
         <p>Use this first panel as the operational map for owners, managers, admin approvals, and future backend development.</p>
       </div>
-      <a class="btn btn-primary" href="partners.html">Partner Page</a>
+      <a class="btn btn-primary" href="../partners.html">Partner Page</a>
     </div>
     <div class="container footer-bottom">
       <p>© <span data-current-year>2026</span> LuxeRoutes. All rights reserved.</p>
       <p>Internal operations prototype.</p>
     </div>
   </footer>
-  <script src="script.js"></script>
-  <script src="admin-panel.js"></script>
+  <script src="../script.js"></script>
+  <script src="../admin-panel.js"></script>
 </body>
 </html>

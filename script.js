@@ -4,6 +4,66 @@ document.querySelectorAll('[data-current-year]').forEach((year) => {
   year.textContent = String(new Date().getFullYear());
 });
 
+
+const navAccountSessionKey = 'luxeroutes-account-session-v1';
+
+const readAccountSession = () => {
+  try {
+    const session = JSON.parse(sessionStorage.getItem(navAccountSessionKey) || 'null');
+    if (!session?.expiresAt || Date.now() >= session.expiresAt) return null;
+    return session;
+  } catch (error) {
+    return null;
+  }
+};
+
+const getPathPrefix = () => (window.location.pathname.includes('/admin/') ? '../' : '');
+
+const updateRoleBasedNavigation = () => {
+  const session = readAccountSession();
+  const isLoggedIn = Boolean(session?.identity?.email || session?.profile?.email);
+  const role = session?.role || session?.grant?.role || session?.profile?.defaultRole || '';
+  const isAdmin = role === 'admin';
+  const prefix = getPathPrefix();
+  const visibleLabels = new Set(['Home', 'Offers', 'Partners', 'Managers', isLoggedIn ? 'Account' : 'Login', 'Plan a Trip']);
+  if (isAdmin) visibleLabels.add('Admin Panel');
+
+  document.querySelectorAll('[data-nav-login]').forEach((link) => {
+    link.hidden = isLoggedIn;
+    link.textContent = 'Login';
+    link.href = `${prefix}login.html`;
+    link.setAttribute('aria-label', 'Login to LuxeRoutes');
+  });
+
+  document.querySelectorAll('[data-nav-account]').forEach((link) => {
+    link.hidden = !isLoggedIn;
+    link.textContent = 'Account';
+    link.href = `${prefix}account.html`;
+    link.setAttribute('aria-label', isLoggedIn
+      ? `Open LuxeRoutes account for ${session?.identity?.email || session?.profile?.email || 'signed-in user'}`
+      : 'Open LuxeRoutes account dashboard');
+  });
+
+  const adminNavLinks = new Set([
+    ...document.querySelectorAll('[data-nav-admin]'),
+    ...Array.from(document.querySelectorAll('.primary-nav > a[href]')).filter((link) => link.textContent.trim() === 'Admin Panel'),
+  ]);
+
+  adminNavLinks.forEach((link) => {
+    link.hidden = !isAdmin;
+    link.href = `${prefix}admin/index.html`.replace('../admin/', '');
+    link.setAttribute('aria-label', 'Open LuxeRoutes admin panel');
+  });
+
+  document.querySelectorAll('.primary-nav > .nav-link, .primary-nav > .nav-item, .primary-nav > .nav-cta').forEach((item) => {
+    const label = item.dataset.navLabel || item.textContent.trim().replace(/\s+/g, ' ');
+    if (!label) return;
+    item.hidden = !visibleLabels.has(label);
+  });
+};
+
+updateRoleBasedNavigation();
+
 const updateHeaderState = () => {
   if (!header) return;
   header.classList.toggle('scrolled', window.scrollY > 18);
