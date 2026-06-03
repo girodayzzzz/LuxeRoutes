@@ -4328,3 +4328,18 @@ p { font-size: .98rem; }
   .auth-card { padding: 1rem; }
   .footer-consultation .btn, .nav-cta { width: 100%; }
 }
+
+.account-role-panels {
+  display: grid;
+  gap: 1rem;
+  margin: 0 0 1.25rem;
+}
+
+.account-role-panel[hidden] {
+  display: none !important;
+}
+
+.account-role-panel {
+  border-color: rgba(183, 143, 76, .38);
+  background: linear-gradient(135deg, rgba(255, 255, 255, .96), rgba(246, 239, 228, .82));
+}

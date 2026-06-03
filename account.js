@@ -30,6 +30,7 @@ const accountStorageKey = 'luxeroutes-account-profile-v1';
 const accountSessionKey = 'luxeroutes-account-session-v1';
 const accountSessionTtlMs = 4 * 60 * 60 * 1000;
 const loginPreviewOtp = '246810';
+const accountDashboardRoles = ['customer', 'owner', 'manager', 'admin', 'partner'];
 let accountIdentity = null;
 let accountApiEnabled = false;
 
@@ -43,6 +44,25 @@ const accountEscapeHtml = (value) => String(value || '').replace(/[&<>"]/g, (cha
 const isAccountLocalPreview = () => ['localhost', '127.0.0.1', ''].includes(window.location.hostname);
 
 const isSessionFresh = (session) => Boolean(session?.expiresAt && Date.now() < session.expiresAt);
+
+const normalizeAccountRole = (role) => (accountDashboardRoles.includes(role) ? role : 'customer');
+
+const hasVerifiedAccountSession = (session) => Boolean(isSessionFresh(session) && (session?.identity?.email || session?.profile?.email));
+
+const lockDashboard = () => {
+  if (isDashboardPage()) document.body.dataset.accountLocked = 'true';
+};
+
+const unlockDashboard = () => {
+  if (isDashboardPage()) document.body.dataset.accountLocked = 'false';
+};
+
+const redirectToLogin = () => {
+  if (!isDashboardPage()) return;
+  lockDashboard();
+  const target = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+  window.location.replace(`login.html?redirect=${encodeURIComponent(target)}`);
+};
 
 const loadAccountSession = () => {
   const stored = sessionStorage.getItem(accountSessionKey);
@@ -133,7 +153,7 @@ const saveAccountSession = ({ identity = accountIdentity, profile = null, grant 
     identity,
     profile,
     grant,
-    role: role || grant?.role || profile?.defaultRole || 'customer',
+    role: normalizeAccountRole(role || grant?.role || profile?.defaultRole || profile?.requestedRole),
     savedAt: Date.now(),
     expiresAt: Date.now() + accountSessionTtlMs,
   }));
@@ -231,15 +251,20 @@ const getLoginRedirectTarget = () => {
   }
 };
 
-const getAccountRole = (sessionOrAccount = {}) => sessionOrAccount?.role
+const getAccountRole = (sessionOrAccount = {}) => normalizeAccountRole(sessionOrAccount?.role
   || sessionOrAccount?.grant?.role
   || sessionOrAccount?.profile?.defaultRole
-  || sessionOrAccount?.profile?.requestedRole
-  || 'customer';
+  || sessionOrAccount?.profile?.requestedRole);
 
 const updateAccountAccessCards = (role = 'customer') => {
+  const normalizedRole = normalizeAccountRole(role);
+
   document.querySelectorAll('[data-account-role-link]').forEach((card) => {
-    card.hidden = card.dataset.accountRoleLink !== role;
+    card.hidden = card.dataset.accountRoleLink !== normalizedRole;
+  });
+
+  document.querySelectorAll('[data-account-role-panel]').forEach((panel) => {
+    panel.hidden = panel.dataset.accountRolePanel !== normalizedRole;
   });
 };
 
@@ -328,6 +353,10 @@ const setAccountStatus = ({ heading, status, email, role, approved }) => {
   updateAccountNav({ email, role, active: Boolean(email && approved) });
   updateAccountAccessCards(String(role || '').toLowerCase());
   updateAccountLogout(Boolean(email && approved));
+  if (isDashboardPage()) {
+    if (email && approved) unlockDashboard();
+    else lockDashboard();
+  }
 
   if (accountLoginLink) {
     if (isRegisterPage()) {
@@ -345,9 +374,15 @@ const setAccountStatus = ({ heading, status, email, role, approved }) => {
 
 const initialiseAccount = async () => {
   const cachedSession = loadAccountSession();
+  const hasCachedSession = hasVerifiedAccountSession(cachedSession);
   setLoginAccountState(false);
 
-  if (cachedSession?.profile || cachedSession?.identity) {
+  if (isDashboardPage() && !hasCachedSession && !isAccountLocalPreview()) {
+    redirectToLogin();
+    return;
+  }
+
+  if (hasCachedSession) {
     const cachedEmail = cachedSession.identity?.email || cachedSession.profile?.email;
     accountIdentity = cachedSession.identity || (cachedEmail ? { email: cachedEmail } : null);
     setAccountStatus({
@@ -364,7 +399,7 @@ const initialiseAccount = async () => {
   const identity = await getAccessIdentity();
   accountIdentity = identity;
   const remoteAccount = identity ? await loadRemoteAccountProfile() : null;
-  const profile = remoteAccount?.profile || cachedSession?.profile || loadAccountProfile();
+  const profile = remoteAccount?.profile || (hasCachedSession ? cachedSession?.profile : null) || null;
 
   if (identity) {
     saveAccountSession({ identity, profile, grant: remoteAccount?.grant, role: remoteAccount?.role });
@@ -380,7 +415,7 @@ const initialiseAccount = async () => {
       approved: true,
     });
     setLoginAccountState(true);
-  } else if (cachedSession?.profile || cachedSession?.identity) {
+  } else if (hasCachedSession) {
     setAccountStatus({
       heading: isLoginPage() ? 'Account access' : 'Session still active',
       status: isLoginPage() ? 'Sign in with your email to open your LuxeRoutes account.' : 'Your account session is active in this browser.',
@@ -390,15 +425,25 @@ const initialiseAccount = async () => {
     });
     setLoginAccountState(true);
   } else if (isAccountLocalPreview()) {
+    if (isDashboardPage()) {
+      redirectToLogin();
+      return;
+    }
+
     setAccountStatus({
-      heading: isLoginPage() ? 'Account access' : 'Local preview',
-      status: isLoginPage() ? 'Sign in with your email to open your LuxeRoutes account.' : 'Account preview is active for this browser.',
-      email: profile?.email || 'Email pending',
+      heading: 'Account access',
+      status: 'Sign in with your email to open your LuxeRoutes account.',
+      email: 'Email pending',
       role: 'Account',
       approved: false,
     });
     setLoginAccountState(false);
   } else {
+    if (isDashboardPage()) {
+      redirectToLogin();
+      return;
+    }
+
     setAccountStatus({
       heading: 'Account access',
       status: 'Sign in with your email to open your LuxeRoutes account.',
