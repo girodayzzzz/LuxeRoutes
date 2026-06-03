@@ -27,8 +27,6 @@ const normalizeSessionRole = (role) => (accountRoles.includes(role) ? role : 'cu
 
 const privateAccessRules = {
   'account.html': accountRoles,
-  'partners.html': ['owner', 'partner'],
-  'managers.html': ['manager'],
   'admin-panel.html': ['admin'],
   'index.html': null,
   'offers.html': null,
