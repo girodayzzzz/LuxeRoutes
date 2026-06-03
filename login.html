@@ -50,22 +50,44 @@
       <div class="container auth-shell">
         <div class="auth-copy login-studio-panel">
           <div class="login-brand-mark" aria-hidden="true">LR</div>
-          <p class="eyebrow">Private access</p>
-          <h1>Welcome back.</h1>
-          <p class="admin-lead">A fast passwordless login: enter your email, receive an OTP code, and continue to your LuxeRoutes account.</p>
+          <div class="login-panel-content">
+            <p class="eyebrow">Private access desk</p>
+            <h1>Welcome back to LuxeRoutes.</h1>
+            <p class="admin-lead">Enter with a secure one-time email code and continue to curated offers, partner approvals, and your private account dashboard.</p>
+          </div>
           <div class="login-route-preview" aria-label="Login access highlights">
             <span>Email OTP</span>
             <span>Private offers</span>
             <span>Partner access</span>
           </div>
+          <div class="login-trust-panel" aria-label="Account protection details">
+            <div>
+              <strong>4h</strong>
+              <span>Session window</span>
+            </div>
+            <div>
+              <strong>OTP</strong>
+              <span>No password stored</span>
+            </div>
+          </div>
         </div>
 
         <aside class="auth-card login-box" aria-label="LuxeRoutes OTP login form">
-          <div class="auth-card-head login-box-head">
-            <p class="eyebrow">Secure login</p>
-            <h2>Sign in</h2>
-            <p>A simple email login with no password — just a one-time OTP code sent to your inbox.</p>
+          <div class="login-card-kicker">
+            <span class="login-secure-dot" aria-hidden="true"></span>
+            Secure client portal
           </div>
+          <div class="auth-card-head login-box-head">
+            <p class="eyebrow">Sign in</p>
+            <h2>Access your account</h2>
+            <p>Use the email connected to your LuxeRoutes profile. We will send a one-time verification code to confirm it is you.</p>
+          </div>
+
+          <ol class="login-progress" aria-label="Login steps">
+            <li><span>1</span> Email</li>
+            <li><span>2</span> Verify code</li>
+            <li><span>3</span> Account</li>
+          </ol>
 
           <form class="auth-form login-otp-form" action="account.html" method="get" data-login-form>
             <div class="login-step is-active" data-login-step="email">
@@ -91,11 +113,16 @@
             <p class="otp-helper" data-login-helper>In production, the email API sends the OTP; local preview shows a test code.</p>
           </form>
 
-          <div class="auth-divider"><span>or</span></div>
+          <div class="auth-divider"><span>Need another option?</span></div>
           <div class="auth-actions">
             <a class="btn btn-secondary" href="register.html">Create Account</a>
             <a class="btn btn-secondary" href="account.html">Open Account</a>
           </div>
+
+          <ul class="login-security-list" aria-label="Security notes">
+            <li>One-time codes expire after use.</li>
+            <li>Owner and manager access stays approval-based.</li>
+          </ul>
 
           <div class="auth-status-card" aria-label="Login status">
             <div class="card-head compact-head">
