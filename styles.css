@@ -4107,3 +4107,224 @@ body {
     font-size: .7rem;
   }
 }
+
+/* Subtle premium polish: tighter rhythm, cleaner cards, and lighter mobile density. */
+:root {
+  --radius: 24px;
+  --shadow: 0 24px 70px rgba(0, 0, 0, .38);
+  --shadow-soft: 0 14px 36px rgba(0, 0, 0, .22);
+}
+
+body { line-height: 1.6; }
+
+h1, h2, h3 { letter-spacing: -0.032em; }
+
+h1 { font-size: clamp(3rem, 7vw, 6.85rem); }
+h2 { font-size: clamp(2rem, 4.6vw, 4.05rem); }
+h3 { font-size: clamp(1.28rem, 2.1vw, 1.82rem); }
+
+p { font-size: .98rem; }
+
+.eyebrow {
+  margin-bottom: .75rem;
+  font-size: .68rem;
+  letter-spacing: .18em;
+}
+
+.nav-shell { min-height: 76px; gap: 1.1rem; }
+.brand img, .footer-brand img { width: 170px; }
+.primary-nav { gap: .08rem; }
+.nav-link {
+  padding: .64rem .74rem;
+  font-size: .86rem;
+  font-weight: 780;
+}
+.nav-cta { margin-left: .35rem; }
+
+.btn {
+  min-height: 46px;
+  padding: .78rem 1.22rem;
+  font-size: .93rem;
+  font-weight: 850;
+}
+.btn:hover { transform: translateY(-1px); }
+.btn-primary { box-shadow: 0 14px 34px rgba(198, 161, 91, .22); }
+.btn-primary:hover { box-shadow: 0 18px 44px rgba(198, 161, 91, .3); }
+.button-row { gap: .75rem; margin-top: 1.6rem; }
+.text-link { margin-top: .9rem; font-size: .93rem; }
+
+.hero-home { min-height: 760px; padding: 7rem 0 5rem; }
+.hero-content { padding-top: 3.2rem; }
+.hero-lead {
+  max-width: 680px;
+  margin-top: 1rem;
+  font-size: clamp(1.02rem, 1.75vw, 1.24rem);
+  line-height: 1.58;
+}
+.hero-proof { gap: .7rem; margin-top: 1.75rem; }
+.hero-proof div { padding: .9rem; border-radius: 18px; }
+.hero-proof strong { font-size: 1.55rem; }
+.hero-proof span { font-size: .7rem; letter-spacing: .1em; }
+
+.page-hero { padding: clamp(5.4rem, 10vw, 8.8rem) 0 clamp(2.9rem, 6vw, 5.2rem); }
+.page-hero-image { min-height: 560px; }
+.page-hero p:not(.eyebrow) {
+  max-width: 700px;
+  margin-top: .85rem;
+  font-size: clamp(.98rem, 1.5vw, 1.06rem);
+  line-height: 1.62;
+}
+
+.section { padding: clamp(3.8rem, 7vw, 6.6rem) 0; }
+.section-heading { max-width: 800px; margin-bottom: 2.05rem; }
+.section-heading p:not(.eyebrow),
+.narrow p:not(.eyebrow),
+.feature-panel p:not(.eyebrow),
+.partner-cta-inner p:not(.eyebrow) {
+  margin-top: .85rem;
+  font-size: clamp(.96rem, 1.4vw, 1.03rem);
+  line-height: 1.62;
+}
+.split-heading { gap: clamp(1rem, 3vw, 2rem); }
+
+.card-grid,
+.journal-grid,
+.process-grid,
+.info-columns,
+.split,
+.feature-panel,
+.mini-grid { gap: 1.05rem; }
+
+.image-card,
+.plain-card,
+.process-grid article,
+.info-columns > div,
+.concierge-card,
+.admin-card,
+.auth-card,
+.stay-offer-card,
+.route-card,
+.marketplace-note,
+.footer-consultation {
+  border-color: rgba(241, 215, 150, .14);
+  box-shadow: var(--shadow-soft);
+}
+
+.image-card:hover,
+.stay-offer-card:hover,
+.route-card:hover { transform: translateY(-3px); }
+.image-card img { height: 230px; }
+.image-card div,
+.plain-card,
+.process-grid article,
+.info-columns > div { padding: clamp(1.15rem, 2vw, 1.55rem); }
+.process-grid article { min-height: 210px; }
+.process-grid article h3 { margin-top: .65rem; }
+.process-grid article::before { width: 44px; height: 44px; }
+.feature-panel { padding: clamp(1.1rem, 2.5vw, 1.75rem); }
+.feature-panel img { height: 410px; }
+.mini-grid div { padding: 1rem; border-radius: 18px; }
+
+.route-card-grid { gap: 1.05rem; }
+.route-card { min-height: 300px; padding: clamp(1.2rem, 2.6vw, 1.8rem); }
+.route-card.featured-route { min-height: 380px; }
+.route-card p { line-height: 1.58; }
+
+.destination-grid { gap: .9rem; }
+.destination-card { min-height: 300px; }
+.destination-card h3 { font-size: clamp(1.65rem, 2.6vw, 2.75rem); }
+.destination-card span { font-size: .72rem; letter-spacing: .13em; }
+.stay-feature { min-height: 430px; }
+.stay-feature.compact { min-height: 390px; }
+.stay-copy { padding: clamp(1.2rem, 3vw, 2rem); }
+.stay-copy h3 { font-size: clamp(1.75rem, 3.5vw, 3.35rem); }
+.stay-copy p { margin-top: .8rem; line-height: 1.6; }
+
+.offers-hero-grid { gap: clamp(1.2rem, 4vw, 3rem); }
+.marketplace-note { padding: 1.15rem; border-radius: 22px; }
+.marketplace-stats { gap: .8rem; }
+.marketplace-stats article { padding: 1rem; }
+.stay-offer-grid { gap: 1rem; }
+.stay-offer-body { padding: 1.15rem; }
+.stay-offer-body p { line-height: 1.55; }
+.offer-image-wrap img { height: 220px; }
+.offer-meta, .offer-footer { gap: .45rem; }
+
+.luxury-form { gap: .85rem; }
+.luxury-form input,
+.luxury-form textarea,
+.luxury-form select,
+.auth-form input,
+.auth-form textarea,
+.auth-form select,
+.admin-form input,
+.admin-form textarea,
+.admin-form select {
+  min-height: 48px;
+  border-radius: 16px;
+}
+.luxury-form textarea,
+.auth-form textarea,
+.admin-form textarea { line-height: 1.55; }
+
+.auth-shell { gap: 1.15rem; }
+.auth-card, .login-box { border-radius: 30px; }
+.auth-benefits article, .auth-status-card { padding: 1rem; }
+.login-studio-panel { min-height: 620px; padding: clamp(1.35rem, 3vw, 2.3rem); }
+.login-studio-panel h1 { font-size: clamp(2.7rem, 5.4vw, 5rem); }
+.login-box .auth-form input, .login-box .auth-form .btn { min-height: 52px; }
+.login-progress li { min-height: 38px; }
+.login-trust-panel div { padding: .85rem; }
+.login-security-list { font-size: .86rem; }
+
+.footer-consultation {
+  padding: clamp(1.35rem, 3vw, 2.25rem);
+  gap: 1rem;
+}
+.footer-consultation h2 { font-size: clamp(1.75rem, 3.5vw, 3.1rem); }
+.footer-consultation p:not(.eyebrow) { margin-top: .75rem; font-size: .98rem; }
+.footer-grid { gap: clamp(1.2rem, 3vw, 2rem); }
+.footer-grid ul { gap: .48rem; }
+.footer-grid a { font-size: .94rem; }
+.footer-bottom { margin-top: 2rem; padding-top: 1.2rem; }
+
+@media (max-width: 1180px) {
+  .primary-nav { gap: 0; }
+  .nav-link { padding-inline: .6rem; }
+  .brand img { width: 158px; }
+}
+
+@media (max-width: 780px) {
+  .container { width: min(100% - 24px, var(--max)); }
+  h1 { font-size: clamp(2.5rem, 13vw, 4.2rem); }
+  h2 { font-size: clamp(1.85rem, 9vw, 3rem); }
+  .hero-home { min-height: 680px; padding: 5.4rem 0 3.8rem; }
+  .hero-content { padding-top: 2rem; }
+  .hero-proof { grid-template-columns: 1fr; max-width: 320px; }
+  .page-hero-image { min-height: 500px; }
+  .section { padding: clamp(3rem, 11vw, 4.7rem) 0; }
+  .section-heading { margin-bottom: 1.55rem; }
+  .image-card img, .offer-image-wrap img { height: 205px; }
+  .process-grid article { min-height: 0; }
+  .route-card, .route-card.featured-route { min-height: 0; }
+  .destination-card, .stay-feature, .stay-feature.compact { min-height: 340px; }
+  .login-studio-panel { min-height: 360px; }
+  .footer-grid { gap: 1.4rem; }
+}
+
+@media (max-width: 520px) {
+  .btn { width: 100%; min-height: 44px; padding: .72rem 1rem; }
+  .button-row { gap: .6rem; margin-top: 1.25rem; }
+  .page-hero { padding-top: 4.8rem; }
+  .page-hero p:not(.eyebrow),
+  .section-heading p:not(.eyebrow),
+  .narrow p:not(.eyebrow) { font-size: .94rem; }
+  .image-card div,
+  .plain-card,
+  .process-grid article,
+  .info-columns > div,
+  .stay-offer-body,
+  .admin-card,
+  .auth-card { padding: 1rem; }
+  .footer-consultation .btn, .nav-cta { width: 100%; }
+}

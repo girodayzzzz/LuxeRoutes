@@ -4,10 +4,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Login | LuxeRoutes</title>
-  <meta name="description" content="Log in to LuxeRoutes with a one-time email OTP before opening your private account dashboard." />
+  <meta name="description" content="Log in to LuxeRoutes with secure email verification before opening your private account dashboard." />
   <meta name="robots" content="noindex, nofollow" />
   <meta property="og:title" content="Login | LuxeRoutes" />
-  <meta property="og:description" content="Log in to LuxeRoutes with email OTP verification." />
+  <meta property="og:description" content="Log in to LuxeRoutes with secure email verification." />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://luxeroutes.eu/login.html" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -39,7 +39,6 @@
         <a href="managers.html" class="nav-link">Managers</a>
         <a href="login.html" class="nav-link" data-nav-login>Login</a>
         <a href="account.html" class="nav-link" data-nav-account hidden>Account</a>
-        <a href="admin-panel.html" class="nav-link">Admin Panel</a>
         <a class="btn btn-primary nav-cta" href="plan-trip.html">Plan a Trip</a>
       </nav>
     </div>
@@ -53,22 +52,22 @@
           <div class="login-panel-content">
             <p class="eyebrow">Private access desk</p>
             <h1>Welcome back to LuxeRoutes.</h1>
-            <p class="admin-lead">Enter with a secure one-time email code and continue to curated offers, partner approvals, and your private account dashboard.</p>
+            <p class="admin-lead">Enter with a secure one-time email code and continue to curated offers, partner details, and your private account dashboard.</p>
           </div>
           <div class="login-route-preview" aria-label="Login access highlights">
-            <span>Email OTP</span>
+            <span>Email verification</span>
             <span>Private offers</span>
             <span>Partner access</span>
           </div>
           <div class="login-trust-panel" aria-label="Account protection details">
             <div>
-              <strong>OTP</strong>
+              <strong>Code</strong>
               <span>No password stored</span>
             </div>
           </div>
         </div>
 
-        <aside class="auth-card login-box" aria-label="LuxeRoutes OTP login form">
+        <aside class="auth-card login-box" aria-label="LuxeRoutes login form">
           <div class="login-card-kicker">
             <span class="login-secure-dot" aria-hidden="true"></span>
             Secure client portal
@@ -102,19 +101,19 @@
                 <span>Code sent to</span>
                 <strong data-login-otp-email>your email</strong>
               </div>
-              <label>OTP code
+              <label>Verification code
                 <input name="otp" type="text" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" placeholder="000000" autocomplete="one-time-code" data-login-otp-input>
               </label>
               <button class="btn btn-primary" type="submit" data-login-otp-submit>Verify and continue</button>
               <button class="mini-action login-back-button" type="button" data-login-back>Change email</button>
             </div>
 
-            <label class="auth-checkbox"><input name="remember" type="checkbox" checked> Remember this login for this browser session</label>
+            <label class="auth-checkbox"><input name="remember" type="checkbox" checked> Keep me signed in on this browser</label>
           </form>
 
           <ul class="login-security-list" aria-label="Security notes">
             <li>One-time codes expire after use.</li>
-            <li>Owner and manager access stays approval-based.</li>
+            <li>Partner access is reviewed by the LuxeRoutes team.</li>
           </ul>
 
           <div class="auth-status-card" aria-label="Account access" data-login-session-status>
@@ -133,7 +132,7 @@
     <div class="container footer-grid">
       <div>
         <a class="footer-logo" href="index.html"><img src="logo.svg" alt="LuxeRoutes" width="620" height="160" loading="lazy" decoding="async" /></a>
-        <p>Private European travel accounts for guests, owners, managers, and admins.</p>
+        <p>Private European travel accounts for guests, owners, and regional partners.</p>
       </div>
       <div>
         <h3>Account</h3>
@@ -146,7 +145,7 @@
     </div>
     <div class="container footer-bottom">
       <p>© <span data-current-year>2026</span> LuxeRoutes. All rights reserved.</p>
-      <p>Email OTP account access.</p>
+      <p>Secure account access.</p>
     </div>
   </footer>
   <script src="script.js"></script>
