@@ -17,7 +17,7 @@ Cloudflare Pages will publish the static files from the repository root. The `_h
 
 ## Account and admin access
 
-The site is prepared for **Cloudflare email login for everyone** plus **admin-approved role grants by email**. It now includes Cloudflare Pages Functions and a D1 migration for account profiles and access grants.
+The site is prepared for **Cloudflare email login for everyone** plus **admin-approved role grants by email**. It now includes Cloudflare Pages Functions and D1 migrations for account profiles, access grants, and one-time login codes. Verified custom OTP logins set a secure account session cookie for `/api/account`; configure `AUTH_SESSION_SECRET` as a long random secret (or the API will fall back to `RESEND_API_KEY` for signing).
 
 Start with two Cloudflare Access applications:
 

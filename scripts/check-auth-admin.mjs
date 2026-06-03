@@ -50,6 +50,7 @@ writeFileSync(join(tempRoot, 'package.json'), '{"type":"module"}\n');
 
 const accountModule = await import(pathToFileURL(join(tempRoot, 'functions/api/account.js')));
 const grantsModule = await import(pathToFileURL(join(tempRoot, 'functions/api/admin/grants.js')));
+const utilsModule = await import(pathToFileURL(join(tempRoot, 'functions/api/_utils.js')));
 
 class FakeStatement {
   constructor(db, sql) {
@@ -236,6 +237,22 @@ assert.equal(registrationResponse.status, 201, 'Owner registration should save s
 const registrationPayload = await registrationResponse.json();
 assert.equal(registrationPayload.profile.status, 'pending_admin_grant', 'Owner registration should wait for admin approval.');
 assert.equal(registrationPayload.role, 'customer', 'Owner registration should keep customer access until approval.');
+
+const sessionCookie = await utilsModule.createAccountSessionCookie({ AUTH_SESSION_SECRET: 'test-secret' }, 'OWNER@example.com');
+assert.match(sessionCookie, /luxeroutes_account_session=.*HttpOnly; Secure; SameSite=Lax/, 'OTP login should create a secure account session cookie.');
+const sessionCookieHeader = sessionCookie.split(';')[0];
+const cookieEmail = await utilsModule.getAccountSessionEmail(new Request('https://luxeroutes.test/api/account', {
+  headers: { Cookie: sessionCookieHeader },
+}), { AUTH_SESSION_SECRET: 'test-secret' });
+assert.equal(cookieEmail, 'owner@example.com', 'Account session cookie should restore the verified email.');
+
+const cookieAccountResponse = await accountModule.onRequestGet({
+  request: new Request('https://luxeroutes.test/api/account', { headers: { Cookie: sessionCookieHeader } }),
+  env: { DB: db, AUTH_SESSION_SECRET: 'test-secret' },
+});
+assert.equal(cookieAccountResponse.status, 200, 'Account API should accept a verified OTP session cookie.');
+const cookieAccountPayload = await cookieAccountResponse.json();
+assert.equal(cookieAccountPayload.identityEmail, 'owner@example.com', 'Account API should use the email from the verified session cookie.');
 
 const forbiddenGrantResponse = await grantsModule.onRequestGet({ request: makeRequest('owner@example.com'), env });
 assert.equal(forbiddenGrantResponse.status, 403, 'Non-admin users should not read admin grant data.');

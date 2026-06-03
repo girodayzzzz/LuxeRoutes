@@ -1,4 +1,4 @@
-import { errorJson, getActiveGrant, json, makeId, normalizeEmail, nowIso, requireDb } from '../_utils.js';
+import { createAccountSessionCookie, errorJson, getActiveGrant, json, makeId, normalizeEmail, nowIso, requireDb } from '../_utils.js';
 
 const OTP_TTL_MINUTES = 10;
 const OTP_LENGTH = 6;
@@ -110,13 +110,15 @@ const verifyOtp = async ({ request, env }) => {
     getActiveGrant(db, email),
   ]);
 
+  const sessionCookie = await createAccountSessionCookie(env, email);
+
   return json({
     ok: true,
     identity: { email },
     profile,
     grant,
     role: grant?.role || profile?.defaultRole || 'customer',
-  });
+  }, sessionCookie ? { headers: { 'Set-Cookie': sessionCookie } } : {});
 };
 
 export const onRequestPost = async (context) => {
