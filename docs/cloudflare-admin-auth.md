@@ -149,7 +149,7 @@ You still need to complete these steps outside the repository in Cloudflare:
 1. Create the D1 database named `luxeroutes-db` if it does not already exist.
 2. Apply `migrations/0001_auth.sql` remotely with Wrangler.
 3. Bind that D1 database to the Pages project with binding name `DB`.
-4. Add `RESEND_API_KEY` and `OTP_EMAIL_FROM` secrets if the site should send OTP codes from the custom login form.
+4. Add `RESEND_API_KEY` and `OTP_EMAIL_FROM` secrets if the site should send OTP codes from the custom login form. Add `AUTH_SESSION_SECRET` as a long random string so verified OTP logins can set the secure account session cookie used by `/api/account`; if it is omitted, the API falls back to `RESEND_API_KEY` for signing.
 5. Create a public Cloudflare Access application for `/login.html`, `/login`, `/register*`, `/account.html`, `/account`, and `/api/account` with an **Everyone** allow policy. Keep `/api/auth/otp` reachable so the custom form can request the first email code before an Access identity exists.
 6. Create a separate Cloudflare Access application for `/admin/index.html`, `/admin/*`, and `/api/admin/*` that only allows your trusted admin email addresses.
 7. Seed your first admin email into `access_grants` with the command in Phase 4.
