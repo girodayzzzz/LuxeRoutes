@@ -73,6 +73,7 @@ p { color: var(--color-muted); }
 .primary-nav { display: flex; align-items: center; gap: .25rem; }
 .nav-link { color: rgba(248, 243, 233, .78); font-size: .9rem; font-weight: 800; padding: .72rem .88rem; border-radius: 999px; transition: color .2s ease, background .2s ease, box-shadow .2s ease; }
 .nav-link:hover, .nav-link.active { color: var(--color-text); background: rgba(255, 255, 255, .075); box-shadow: inset 0 0 0 1px rgba(255,255,255,.06); }
+.nav-logout-button { appearance: none; border: 0; background: transparent; }
 .nav-cta { margin-left: .5rem; }
 .menu-toggle { display: none; width: 46px; height: 46px; border: 1px solid var(--color-border); border-radius: 999px; background: rgba(255,255,255,.04); color: var(--color-text); }
 .menu-toggle span { display: block; width: 18px; height: 2px; margin: 4px auto; border-radius: 99px; background: currentColor; transition: transform .2s ease, opacity .2s ease; }

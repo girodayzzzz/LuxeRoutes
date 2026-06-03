@@ -261,6 +261,14 @@ const getLocalAccountProfile = () => {
 
 const normalizeProfileRole = (role) => (['customer', 'owner', 'manager'].includes(role) ? role : 'customer');
 
+const normalizeProfileStatus = (profile) => profile.status || (normalizeProfileRole(profile.requestedRole) === 'customer' ? 'active' : 'pending_admin_grant');
+
+const registrationStatusGroups = [
+  { key: 'pending', label: 'Pending', statuses: ['pending_admin_grant'] },
+  { key: 'accepted', label: 'Accepted', statuses: ['active'] },
+  { key: 'rejected', label: 'Rejected', statuses: ['rejected'] },
+];
+
 const profileCompanySummary = (profile) => [
   profile.companyName ? `Company: ${escapeHtml(profile.companyName)}` : '',
   profile.businessContext ? `Context: ${escapeHtml(profile.businessContext)}` : '',
@@ -275,7 +283,8 @@ const getProfileActiveRole = (profile) => {
 const renderRegistrationCard = (profile) => {
   const requestedRole = normalizeProfileRole(profile.requestedRole);
   const currentRole = getProfileActiveRole(profile);
-  const canReviewProfile = ['owner', 'manager'].includes(requestedRole) && profile.status === 'pending_admin_grant' && !profile.localOnly;
+  const profileStatus = normalizeProfileStatus(profile);
+  const canReviewProfile = ['owner', 'manager'].includes(requestedRole) && profileStatus === 'pending_admin_grant';
   const companySummary = profileCompanySummary(profile);
 
   return `
@@ -284,7 +293,7 @@ const renderRegistrationCard = (profile) => {
         <strong>${escapeHtml(profile.name || profile.email || 'Unnamed account')}</strong>
         <span>${escapeHtml(profile.email)}</span>
         <span>Requested: ${escapeHtml(formatRole(requestedRole))} · Current: ${escapeHtml(formatRole(currentRole))}</span>
-        <span>Status: <span class="status-pill ${profileStatusClass(profile.status)}">${escapeHtml(profileStatusLabel(profile.status))}</span></span>
+        <span>Status: <span class="status-pill ${profileStatusClass(profileStatus)}">${escapeHtml(profileStatusLabel(profileStatus))}</span></span>
         ${companySummary ? `<span>${companySummary}</span>` : '<span>Company context: not provided</span>'}
         ${profile.notes ? `<span>Notes: ${escapeHtml(profile.notes)}</span>` : ''}
         ${profile.localOnly ? '<span>Local preview request — save it through production D1 before final approval.</span>' : ''}
@@ -560,15 +569,19 @@ const renderPeople = () => {
       status: accountProfile.status || (accountProfile.requestedRole === 'customer' ? 'active' : 'pending_admin_grant'),
       localOnly: true,
     }] : [];
-    const profiles = isLocalPreview() ? [...localProfiles, ...remoteProfiles] : remoteProfiles;
-    const roles = ['customer', 'owner', 'manager'];
+    const profileMap = new Map();
+    [...(isLocalPreview() ? localProfiles : []), ...remoteProfiles].forEach((profile) => {
+      if (!profile?.email) return;
+      profileMap.set(profile.email.toLowerCase(), profile);
+    });
+    const profiles = Array.from(profileMap.values());
 
-    registrationList.innerHTML = roles.map((role) => {
-      const roleProfiles = profiles.filter((profile) => normalizeProfileRole(profile.requestedRole) === role);
+    registrationList.innerHTML = registrationStatusGroups.map((group) => {
+      const groupProfiles = profiles.filter((profile) => group.statuses.includes(normalizeProfileStatus(profile)));
       return `
-        <section class="registration-column" aria-label="${escapeHtml(formatRole(role))} registrations">
-          <div class="card-head"><p class="eyebrow">${escapeHtml(formatRole(role))}</p><span class="status-pill">${roleProfiles.length}</span></div>
-          ${roleProfiles.map(renderRegistrationCard).join('') || '<p class="empty-state">No registrations in this role.</p>'}
+        <section class="registration-column" aria-label="${escapeHtml(group.label)} registrations">
+          <div class="card-head"><p class="eyebrow">${escapeHtml(group.label)}</p><span class="status-pill">${groupProfiles.length}</span></div>
+          ${groupProfiles.map(renderRegistrationCard).join('') || `<p class="empty-state">No ${escapeHtml(group.label.toLowerCase())} registrations.</p>`}
         </section>
       `;
     }).join('');
@@ -744,11 +757,6 @@ const initialiseAdminAccess = async () => {
     return false;
   }
 
-  if (isLocalPreview()) {
-    unlockWorkspace({ role: roleSelect?.value || 'admin', localPreview: true });
-    return true;
-  }
-
   lockWorkspace();
   redirectNonAdmin(session);
   return false;
@@ -866,26 +874,21 @@ const initialiseAdminPanel = async () => {
     try {
       const remoteResult = await saveRemoteAccessGrant({ email, role, note, action });
       const remoteGrant = remoteResult?.grant;
-      const remoteProfile = remoteResult?.profile;
+      const status = action === 'approve' ? 'active' : 'rejected';
+      const fallbackRole = action === 'approve' ? role : 'customer';
+      const localProfile = updateLocalAccountProfileStatus({ email, role, status, note });
+      const remoteProfile = remoteResult?.profile || localProfile || { email, requestedRole: role, defaultRole: fallbackRole, status, notes: note };
       const existingGrant = state.accessGrants.find((grant) => grant.email.toLowerCase() === email);
 
-      if (action === 'approve') {
-        if (existingGrant) {
-          existingGrant.role = remoteGrant?.role || role;
-          existingGrant.note = remoteGrant?.note || note;
-          existingGrant.status = remoteGrant?.status || 'Active';
-        } else {
-          state.accessGrants.unshift(remoteGrant || { email, role, note, status: 'Active' });
-        }
-      } else if (existingGrant) {
-        existingGrant.role = remoteGrant?.role || 'customer';
+      if (existingGrant) {
+        existingGrant.role = remoteGrant?.role || fallbackRole;
         existingGrant.note = remoteGrant?.note || note;
         existingGrant.status = remoteGrant?.status || 'Active';
+      } else {
+        state.accessGrants.unshift(remoteGrant || { email, role: fallbackRole, note, status: 'Active' });
       }
 
-      remoteProfiles = remoteProfiles.map((profile) => (profile.email === email
-        ? { ...profile, ...(remoteProfile || {}), status: action === 'approve' ? 'active' : 'rejected' }
-        : profile));
+      upsertRemoteProfile({ ...remoteProfile, status, requestedRole: remoteProfile.requestedRole || role });
       saveState();
       render();
     } catch (error) {

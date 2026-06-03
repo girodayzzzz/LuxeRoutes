@@ -34,12 +34,13 @@
       </button>
       <nav id="primary-navigation" class="primary-nav" aria-label="Primary navigation">
         <a href="index.html" class="nav-link">Home</a>
-        <a href="offers.html" class="nav-link">Offers</a>
-        <a href="partners.html" class="nav-link">Partners</a>
-        <a href="managers.html" class="nav-link">Managers</a>
+        <a href="destinations.html" class="nav-link">Destinations</a>
+        <a href="stays.html" class="nav-link">Stays</a>
+        <a href="experiences.html" class="nav-link">Experiences</a>
+        <a href="journal.html" class="nav-link">Journal</a>
+        <a class="btn btn-primary nav-cta" href="plan-trip.html">Plan a Trip</a>
         <a href="login.html" class="nav-link" data-nav-login>Login</a>
         <a href="account.html" class="nav-link" data-nav-account>Account</a>
-        <a class="btn btn-primary nav-cta" href="plan-trip.html">Plan a Trip</a>
       </nav>
     </div>
   </header>
@@ -55,6 +56,7 @@
             <a class="btn btn-primary" href="#accepted-offers">View Accepted Offers</a>
             <a class="btn btn-secondary" href="#account-settings">Account Settings</a>
             <a class="btn btn-secondary" href="login.html" data-account-login-link>Login with Email</a>
+            <button class="btn btn-secondary" type="button" data-account-logout hidden>Logout</button>
           </div>
         </div>
         <aside class="admin-login-card" aria-label="Account status">
@@ -75,13 +77,65 @@
         <div class="admin-toolbar">
           <div>
             <p class="eyebrow">Dashboard</p>
-            <h2>Accepted offers, settings, and rewards</h2>
-            <p>Your signed-in dashboard keeps accepted offers, saved preferences, and account details easy to review.</p>
+            <h2>Profile, saved inquiries, and private access</h2>
+            <p>Your signed-in dashboard keeps profile details, saved offers, trip planning, and approved business tools easy to review.</p>
           </div>
-          <a class="btn btn-secondary" href="login.html">Login / refresh session</a>
+          <div class="button-row">
+            <a class="btn btn-secondary" href="login.html">Login / refresh session</a>
+            <button class="btn btn-secondary" type="button" data-account-logout hidden>Logout</button>
+          </div>
         </div>
 
         <div class="admin-grid two">
+          <article class="admin-card">
+            <div class="card-head"><p class="eyebrow">My profile</p><span class="status-pill">Account</span></div>
+            <h3>Profile and preferences</h3>
+            <p class="admin-helper">Review your verified profile details and request updates to your travel preferences.</p>
+            <a class="btn btn-secondary" href="#account-settings">Open Profile</a>
+          </article>
+
+          <article class="admin-card">
+            <div class="card-head"><p class="eyebrow">Saved offers / inquiries</p><span class="status-pill status-approved">Traveler</span></div>
+            <h3>Saved offers and inquiries</h3>
+            <p class="admin-helper">Accepted offers, saved inquiries, and proposal notes for your verified email appear here.</p>
+            <a class="btn btn-secondary" href="#accepted-offers">Review Saved Items</a>
+          </article>
+
+          <article class="admin-card">
+            <div class="card-head"><p class="eyebrow">Plan a Trip</p><span class="status-pill">Concierge</span></div>
+            <h3>Start or continue a trip plan</h3>
+            <p class="admin-helper">Open the guest trip brief to share dates, route ideas, and preferred stays with LuxeRoutes.</p>
+            <a class="btn btn-primary" href="plan-trip.html">Plan a Trip</a>
+          </article>
+
+          <article class="admin-card" data-account-role-link="owner" hidden>
+            <div class="card-head"><p class="eyebrow">Owner area</p><span class="status-pill status-approved">Owner</span></div>
+            <h3>Owner access</h3>
+            <p class="admin-helper">Open owner tools and property access after LuxeRoutes approves your owner role.</p>
+            <a class="btn btn-secondary" href="partners.html">Owner Access</a>
+          </article>
+
+          <article class="admin-card" data-account-role-link="manager" hidden>
+            <div class="card-head"><p class="eyebrow">Manager area</p><span class="status-pill status-approved">Manager</span></div>
+            <h3>Manager access</h3>
+            <p class="admin-helper">Open manager tools after LuxeRoutes approves your manager role.</p>
+            <a class="btn btn-secondary" href="managers.html">Manager Access</a>
+          </article>
+
+          <article class="admin-card" data-account-role-link="partner" hidden>
+            <div class="card-head"><p class="eyebrow">Partner area</p><span class="status-pill status-approved">Partner</span></div>
+            <h3>Partner access</h3>
+            <p class="admin-helper">Open partner tools and collaboration details for approved partner accounts.</p>
+            <a class="btn btn-secondary" href="partners.html">Partner Access</a>
+          </article>
+
+          <article class="admin-card" data-account-role-link="admin" hidden>
+            <div class="card-head"><p class="eyebrow">Admin Panel</p><span class="status-pill status-warning">Admin</span></div>
+            <h3>Admin Panel</h3>
+            <p class="admin-helper">Manage offers, users, and access grants from the private admin area.</p>
+            <a class="btn btn-secondary" href="admin/index.html">Open Admin Panel</a>
+          </article>
+
           <article class="admin-card" id="accepted-offers">
             <div class="card-head"><p class="eyebrow">Accepted offers</p><span class="status-pill status-approved">Account</span></div>
             <h3>Your accepted offers</h3>
