@@ -4,10 +4,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Login | LuxeRoutes</title>
-  <meta name="description" content="Login to LuxeRoutes with verified email access before opening your private account dashboard." />
+  <meta name="description" content="Log in to LuxeRoutes with a one-time email OTP before opening your private account dashboard." />
   <meta name="robots" content="noindex, nofollow" />
   <meta property="og:title" content="Login | LuxeRoutes" />
-  <meta property="og:description" content="Login to LuxeRoutes using Cloudflare-protected email access." />
+  <meta property="og:description" content="Log in to LuxeRoutes with email OTP verification." />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://luxeroutes.eu/login.html" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -22,9 +22,9 @@
   <header class="site-header" data-header>
     <div class="header-top" aria-label="LuxeRoutes login highlights">
       <div class="container header-top-inner">
-        <span>Private LuxeRoutes Login</span>
+        <span>Private LuxeRoutes login</span>
         <a href="mailto:info@luxeroutes.eu">info@luxeroutes.eu</a>
-        <span>Customer · Owner · Manager</span>
+        <span>Guest · Owner · Manager</span>
       </div>
     </div>
     <div class="container nav-shell">
@@ -50,29 +50,45 @@
       <div class="container auth-shell">
         <div class="auth-copy login-studio-panel">
           <div class="login-brand-mark" aria-hidden="true">LR</div>
-          <p class="eyebrow">Private client access</p>
+          <p class="eyebrow">Private access</p>
           <h1>Welcome back.</h1>
-          <p class="admin-lead">A compact, email-secured entry for your LuxeRoutes account, offers, and partner workspace.</p>
+          <p class="admin-lead">A fast passwordless login: enter your email, receive an OTP code, and continue to your LuxeRoutes account.</p>
           <div class="login-route-preview" aria-label="Login access highlights">
-            <span>Verified email</span>
+            <span>Email OTP</span>
             <span>Private offers</span>
-            <span>Partner roles</span>
+            <span>Partner access</span>
           </div>
         </div>
 
-        <aside class="auth-card login-box" aria-label="LuxeRoutes login form">
+        <aside class="auth-card login-box" aria-label="LuxeRoutes OTP login form">
           <div class="auth-card-head login-box-head">
             <p class="eyebrow">Secure login</p>
             <h2>Sign in</h2>
-            <p>Use your approved email to enter the private LuxeRoutes dashboard.</p>
+            <p>A simple email login with no password — just a one-time OTP code sent to your inbox.</p>
           </div>
 
-          <form class="auth-form" action="account.html" method="get" data-login-form>
-            <label>Email address
-              <input name="email" type="email" placeholder="you@example.com" autocomplete="email" required data-login-email data-account-email-input>
-            </label>
-            <label class="auth-checkbox"><input name="remember" type="checkbox" checked> Keep this browser remembered for this session</label>
-            <button class="btn btn-primary" type="submit">Continue Securely</button>
+          <form class="auth-form login-otp-form" action="account.html" method="get" data-login-form>
+            <div class="login-step is-active" data-login-step="email">
+              <label>Email address
+                <input name="email" type="email" placeholder="name@example.com" autocomplete="email" required data-login-email data-account-email-input>
+              </label>
+              <button class="btn btn-primary" type="submit" data-login-email-submit>Send OTP code</button>
+            </div>
+
+            <div class="login-step" data-login-step="otp" hidden>
+              <div class="otp-summary">
+                <span>Code sent to</span>
+                <strong data-login-otp-email>your email</strong>
+              </div>
+              <label>OTP code
+                <input name="otp" type="text" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" placeholder="000000" autocomplete="one-time-code" data-login-otp-input>
+              </label>
+              <button class="btn btn-primary" type="submit" data-login-otp-submit>Verify and continue</button>
+              <button class="mini-action login-back-button" type="button" data-login-back>Change email</button>
+            </div>
+
+            <label class="auth-checkbox"><input name="remember" type="checkbox" checked> Remember this login for this browser session</label>
+            <p class="otp-helper" data-login-helper>In production, the email API sends the OTP; local preview shows a test code.</p>
           </form>
 
           <div class="auth-divider"><span>or</span></div>
@@ -83,11 +99,11 @@
 
           <div class="auth-status-card" aria-label="Login status">
             <div class="card-head compact-head">
-              <p class="eyebrow">Session status</p>
+              <p class="eyebrow">Login status</p>
               <span class="status-pill status-pending" data-account-role>Verifying</span>
             </div>
             <h3 data-account-heading>Checking session</h3>
-            <p data-account-status>Checking whether Cloudflare Access already verified your email.</p>
+            <p data-account-status>Checking whether your email is verified or an OTP session is still active.</p>
             <div class="admin-auth-meta"><span data-account-email>Session pending</span></div>
           </div>
 
@@ -99,21 +115,21 @@
     <section class="section auth-next-section" id="login-next-steps">
       <div class="container auth-mini-grid">
         <article class="admin-card">
-          <div class="card-head"><p class="eyebrow">New customer</p><span class="status-pill">Register first</span></div>
-          <h3>Create your profile</h3>
-          <p class="admin-helper">Save your verified email, requested role, and optional business context for owner or manager approval.</p>
+          <div class="card-head"><p class="eyebrow">New user</p><span class="status-pill">Registration</span></div>
+          <h3>Create profile</h3>
+          <p class="admin-helper">Save your verified email, requested role, and optional details for owner or manager approval.</p>
           <a class="btn btn-primary" href="register.html">Go to Register</a>
         </article>
         <article class="admin-card">
           <div class="card-head"><p class="eyebrow">Returning user</p><span class="status-pill status-approved">Account</span></div>
           <h3>Continue to account</h3>
-          <p class="admin-helper">Use Account after login for accepted offers, settings, coupons, and your saved access status.</p>
+          <p class="admin-helper">After OTP login, open your account for offers, settings, coupons, and saved access status.</p>
           <a class="btn btn-secondary" href="account.html">Open Account</a>
         </article>
         <article class="admin-card">
           <div class="card-head"><p class="eyebrow">Partner access</p><span class="status-pill">Approval</span></div>
           <h3>Owner or manager?</h3>
-          <p class="admin-helper">Register first as owner or manager. Admins approve privileged access after reviewing your profile.</p>
+          <p class="admin-helper">Registration as owner or manager. Admins approve privileged access after reviewing your profile.</p>
           <a class="btn btn-secondary" href="register.html#account-workspace">Request Access</a>
         </article>
       </div>
@@ -124,13 +140,13 @@
     <div class="container footer-grid">
       <div>
         <a class="footer-logo" href="index.html"><img src="logo.svg" alt="LuxeRoutes" width="620" height="160" loading="lazy" decoding="async" /></a>
-        <p>Private European travel accounts for customers, owners, managers, and admins.</p>
+        <p>Private European travel accounts for guests, owners, managers, and admins.</p>
       </div>
       <div>
         <h3>Account</h3>
         <ul>
           <li><a href="login.html">Login</a></li>
-          <li><a href="register.html">Create account</a></li>
+          <li><a href="register.html">Create Account</a></li>
           <li><a href="account.html">Account dashboard</a></li>
         </ul>
       </div>
@@ -138,7 +154,7 @@
     </div>
     <div class="container footer-bottom">
       <p>© <span data-current-year>2026</span> LuxeRoutes. All rights reserved.</p>
-      <p>Email-first account access.</p>
+      <p>Email OTP account access.</p>
     </div>
   </footer>
   <script src="script.js"></script>
