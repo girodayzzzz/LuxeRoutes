@@ -6,14 +6,16 @@ This site now includes the first production-ready Cloudflare Pages Functions + D
 
 Implemented in this repository:
 
-- `login.html`, `register.html`, `account.html`, and `account.js` — separate public login, registration, and account dashboard screens. `account.js` supports all three pages, saves profiles to `/api/account`, and falls back to browser `localStorage` only if the API/D1 binding is missing.
+- `login.html`, `register.html`, `account.html`, and `account.js` — separate public login, registration, and account dashboard screens. The login page now uses a passwordless email OTP step, while `account.js` supports all three pages, saves profiles to `/api/account`, and falls back to browser `localStorage` only if the API/D1 binding is missing.
 - `admin-panel.html` + `admin-panel.js` — operations panel. It now tries to load and save access grants from `/api/admin/grants`; local preview still works on `localhost`.
 - `functions/api/account.js` — Cloudflare Pages Function for reading/upserting the verified visitor profile.
+- `functions/api/auth/otp.js` — Cloudflare Pages Function for issuing and verifying 6-digit email OTP login codes.
 - `functions/api/admin/grants.js` — Cloudflare Pages Function for admin-only role grant reads/writes.
 - `functions/api/_utils.js` — shared API helpers; it also returns 404 if Pages maps it as `/api/_utils` during function bundling.
 - `_routes.json` — explicitly invokes Pages Functions only for `/api/*`, keeping static pages on the asset path.
 - `migrations/0001_auth.sql` — initial D1 schema for `profiles` and `access_grants`.
 - `migrations/0002_profile_business_fields.sql` — adds company name, website, and business context fields for registration review.
+- `migrations/0003_login_otps.sql` — stores short-lived hashed OTP challenges for passwordless login.
 - `wrangler.toml` — keeps Pages build output at the repository root and intentionally omits placeholder D1 IDs; bind `DB` in the Pages dashboard or add a real D1 UUID only after creation.
 
 The property/inquiry workspace is still demo data in browser storage. Move it to D1 later when account and role setup is confirmed.
@@ -77,8 +79,11 @@ Recommended setup:
    - `/api/account`
 4. Add an **Allow** policy with **Include: Everyone**.
 5. Use email OTP or your chosen identity provider.
+6. Add Pages/Workers secrets for app-sent OTP emails if you use the custom `/api/auth/otp` route:
+   - `RESEND_API_KEY` — API key for Resend email delivery.
+   - `OTP_EMAIL_FROM` — verified sender address, for example `LuxeRoutes <login@luxeroutes.eu>`.
 
-The `/register*` destination covers both `/register` and `/register.html`. Result: every visitor can login on `/login.html`, register with a verified email on `/register.html`, and then use `/account.html` as the dashboard for accepted offers, settings, coupons, and profile status. A `customer` registration is active immediately. If the visitor requests `owner` or `manager`, the email still receives safe customer access only, while the requested privileged role stays pending for admin review.
+The `/register*` destination covers both `/register` and `/register.html`. The custom OTP route stores only hashed codes in D1 and expires them after 10 minutes. Result: every visitor can login on `/login.html`, register with a verified email on `/register.html`, and then use `/account.html` as the dashboard for accepted offers, settings, coupons, and profile status. A `customer` registration is active immediately. If the visitor requests `owner` or `manager`, the email still receives safe customer access only, while the requested privileged role stays pending for admin review.
 
 ## Phase 3 — Admin panel gate
 
@@ -118,8 +123,8 @@ Role meanings:
 
 ## Phase 5 — Test the real login/register flow
 
-1. Open `/login.html` in production and verify the email session, then open `/register.html` for a new profile.
-2. Complete Cloudflare email verification.
+1. Open `/login.html` in production, enter an email, and confirm the 6-digit OTP sent by the custom route or Cloudflare Access.
+2. Open `/register.html` for a new profile and complete Cloudflare email verification if Access prompts for it.
 3. Submit the profile form.
 4. Confirm D1 received the profile:
 
@@ -144,11 +149,12 @@ You still need to complete these steps outside the repository in Cloudflare:
 1. Create the D1 database named `luxeroutes-db` if it does not already exist.
 2. Apply `migrations/0001_auth.sql` remotely with Wrangler.
 3. Bind that D1 database to the Pages project with binding name `DB`.
-4. Create a public Cloudflare Access application for `/login.html`, `/login`, `/register*`, `/account.html`, `/account`, and `/api/account` with an **Everyone** allow policy.
-5. Create a separate Cloudflare Access application for `/admin-panel.html`, `/admin/*`, and `/api/admin/*` that only allows your trusted admin email addresses.
-6. Seed your first admin email into `access_grants` with the command in Phase 4.
-7. Test with three different emails: one customer, one owner request, and one manager request.
-8. From the admin email, approve one owner/manager request and reject the other to confirm both paths work.
+4. Add `RESEND_API_KEY` and `OTP_EMAIL_FROM` secrets if the site should send OTP codes from the custom login form.
+5. Create a public Cloudflare Access application for `/login.html`, `/login`, `/register*`, `/account.html`, `/account`, and `/api/account` with an **Everyone** allow policy. Keep `/api/auth/otp` reachable so the custom form can request the first email code before an Access identity exists.
+6. Create a separate Cloudflare Access application for `/admin-panel.html`, `/admin/*`, and `/api/admin/*` that only allows your trusted admin email addresses.
+7. Seed your first admin email into `access_grants` with the command in Phase 4.
+8. Test with three different emails: one customer, one owner request, and one manager request.
+9. From the admin email, approve one owner/manager request and reject the other to confirm both paths work.
 
 Do not share the admin URL until step 8 succeeds in a private/incognito browser window.
 

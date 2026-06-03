@@ -7,12 +7,19 @@ const accountEmailInput = document.querySelector('[data-account-email-input]');
 const accountProfile = document.querySelector('[data-account-profile]');
 const accountLoginLink = document.querySelector('[data-account-login-link]');
 const loginForm = document.querySelector('[data-login-form]');
+const loginEmailStep = document.querySelector('[data-login-step="email"]');
+const loginOtpStep = document.querySelector('[data-login-step="otp"]');
+const loginOtpEmail = document.querySelector('[data-login-otp-email]');
+const loginOtpInput = document.querySelector('[data-login-otp-input]');
+const loginBackButton = document.querySelector('[data-login-back]');
+const loginHelper = document.querySelector('[data-login-helper]');
 const isRegisterPage = () => document.body.classList.contains('account-page') && Boolean(accountForm);
 const isDashboardPage = () => document.body.classList.contains('account-dashboard-page');
 const isLoginPage = () => document.body.classList.contains('login-page');
 const accountStorageKey = 'luxeroutes-account-profile-v1';
 const accountSessionKey = 'luxeroutes-account-session-v1';
 const accountSessionTtlMs = 4 * 60 * 60 * 1000;
+const loginPreviewOtp = '246810';
 let accountIdentity = null;
 let accountApiEnabled = false;
 
@@ -40,6 +47,73 @@ const loadAccountSession = () => {
 
   sessionStorage.removeItem(accountSessionKey);
   return null;
+};
+
+
+const setLoginOtpStep = (email) => {
+  if (!loginEmailStep || !loginOtpStep) return;
+
+  loginEmailStep.hidden = true;
+  loginOtpStep.hidden = false;
+  loginEmailStep.classList.remove('is-active');
+  loginOtpStep.classList.add('is-active');
+  if (loginOtpEmail) loginOtpEmail.textContent = email;
+  if (loginOtpInput) {
+    loginOtpInput.required = true;
+    loginOtpInput.focus({ preventScroll: true });
+  }
+  if (loginHelper) {
+    loginHelper.textContent = isAccountLocalPreview()
+      ? `Local preview: use test OTP code ${loginPreviewOtp}.`
+      : 'Check your email for the one-time code. If the page is protected by Cloudflare Access, the same email is verified there too.';
+  }
+};
+
+const requestEmailOtp = async (email) => {
+  const response = await fetch('/api/auth/otp', {
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    credentials: 'same-origin',
+    body: JSON.stringify({ email }),
+  });
+
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(payload.error || 'OTP email could not be sent.');
+  return payload;
+};
+
+const verifyEmailOtp = async (email, otp) => {
+  const response = await fetch('/api/auth/otp?action=verify', {
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    credentials: 'same-origin',
+    body: JSON.stringify({ email, otp }),
+  });
+
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(payload.error || 'OTP code could not be verified.');
+  return payload;
+};
+
+const resetLoginOtpStep = () => {
+  if (!loginEmailStep || !loginOtpStep) return;
+
+  loginEmailStep.hidden = false;
+  loginOtpStep.hidden = true;
+  loginEmailStep.classList.add('is-active');
+  loginOtpStep.classList.remove('is-active');
+  if (loginOtpInput) {
+    loginOtpInput.required = false;
+    loginOtpInput.value = '';
+  }
+  if (loginHelper) loginHelper.textContent = 'In production, the email API sends the OTP; local preview shows a test code.';
+  accountEmailInput?.focus({ preventScroll: true });
 };
 
 const saveAccountSession = ({ identity = accountIdentity, profile = null, grant = null, role = null } = {}) => {
@@ -316,33 +390,111 @@ accountForm?.addEventListener('submit', async (event) => {
   }
 });
 
-loginForm?.addEventListener('submit', (event) => {
+loginBackButton?.addEventListener('click', resetLoginOtpStep);
+
+loginForm?.addEventListener('submit', async (event) => {
   event.preventDefault();
   const formData = new FormData(loginForm);
   const email = String(formData.get('email') || accountIdentity?.email || '').trim().toLowerCase();
+  const otp = String(formData.get('otp') || '').trim();
+  const otpStepActive = Boolean(loginOtpStep && !loginOtpStep.hidden);
 
   if (!email) return;
 
-  if (accountIdentity || isAccountLocalPreview()) {
-    const storedProfile = loadAccountProfile();
-    saveAccountSession({
-      identity: accountIdentity || { email },
-      profile: storedProfile?.email === email ? storedProfile : { email, name: 'LuxeRoutes guest', defaultRole: 'customer', status: 'active' },
-      role: 'customer',
-    });
+  if (!otpStepActive) {
+    const submitButton = loginForm.querySelector('[data-login-email-submit]');
+    if (submitButton) submitButton.disabled = true;
+
+    try {
+      if (!isAccountLocalPreview()) await requestEmailOtp(email);
+      setLoginOtpStep(email);
+      setAccountStatus({
+        heading: 'OTP code sent',
+        status: isAccountLocalPreview()
+          ? `For local preview, enter test code ${loginPreviewOtp}.`
+          : 'We sent a 6-digit OTP code to your email. Enter it below to continue without a password.',
+        email,
+        role: 'Email OTP',
+        approved: true,
+      });
+    } catch (error) {
+      setAccountStatus({
+        heading: 'OTP was not sent',
+        status: error.message,
+        email,
+        role: 'OTP error',
+        approved: false,
+      });
+    } finally {
+      if (submitButton) submitButton.disabled = false;
+    }
+    return;
   }
 
-  setAccountStatus({
-    heading: 'Continuing securely',
-    status: isAccountLocalPreview()
-      ? 'Local preview session saved. Opening the account dashboard now.'
-      : 'Opening the protected account area. Cloudflare Access may ask you to verify this email before continuing.',
-    email,
-    role: isAccountLocalPreview() ? 'Preview login' : 'Email login',
-    approved: true,
-  });
+  if (!/^\d{6}$/.test(otp)) {
+    setAccountStatus({
+      heading: 'Enter OTP code',
+      status: 'OTP code must contain 6 digits.',
+      email,
+      role: 'OTP required',
+      approved: false,
+    });
+    loginOtpInput?.focus({ preventScroll: true });
+    return;
+  }
 
-  window.location.href = 'account.html';
+  if (isAccountLocalPreview() && otp !== loginPreviewOtp) {
+    setAccountStatus({
+      heading: 'Incorrect test code',
+      status: `For local preview, use OTP code ${loginPreviewOtp}.`,
+      email,
+      role: 'OTP error',
+      approved: false,
+    });
+    loginOtpInput?.focus({ preventScroll: true });
+    return;
+  }
+
+  const submitButton = loginForm.querySelector('[data-login-otp-submit]');
+  if (submitButton) submitButton.disabled = true;
+
+  try {
+    const remoteAccount = isAccountLocalPreview() ? null : await verifyEmailOtp(email, otp);
+    const storedProfile = loadAccountProfile();
+    const verifiedProfile = remoteAccount?.profile || (storedProfile?.email === email
+      ? storedProfile
+      : { email, name: 'LuxeRoutes guest', defaultRole: 'customer', status: 'active' });
+
+    saveAccountSession({
+      identity: remoteAccount?.identity || accountIdentity || { email },
+      profile: verifiedProfile,
+      grant: remoteAccount?.grant,
+      role: remoteAccount?.role || 'customer',
+    });
+
+    setAccountStatus({
+      heading: 'OTP verified',
+      status: isAccountLocalPreview()
+        ? 'Local OTP session saved. Opening the account dashboard.'
+        : 'OTP is verified. Opening the account dashboard.',
+      email,
+      role: isAccountLocalPreview() ? 'Preview OTP' : (remoteAccount?.role || 'Email OTP'),
+      approved: true,
+    });
+
+    window.location.href = 'account.html';
+  } catch (error) {
+    setAccountStatus({
+      heading: 'OTP not verified',
+      status: error.message,
+      email,
+      role: 'OTP error',
+      approved: false,
+    });
+    loginOtpInput?.focus({ preventScroll: true });
+  } finally {
+    if (submitButton) submitButton.disabled = false;
+  }
 });
 
 initialiseAccount();

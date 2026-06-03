@@ -3563,3 +3563,180 @@ body.home-page {
     grid-template-columns: 1fr;
   }
 }
+
+/* Responsive tidy-up + OTP login refinement */
+html,
+body {
+  overflow-x: hidden;
+}
+
+*,
+*::before,
+*::after {
+  min-width: 0;
+}
+
+.login-page .auth-login-section {
+  min-height: auto;
+}
+
+.login-page .auth-shell {
+  align-items: stretch;
+}
+
+.login-otp-form {
+  gap: .95rem;
+}
+
+.login-step {
+  display: grid;
+  gap: .82rem;
+}
+
+.login-step[hidden] {
+  display: none;
+}
+
+.otp-summary {
+  display: grid;
+  gap: .12rem;
+  padding: .8rem .9rem;
+  border: 1px solid rgba(241, 215, 150, .16);
+  border-radius: 16px;
+  background: rgba(241, 215, 150, .08);
+}
+
+.otp-summary span,
+.otp-helper {
+  color: var(--color-muted);
+  font-size: .86rem;
+  line-height: 1.5;
+}
+
+.otp-summary strong {
+  color: var(--color-text);
+  overflow-wrap: anywhere;
+}
+
+.login-back-button {
+  min-height: 42px;
+  padding: .65rem 1rem;
+}
+
+.login-box .auth-checkbox {
+  margin-top: .1rem;
+}
+
+@media (max-width: 900px) {
+  .card-grid.three,
+  .card-grid.four,
+  .process-grid.three,
+  .info-columns,
+  .split,
+  .feature-panel,
+  .form-shell,
+  .route-intro,
+  .admin-hero-grid,
+  .admin-stats,
+  .footer-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .feature-panel img,
+  .image-card img,
+  .feature-card img {
+    height: auto;
+    min-height: 220px;
+  }
+}
+
+@media (max-width: 640px) {
+  :root {
+    --radius: 22px;
+  }
+
+  .container,
+  .login-page .auth-shell,
+  .login-page .auth-mini-grid {
+    width: min(100% - 24px, var(--max));
+  }
+
+  h1 {
+    font-size: clamp(2.4rem, 14vw, 3.6rem);
+  }
+
+  h2 {
+    font-size: clamp(2rem, 10vw, 3rem);
+  }
+
+  .section,
+  .auth-section,
+  .admin-hero {
+    padding-block: clamp(3rem, 11vw, 4.5rem);
+  }
+
+  .button-row,
+  .auth-actions,
+  .admin-toolbar {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .btn,
+  .nav-cta,
+  .button-row .btn,
+  .admin-toolbar .btn {
+    width: 100%;
+  }
+
+  .auth-card,
+  .admin-card,
+  .plain-card,
+  .process-grid article,
+  .info-columns > div {
+    padding: 1.15rem;
+  }
+
+  .login-studio-panel {
+    min-height: 240px;
+    padding: 1.15rem;
+  }
+
+  .login-brand-mark {
+    width: 46px;
+    height: 46px;
+    border-radius: 15px;
+  }
+
+  .auth-status-card .card-head,
+  .compact-head {
+    display: grid;
+    gap: .5rem;
+    align-items: start;
+  }
+}
+
+@media (max-width: 420px) {
+  .container,
+  .login-page .auth-shell,
+  .login-page .auth-mini-grid {
+    width: min(100% - 18px, var(--max));
+  }
+
+  .brand img,
+  .footer-brand img {
+    width: 138px;
+  }
+
+  .login-box,
+  .login-studio-panel,
+  .auth-card {
+    border-radius: 20px;
+  }
+
+  .auth-form input,
+  .auth-form textarea,
+  .auth-form select {
+    padding: .82rem .88rem;
+  }
+}
