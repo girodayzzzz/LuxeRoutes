@@ -4107,3 +4107,73 @@ body {
     font-size: .7rem;
   }
 }
+
+[hidden] {
+  display: none !important;
+}
+
+.admin-route-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .45rem;
+  justify-content: flex-end;
+}
+
+.admin-route-nav a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: .48rem .82rem;
+  border: 1px solid rgba(241, 215, 150, .18);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .035);
+  color: var(--color-muted-strong);
+  font-size: .82rem;
+  font-weight: 900;
+}
+
+.admin-route-nav a:hover,
+.admin-route-nav a.is-active {
+  border-color: rgba(241, 215, 150, .5);
+  background: rgba(198, 161, 91, .14);
+  color: var(--color-text);
+}
+
+.admin-page .admin-hero {
+  padding: clamp(4.25rem, 7vw, 6.75rem) 0 clamp(2.4rem, 4vw, 3.75rem);
+}
+
+.admin-page .admin-workspace {
+  padding-top: clamp(2.2rem, 4vw, 3.8rem);
+}
+
+.admin-page .admin-card,
+.admin-page .admin-login-card,
+.admin-page .admin-stats article,
+.admin-page .table-wrap,
+.admin-page .registration-card,
+.admin-page .registration-column {
+  border-color: rgba(241, 215, 150, .16);
+}
+
+.admin-page .admin-card {
+  padding: clamp(1.15rem, 2vw, 1.55rem);
+}
+
+.admin-page .admin-stats article {
+  padding: 1rem 1.05rem;
+}
+
+.admin-page .admin-table th,
+.admin-page .admin-table td {
+  padding: .78rem .9rem;
+}
+
+.admin-page .stack-list {
+  gap: .7rem;
+}
+
+.admin-page .stack-item {
+  padding: .8rem .9rem;
+  border-radius: 18px;
+}

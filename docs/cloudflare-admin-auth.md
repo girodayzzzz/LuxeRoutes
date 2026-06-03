@@ -7,7 +7,7 @@ This site now includes the first production-ready Cloudflare Pages Functions + D
 Implemented in this repository:
 
 - `login.html`, `register.html`, `account.html`, and `account.js` — separate public login, registration, and account dashboard screens. The login page now uses a passwordless email OTP step, while `account.js` supports all three pages, saves profiles to `/api/account`, and falls back to browser `localStorage` only if the API/D1 binding is missing.
-- `admin-panel.html` + `admin-panel.js` — operations panel. It now tries to load and save access grants from `/api/admin/grants`; local preview still works on `localhost`.
+- `/admin/index.html` (plus `/admin/offers.html`, `/admin/partners.html`, `/admin/users.html`) + `admin-panel.js` — operations panel. It now tries to load and save access grants from `/api/admin/grants`; local preview still works on `localhost`.
 - `functions/api/account.js` — Cloudflare Pages Function for reading/upserting the verified visitor profile.
 - `functions/api/auth/otp.js` — Cloudflare Pages Function for issuing and verifying 6-digit email OTP login codes.
 - `functions/api/admin/grants.js` — Cloudflare Pages Function for admin-only role grant reads/writes.
@@ -92,7 +92,7 @@ Create a separate Cloudflare Zero Trust Access application for the operations pa
 Recommended setup:
 
 1. Protect these paths:
-   - `/admin-panel.html`
+   - `/admin/index.html`
    - `/admin/*`
    - `/api/admin/*`
 2. Add an **Allow** policy only for trusted admin emails.
@@ -109,7 +109,7 @@ After applying the D1 migration, insert your own verified email as the first adm
 wrangler d1 execute luxeroutes-db --remote --command "INSERT INTO access_grants (id, email, role, note, granted_by_email, status, created_at, updated_at) VALUES ('grant-initial-admin', 'YOUR_ADMIN_EMAIL@example.com', 'admin', 'Initial LuxeRoutes admin', 'system', 'active', datetime('now'), datetime('now')) ON CONFLICT(email) DO UPDATE SET role = 'admin', status = 'active', updated_at = datetime('now');"
 ```
 
-Then open `/admin-panel.html`, login with the same email, and use **People → Access grants**:
+Then open `/admin/index.html`, login with the same email, and use **People → Access grants**:
 
 - **Review role requests** — approve or reject pending `owner` and `manager` registrations.
 - **Grant access by email** — manually grant `customer`, `owner`, `manager`, or `admin` access for direct invitations or corrections.
@@ -132,7 +132,7 @@ Role meanings:
 wrangler d1 execute luxeroutes-db --remote --command "SELECT email, full_name, requested_role, status FROM profiles ORDER BY updated_at DESC LIMIT 10;"
 ```
 
-5. Open `/admin-panel.html` as the seeded admin.
+5. Open `/admin/index.html` as the seeded admin.
 6. Confirm pending owner/manager profiles load under **Review role requests**.
 7. Click **Approve** for a suitable owner/manager request, or **Reject** if it should stay customer-only.
 8. Confirm D1 received the profile status and grant:
@@ -151,7 +151,7 @@ You still need to complete these steps outside the repository in Cloudflare:
 3. Bind that D1 database to the Pages project with binding name `DB`.
 4. Add `RESEND_API_KEY` and `OTP_EMAIL_FROM` secrets if the site should send OTP codes from the custom login form.
 5. Create a public Cloudflare Access application for `/login.html`, `/login`, `/register*`, `/account.html`, `/account`, and `/api/account` with an **Everyone** allow policy. Keep `/api/auth/otp` reachable so the custom form can request the first email code before an Access identity exists.
-6. Create a separate Cloudflare Access application for `/admin-panel.html`, `/admin/*`, and `/api/admin/*` that only allows your trusted admin email addresses.
+6. Create a separate Cloudflare Access application for `/admin/index.html`, `/admin/*`, and `/api/admin/*` that only allows your trusted admin email addresses.
 7. Seed your first admin email into `access_grants` with the command in Phase 4.
 8. Test with three different emails: one customer, one owner request, and one manager request.
 9. From the admin email, approve one owner/manager request and reject the other to confirm both paths work.
