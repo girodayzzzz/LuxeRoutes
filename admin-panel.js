@@ -150,7 +150,7 @@ let remoteProfiles = [];
 let remoteAccessEnabled = false;
 
 const isLocalPreview = () => ['localhost', '127.0.0.1', ''].includes(window.location.hostname);
-const currentPanelRole = () => roleSelect?.value || currentRole;
+const currentPanelRole = () => (isLocalPreview() ? (roleSelect?.value || currentRole) : currentRole);
 
 const getAdminPathPrefix = () => (window.location.pathname.includes('/admin/') ? '../' : '');
 
@@ -163,8 +163,6 @@ const loadAdminAccountSession = () => {
     return null;
   }
 };
-
-const getSessionRole = (session) => session?.role || session?.grant?.role || session?.profile?.defaultRole || '';
 
 const redirectNonAdmin = (session = null) => {
   const prefix = getAdminPathPrefix();
@@ -731,37 +729,33 @@ const lockWorkspace = () => {
 
 const initialiseAdminAccess = async () => {
   const session = loadAdminAccountSession();
-  const sessionRole = getSessionRole(session);
 
-  if (sessionRole && sessionRole !== 'admin') {
+  if (isLocalPreview()) {
+    unlockWorkspace({
+      role: roleSelect?.value || 'admin',
+      identity: session?.identity || (session?.profile?.email ? { email: session.profile.email } : null),
+      localPreview: true,
+    });
+    return true;
+  }
+
+  const identity = await getCloudflareIdentity();
+  if (!identity) {
     lockWorkspace();
     redirectNonAdmin(session);
     return false;
   }
 
-  if (sessionRole === 'admin') {
-    unlockWorkspace({ role: 'admin', identity: session.identity || { email: session.profile?.email } });
+  const remoteAccount = await loadRemoteAccountRole();
+  if (remoteAccount?.role === 'admin') {
+    unlockWorkspace({ role: 'admin', identity });
     return true;
   }
 
-  const identity = await getCloudflareIdentity();
-  if (identity) {
-    const remoteAccount = await loadRemoteAccountRole();
-    if (remoteAccount?.role === 'admin') {
-      unlockWorkspace({ role: 'admin', identity });
-      return true;
-    }
-
-    lockWorkspace();
-    redirectNonAdmin(remoteAccount ? { identity, profile: remoteAccount.profile, role: remoteAccount.role } : null);
-    return false;
-  }
-
   lockWorkspace();
-  redirectNonAdmin(session);
+  redirectNonAdmin(remoteAccount ? { identity, profile: remoteAccount.profile, role: remoteAccount.role } : session);
   return false;
 };
-
 
 const adminRoutePanel = () => {
   const page = window.location.pathname.split('/').pop() || 'index.html';
