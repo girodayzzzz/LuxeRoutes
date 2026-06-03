@@ -5,6 +5,29 @@ import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 const adminPanelSource = readFileSync('admin-panel.js', 'utf8');
+
+const accountSource = readFileSync('account.js', 'utf8');
+const siteScriptSource = readFileSync('script.js', 'utf8');
+assert.match(
+  accountSource,
+  /const loginRememberInput = document\.querySelector\('\[name="remember"\]'\);/,
+  'Login page should wire the remember-me checkbox into session persistence.',
+);
+assert.match(
+  accountSource,
+  /localStorage\.setItem\(accountSessionKey, serializedSession\)/,
+  'Remembered login sessions should be saved to localStorage.',
+);
+assert.match(
+  accountSource,
+  /clearAccountSession[\s\S]*?sessionStorage\.removeItem\(accountSessionKey\);[\s\S]*?localStorage\.removeItem\(accountSessionKey\);/,
+  'Logout and expired session cleanup should clear both tab and remembered sessions.',
+);
+assert.match(
+  siteScriptSource,
+  /parseAccountSession\(sessionStorage\.getItem\(navAccountSessionKey\)\)[\s\S]*?parseAccountSession\(localStorage\.getItem\(navAccountSessionKey\)\)/,
+  'Navigation and private-page guards should restore remembered account sessions.',
+);
 assert.match(
   adminPanelSource,
   /const currentPanelRole = \(\) => \(isLocalPreview\(\) \? \(roleSelect\?\.value \|\| currentRole\) : currentRole\);/,

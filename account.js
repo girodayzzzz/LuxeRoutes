@@ -11,6 +11,7 @@ const loginEmailStep = document.querySelector('[data-login-step="email"]');
 const loginOtpStep = document.querySelector('[data-login-step="otp"]');
 const loginOtpEmail = document.querySelector('[data-login-otp-email]');
 const loginOtpInput = document.querySelector('[data-login-otp-input]');
+const loginRememberInput = document.querySelector('[name="remember"]');
 const loginBackButton = document.querySelector('[data-login-back]');
 const loginHelper = document.querySelector('[data-login-helper]');
 const loginAccountState = document.querySelector('[data-login-account-state]');
@@ -64,19 +65,30 @@ const redirectToLogin = () => {
   window.location.replace(`login.html?redirect=${encodeURIComponent(target)}`);
 };
 
-const loadAccountSession = () => {
-  const stored = sessionStorage.getItem(accountSessionKey);
+const clearAccountSession = () => {
+  sessionStorage.removeItem(accountSessionKey);
+  localStorage.removeItem(accountSessionKey);
+};
+
+const parseStoredAccountSession = (stored) => {
   if (!stored) return null;
 
   try {
     const session = JSON.parse(stored);
-    if (isSessionFresh(session)) return session;
+    return isSessionFresh(session) ? session : null;
   } catch (error) {
     // Ignore invalid browser cache and start a clean session.
+    return null;
   }
+};
 
-  sessionStorage.removeItem(accountSessionKey);
-  return null;
+const loadAccountSession = () => {
+  const sessionSession = parseStoredAccountSession(sessionStorage.getItem(accountSessionKey));
+  const rememberedSession = parseStoredAccountSession(localStorage.getItem(accountSessionKey));
+  const session = sessionSession || rememberedSession;
+
+  if (!session) clearAccountSession();
+  return session;
 };
 
 
@@ -146,17 +158,23 @@ const resetLoginOtpStep = () => {
   accountEmailInput?.focus({ preventScroll: true });
 };
 
-const saveAccountSession = ({ identity = accountIdentity, profile = null, grant = null, role = null } = {}) => {
+const saveAccountSession = ({ identity = accountIdentity, profile = null, grant = null, role = null, remember = false } = {}) => {
   if (!identity?.email && !profile?.email) return;
 
-  sessionStorage.setItem(accountSessionKey, JSON.stringify({
+  const shouldRemember = remember || Boolean(parseStoredAccountSession(localStorage.getItem(accountSessionKey)));
+  const serializedSession = JSON.stringify({
     identity,
     profile,
     grant,
     role: normalizeAccountRole(role || grant?.role || profile?.defaultRole || profile?.requestedRole),
+    remembered: shouldRemember,
     savedAt: Date.now(),
     expiresAt: Date.now() + accountSessionTtlMs,
-  }));
+  });
+
+  sessionStorage.setItem(accountSessionKey, serializedSession);
+  if (shouldRemember) localStorage.setItem(accountSessionKey, serializedSession);
+  else localStorage.removeItem(accountSessionKey);
 };
 
 const accountStatusLabel = (status) => ({
@@ -275,7 +293,7 @@ const updateAccountLogout = (active = false) => {
 };
 
 const logoutAccount = () => {
-  sessionStorage.removeItem(accountSessionKey);
+  clearAccountSession();
   accountIdentity = null;
   updateAccountAccessCards();
   updateAccountLogout(false);
@@ -397,7 +415,7 @@ const initialiseAccount = async () => {
   }
 
   const identity = await getAccessIdentity();
-  accountIdentity = identity;
+  if (identity) accountIdentity = identity;
   const remoteAccount = identity ? await loadRemoteAccountProfile() : null;
   const profile = remoteAccount?.profile || (hasCachedSession ? cachedSession?.profile : null) || null;
 
@@ -587,6 +605,7 @@ loginForm?.addEventListener('submit', async (event) => {
       profile: verifiedProfile,
       grant: remoteAccount?.grant,
       role: remoteAccount?.role || 'customer',
+      remember: Boolean(loginRememberInput?.checked),
     });
 
     setAccountStatus({
