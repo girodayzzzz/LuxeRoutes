@@ -7,14 +7,26 @@ document.querySelectorAll('[data-current-year]').forEach((year) => {
 
 const navAccountSessionKey = 'luxeroutes-account-session-v1';
 
-const readAccountSession = () => {
+const parseAccountSession = (stored) => {
   try {
-    const session = JSON.parse(sessionStorage.getItem(navAccountSessionKey) || 'null');
+    const session = JSON.parse(stored || 'null');
     if (!session?.expiresAt || Date.now() >= session.expiresAt) return null;
     return session;
   } catch (error) {
     return null;
   }
+};
+
+const readAccountSession = () => {
+  const session = parseAccountSession(sessionStorage.getItem(navAccountSessionKey))
+    || parseAccountSession(localStorage.getItem(navAccountSessionKey));
+
+  if (!session) {
+    sessionStorage.removeItem(navAccountSessionKey);
+    localStorage.removeItem(navAccountSessionKey);
+  }
+
+  return session;
 };
 
 const getPathPrefix = () => (window.location.pathname.includes('/admin/') ? '../' : '');
