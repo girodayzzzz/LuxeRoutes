@@ -53,14 +53,22 @@ export const onRequestPost = async ({ request, env }) => {
       `).bind(timestamp, email).run();
 
       await auth.db.prepare(`
-        UPDATE access_grants
-        SET role = CASE WHEN role = 'admin' THEN role ELSE 'customer' END,
-          note = ?,
-          granted_by_email = ?,
+        INSERT INTO access_grants (id, email, role, note, granted_by_email, status, created_at, updated_at)
+        VALUES (?, ?, 'customer', ?, ?, 'active', ?, ?)
+        ON CONFLICT(email) DO UPDATE SET
+          role = CASE WHEN access_grants.role = 'admin' THEN access_grants.role ELSE 'customer' END,
+          note = excluded.note,
+          granted_by_email = excluded.granted_by_email,
           status = 'active',
-          updated_at = ?
-        WHERE email = ?
-      `).bind(note || 'Owner/manager request rejected; customer access retained', auth.email, timestamp, email).run();
+          updated_at = excluded.updated_at
+      `).bind(
+        makeId('grant'),
+        email,
+        note || 'Owner/manager request rejected; customer access retained',
+        auth.email,
+        timestamp,
+        timestamp,
+      ).run();
 
       const [profile, grant] = await Promise.all([
         auth.db.prepare(`
@@ -97,8 +105,19 @@ export const onRequestPost = async ({ request, env }) => {
         updated_at = excluded.updated_at
     `).bind(makeId('profile'), email, role, timestamp, timestamp).run();
 
-    const grant = await auth.db.prepare(`${grantSelect} WHERE email = ? LIMIT 1`).bind(email).first();
-    return json({ grant }, { status: 201 });
+    const [profile, grant] = await Promise.all([
+      auth.db.prepare(`
+        SELECT id, email, full_name AS name, default_role AS defaultRole, requested_role AS requestedRole,
+          company_name AS companyName, company_website AS companyWebsite, business_context AS businessContext,
+          notes, status, created_at AS createdAt, updated_at AS updatedAt
+        FROM profiles
+        WHERE email = ?
+        LIMIT 1
+      `).bind(email).first(),
+      auth.db.prepare(`${grantSelect} WHERE email = ? LIMIT 1`).bind(email).first(),
+    ]);
+
+    return json({ profile, grant, action: 'approve' }, { status: 201 });
   } catch (error) {
     return errorJson(error.message || 'Unable to save access grant.', 500);
   }
