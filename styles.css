@@ -4019,6 +4019,19 @@ body {
   background: linear-gradient(145deg, rgba(6, 8, 13, .72), rgba(20, 27, 40, .72));
 }
 
+.login-account-state {
+  display: grid;
+  gap: 1rem;
+}
+
+.login-account-state[hidden] {
+  display: none;
+}
+
+.login-account-state .btn {
+  width: fit-content;
+}
+
 .account-switch-link {
   margin: 1rem 0 0;
   text-align: center;
