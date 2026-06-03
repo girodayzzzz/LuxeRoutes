@@ -44,7 +44,12 @@ const updateRoleBasedNavigation = () => {
       : 'Open LuxeRoutes account dashboard');
   });
 
-  document.querySelectorAll('[data-nav-admin]').forEach((link) => {
+  const adminNavLinks = new Set([
+    ...document.querySelectorAll('[data-nav-admin]'),
+    ...Array.from(document.querySelectorAll('.primary-nav > a[href]')).filter((link) => link.textContent.trim() === 'Admin Panel'),
+  ]);
+
+  adminNavLinks.forEach((link) => {
     link.hidden = !isAdmin;
     link.href = `${prefix}admin/index.html`.replace('../admin/', '');
     link.setAttribute('aria-label', 'Open LuxeRoutes admin panel');

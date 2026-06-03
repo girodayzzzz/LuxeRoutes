@@ -21,6 +21,10 @@ const accountSwitchLink = document.querySelector('.account-switch-link');
 const isRegisterPage = () => document.body.classList.contains('account-page') && Boolean(accountForm);
 const isDashboardPage = () => document.body.classList.contains('account-dashboard-page');
 const isLoginPage = () => document.body.classList.contains('login-page');
+
+if (document.body.classList.contains('account-dashboard-page')) {
+  document.body.classList.remove('admin-page');
+}
 const accountStorageKey = 'luxeroutes-account-profile-v1';
 const accountSessionKey = 'luxeroutes-account-session-v1';
 const accountSessionTtlMs = 4 * 60 * 60 * 1000;
