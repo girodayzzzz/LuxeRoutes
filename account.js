@@ -86,7 +86,7 @@ const requestEmailOtp = async (email) => {
   });
 
   const payload = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(payload.error || 'OTP email could not be sent.');
+  if (!response.ok) throw new Error(payload.error || 'Verification email could not be sent.');
   return payload;
 };
 
@@ -102,7 +102,7 @@ const verifyEmailOtp = async (email, otp) => {
   });
 
   const payload = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(payload.error || 'OTP code could not be verified.');
+  if (!response.ok) throw new Error(payload.error || 'Verification code could not be confirmed.');
   return payload;
 };
 
@@ -346,7 +346,7 @@ const initialiseAccount = async () => {
   } else if (isAccountLocalPreview()) {
     setAccountStatus({
       heading: isLoginPage() ? 'Account access' : 'Local preview',
-      status: isLoginPage() ? 'Sign in with your email to open your LuxeRoutes account.' : 'Local preview is active for account sign-in testing.',
+      status: isLoginPage() ? 'Sign in with your email to open your LuxeRoutes account.' : 'Account preview is active for this browser.',
       email: profile?.email || 'Email pending',
       role: 'Account',
       approved: false,
@@ -433,20 +433,20 @@ loginForm?.addEventListener('submit', async (event) => {
       if (!isAccountLocalPreview()) await requestEmailOtp(email);
       setLoginOtpStep(email);
       setAccountStatus({
-        heading: 'OTP code sent',
+        heading: 'Verification code sent',
         status: isAccountLocalPreview()
           ? `Enter verification code ${loginPreviewOtp} to continue.`
           : 'We sent a 6-digit verification code to your email. Enter it below to continue.',
         email,
-        role: 'Email OTP',
+        role: 'Email verification',
         approved: false,
       });
     } catch (error) {
       setAccountStatus({
-        heading: 'OTP was not sent',
+        heading: 'Verification code was not sent',
         status: error.message,
         email,
-        role: 'OTP error',
+        role: 'Verification error',
         approved: false,
       });
     } finally {
@@ -457,10 +457,10 @@ loginForm?.addEventListener('submit', async (event) => {
 
   if (!/^\d{6}$/.test(otp)) {
     setAccountStatus({
-      heading: 'Enter OTP code',
-      status: 'OTP code must contain 6 digits.',
+      heading: 'Enter verification code',
+      status: 'Verification code must contain 6 digits.',
       email,
-      role: 'OTP required',
+      role: 'Code required',
       approved: false,
     });
     loginOtpInput?.focus({ preventScroll: true });
@@ -472,7 +472,7 @@ loginForm?.addEventListener('submit', async (event) => {
       heading: 'Incorrect verification code',
       status: `Use verification code ${loginPreviewOtp} to continue.`,
       email,
-      role: 'OTP error',
+      role: 'Verification error',
       approved: false,
     });
     loginOtpInput?.focus({ preventScroll: true });
@@ -497,22 +497,22 @@ loginForm?.addEventListener('submit', async (event) => {
     });
 
     setAccountStatus({
-      heading: 'OTP verified',
+      heading: 'Verification complete',
       status: isAccountLocalPreview()
-        ? 'Local OTP session saved. Opening the account dashboard.'
-        : 'OTP is verified. Opening the account dashboard.',
+        ? 'Verified session saved. Opening the account dashboard.'
+        : 'Verification complete. Opening the account dashboard.',
       email,
-      role: isAccountLocalPreview() ? 'Preview OTP' : (remoteAccount?.role || 'Email OTP'),
+      role: isAccountLocalPreview() ? 'Preview verification' : (remoteAccount?.role || 'Email verification'),
       approved: true,
     });
 
     window.location.href = 'account.html';
   } catch (error) {
     setAccountStatus({
-      heading: 'OTP not verified',
+      heading: 'Verification incomplete',
       status: error.message,
       email,
-      role: 'OTP error',
+      role: 'Verification error',
       approved: false,
     });
     loginOtpInput?.focus({ preventScroll: true });
