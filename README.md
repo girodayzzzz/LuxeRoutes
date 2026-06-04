@@ -21,10 +21,11 @@ The production site uses **Cloudflare Access email one-time codes** for public a
 
 Use two Cloudflare Access applications:
 
-- Public account app: protect `/login.html`, `/login`, `/register*`, `/account.html`, `/account`, and `/api/account` with an **Allow / Include Everyone** policy and the One-time PIN login method.
+- Keep `/login.html` and `/login` public so visitors can see the custom branded entry page.
+- Public-customer Access app: protect `/account.html`, `/account`, `/register.html`, `/register`, and `/api/account` with an **Allow / Include Everyone** policy and the One-time PIN login method.
 - Admin app: protect `/admin/*`, `/admin-panel.html`, and `/api/admin/*` with a separate application restricted to approved internal admin emails.
 
-The optional custom `/api/auth/otp` endpoint requires Resend secrets, but it is not required when Cloudflare Access is the login provider.
+Keep `/api/auth/otp` outside the public-customer Access application. It is an optional Resend-based alternative, is not called by the public login page, and is not part of the primary Cloudflare Access flow. Cloudflare Access sends and verifies the production login code; no `RESEND_API_KEY`, `OTP_EMAIL_FROM`, or `AUTH_SESSION_SECRET` is required for that flow.
 
 Admins can then grant `customer`, `owner`, `manager`, or `admin` access by verified email after D1 is created, the `DB` binding is connected, and the first admin row is seeded. See [`docs/cloudflare-admin-auth.md`](docs/cloudflare-admin-auth.md) for the full Cloudflare + D1 plan.
 
