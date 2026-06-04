@@ -36,3 +36,15 @@ Offer source content lives under `content/offers`. To regenerate offer cards loc
 ```bash
 python3 scripts/generate-offers.py
 ```
+
+## Production stay publishing workflow
+
+The static Markdown offers remain the curated baseline collection. New owner-submitted properties use the D1-backed workflow:
+
+1. Owners submit the structured property offer on `partners.html`; `/api/inquiries` saves it.
+2. Admins review the inquiry at `/admin/index.html` and choose **Publish stay**.
+3. The admin completes the public card and approves it through `/api/admin/offers`.
+4. Published offers are returned by `/api/offers` and automatically appear in the filtered collection on `offers.html`.
+5. Admins can unpublish a stay without deleting its record.
+
+Apply all D1 migrations, including `migrations/0005_stay_offers.sql`, before using this workflow. See `docs/cloudflare-admin-auth.md` for deployment and security details.
