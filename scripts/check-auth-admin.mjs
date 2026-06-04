@@ -7,31 +7,25 @@ import { pathToFileURL } from 'node:url';
 const adminPanelSource = readFileSync('admin-panel.js', 'utf8');
 
 const accountSource = readFileSync('account.js', 'utf8');
+const loginSource = readFileSync('login.html', 'utf8');
 const siteScriptSource = readFileSync('script.js', 'utf8');
+assert.doesNotMatch(loginSource, /\/api\/auth\/otp|data-login-otp|name="otp"/, 'Public login must not call or render the custom OTP flow.');
+assert.match(loginSource, /href="account\.html"[^>]*>Continue to account<\/a>/, 'Public login should link to the protected account page.');
+assert.match(loginSource, /href="register\.html"[^>]*>Create an account<\/a>/, 'Public login should link to the protected registration page.');
+assert.doesNotMatch(accountSource, /\/api\/auth\/otp/, 'Primary customer client code must not call the optional custom OTP endpoint.');
+assert.ok(
+  accountSource.indexOf('const identity = await getAccessIdentity();') < accountSource.indexOf('if (!localPreview && isProtectedAccountPage())'),
+  'Protected account pages must await Cloudflare Access identity before redirecting a fresh browser session.',
+);
 assert.match(
   accountSource,
-  /const loginRememberInput = document\.querySelector\('\[name="remember"\]'\);/,
-  'Login page should wire the remember-me checkbox into session persistence.',
+  /email: String\(accountIdentity\?\.email \|\| \(isAccountLocalPreview\(\) \? formData\.get\('email'\) : ''\)/,
+  'Production registration must derive its submitted email from Cloudflare Access identity.',
 );
 assert.doesNotMatch(
-  accountSource,
-  /if \(isDashboardPage\(\) && !hasCachedSession && !isAccountLocalPreview\(\)\) \{[\s\S]*?redirectToLogin\(\);/,
-  'Account dashboard must check Cloudflare Access identity before redirecting a fresh browser session.',
-);
-assert.match(
-  accountSource,
-  /localStorage\.setItem\(accountSessionKey, serializedSession\)/,
-  'Remembered login sessions should be saved to localStorage.',
-);
-assert.match(
-  accountSource,
-  /clearAccountSession[\s\S]*?sessionStorage\.removeItem\(accountSessionKey\);[\s\S]*?localStorage\.removeItem\(accountSessionKey\);/,
-  'Logout and expired session cleanup should clear both tab and remembered sessions.',
-);
-assert.match(
   siteScriptSource,
-  /parseAccountSession\(sessionStorage\.getItem\(navAccountSessionKey\)\)[\s\S]*?parseAccountSession\(localStorage\.getItem\(navAccountSessionKey\)\)/,
-  'Navigation and private-page guards should restore remembered account sessions.',
+  /'account\.html': accountRoles/,
+  'Shared navigation code must not redirect account.html before account.js checks Cloudflare Access identity.',
 );
 assert.match(
   adminPanelSource,
@@ -255,9 +249,14 @@ const cookieAccountResponse = await accountModule.onRequestGet({
   request: new Request('https://luxeroutes.test/api/account', { headers: { Cookie: sessionCookieHeader } }),
   env: { DB: db, AUTH_SESSION_SECRET: 'test-secret' },
 });
-assert.equal(cookieAccountResponse.status, 200, 'Account API should accept a verified OTP session cookie.');
-const cookieAccountPayload = await cookieAccountResponse.json();
-assert.equal(cookieAccountPayload.identityEmail, 'owner@example.com', 'Account API should use the email from the verified session cookie.');
+assert.equal(cookieAccountResponse.status, 401, 'Account API must require Cloudflare Access even when an optional OTP session cookie exists.');
+
+const mismatchedRegistrationResponse = await accountModule.onRequestPost({
+  request: makeRequest('owner@example.com', { email: 'attacker@example.com', name: 'Wrong Email' }),
+  env,
+});
+assert.equal(mismatchedRegistrationResponse.status, 403, 'Registration must reject a submitted email that differs from Cloudflare Access identity.');
+assert.equal(db.profiles.some((profile) => profile.email === 'attacker@example.com'), false, 'Registration must never save a profile for an unverified submitted email.');
 
 const forbiddenGrantResponse = await grantsModule.onRequestGet({ request: makeRequest('owner@example.com'), env });
 assert.equal(forbiddenGrantResponse.status, 403, 'Non-admin users should not read admin grant data.');

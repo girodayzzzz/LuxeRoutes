@@ -38,7 +38,6 @@ const getSessionRole = (session) => session?.role || session?.grant?.role || ses
 const normalizeSessionRole = (role) => (accountRoles.includes(role) ? role : 'customer');
 
 const privateAccessRules = {
-  'account.html': accountRoles,
   'admin-panel.html': ['admin'],
   'index.html': null,
   'offers.html': null,

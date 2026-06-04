@@ -4343,3 +4343,21 @@ p { font-size: .98rem; }
   border-color: rgba(183, 143, 76, .38);
   background: linear-gradient(135deg, rgba(255, 255, 255, .96), rgba(246, 239, 228, .82));
 }
+
+.login-access-actions {
+  display: grid;
+  gap: .85rem;
+  margin-top: 1.35rem;
+}
+
+.login-access-actions .btn {
+  width: 100%;
+  min-height: 56px;
+}
+
+.login-access-note {
+  margin: .25rem 0 0;
+  color: var(--color-muted-strong);
+  font-size: .9rem;
+  line-height: 1.65;
+}

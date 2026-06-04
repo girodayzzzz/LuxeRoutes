@@ -1,4 +1,4 @@
-import { errorJson, getAccountSessionEmail, getActiveGrant, json, makeId, normalizeEmail, nowIso, requireDb } from './_utils.js';
+import { errorJson, getActiveGrant, getIdentityEmail, json, makeId, normalizeEmail, nowIso, requireDb } from './_utils.js';
 
 const profileSelect = `
   SELECT id, email, full_name AS name, default_role AS defaultRole, requested_role AS requestedRole,
@@ -11,7 +11,7 @@ const getProfile = async (db, email) => db.prepare(`${profileSelect} WHERE email
 
 export const onRequestGet = async ({ request, env }) => {
   try {
-    const email = await getAccountSessionEmail(request, env);
+    const email = getIdentityEmail(request);
 
     if (!email) return errorJson('Verified email is required.', 401);
 
@@ -34,7 +34,7 @@ export const onRequestGet = async ({ request, env }) => {
 
 export const onRequestPost = async ({ request, env }) => {
   try {
-    const identityEmail = await getAccountSessionEmail(request, env);
+    const identityEmail = getIdentityEmail(request);
     const body = await request.json().catch(() => ({}));
     const submittedEmail = normalizeEmail(body.email);
     const email = normalizeEmail(identityEmail);

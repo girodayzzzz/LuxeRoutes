@@ -75,11 +75,12 @@
           <div class="auth-card-head">
             <p class="eyebrow">Account registration</p>
             <h2>Create your profile</h2>
-            <p>Use your preferred email. Business fields are optional for travelers and helpful for partner access.</p>
+            <p>Your verified Cloudflare Access email is locked to this profile. Business fields are optional for travelers and helpful for partner access.</p>
           </div>
 
           <form class="auth-form auth-register-form admin-form" data-account-form>
-            <label>Email<input name="email" type="email" placeholder="you@example.com" autocomplete="email" required data-account-email-input></label>
+            <label>Email<input name="email" type="email" placeholder="Verified email loading…" autocomplete="email" required readonly aria-describedby="verified-email-help" data-account-email-input></label>
+            <p class="full admin-helper" id="verified-email-help">This email is verified by Cloudflare Access and cannot be changed here.</p>
             <label>Full name<input name="name" type="text" placeholder="Your name" autocomplete="name" required></label>
             <label>Account type
               <select name="requested_role">
