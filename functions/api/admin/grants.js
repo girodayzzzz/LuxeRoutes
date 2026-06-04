@@ -1,4 +1,4 @@
-import { getGrantByEmail, privateErrorJson, isValidRole, privateJson, makeId, normalizeEmail, nowIso, requireAdmin } from '../_utils.js';
+import { privateErrorJson, isValidRole, privateJson, makeId, normalizeEmail, nowIso, requireAdmin } from '../_utils.js';
 
 const grantSelect = `
   SELECT id, email, role, note, granted_by_email AS grantedByEmail, status,
@@ -47,11 +47,6 @@ export const onRequestPost = async ({ request, env }) => {
     if (!['approve', 'reject'].includes(action)) return privateErrorJson('Invalid grant action.', 400);
     if (email === auth.email && (action === 'reject' || role !== 'admin')) {
       return privateErrorJson('You cannot remove or downgrade your own admin access.', 400);
-    }
-
-    const existingGrant = await getGrantByEmail(auth.db, email);
-    if (action === 'reject' && existingGrant?.role === 'admin') {
-      return privateErrorJson('An active admin cannot be rejected. Assign a different role explicitly instead.', 400);
     }
 
     if (action === 'reject') {

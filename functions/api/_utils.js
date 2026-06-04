@@ -137,9 +137,12 @@ export const getGrantByEmail = async (db, email) => {
 
 export const getActiveGrant = async (db, email) => {
   if (!email) return null;
-  return db.prepare(`${grantSelect} WHERE lower(trim(email)) = ? AND status = 'active' LIMIT 1`)
-    .bind(normalizeEmail(email))
-    .first();
+  return db.prepare(`
+    SELECT id, email, role, note, granted_by_email AS grantedByEmail, status, created_at AS createdAt, updated_at AS updatedAt
+    FROM access_grants
+    WHERE lower(trim(email)) = ? AND status = 'active'
+    LIMIT 1
+  `).bind(email).first();
 };
 
 export const requireAdmin = async (request, env) => {
