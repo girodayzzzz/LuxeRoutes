@@ -152,8 +152,6 @@ let remoteAccessEnabled = false;
 const isLocalPreview = () => ['localhost', '127.0.0.1', ''].includes(window.location.hostname);
 const currentPanelRole = () => (isLocalPreview() ? (roleSelect?.value || currentRole) : currentRole);
 
-const getAdminPathPrefix = () => (window.location.pathname.includes('/admin/') ? '../' : '');
-
 const loadAdminAccountSession = () => {
   try {
     const session = JSON.parse(sessionStorage.getItem(adminAccountSessionKey) || 'null');
@@ -164,23 +162,29 @@ const loadAdminAccountSession = () => {
   }
 };
 
-const redirectNonAdmin = (session = null) => {
-  const prefix = getAdminPathPrefix();
-  const hasAccount = Boolean(session?.identity?.email || session?.profile?.email);
-  window.location.replace(`${prefix}${hasAccount ? 'account.html' : 'login.html'}`);
-};
-
-const loadRemoteAccountRole = async () => {
+const loadRemoteAdminSession = async () => {
   try {
-    const response = await fetch('/api/account', {
+    const response = await fetch('/api/admin/session', {
       headers: { Accept: 'application/json' },
       credentials: 'same-origin',
     });
+    const data = await response.json().catch(() => ({}));
 
-    if (!response.ok) return null;
-    return response.json();
+    return {
+      approved: response.ok && data.role === 'admin',
+      email: data.email || '',
+      role: data.role || '',
+      error: data.error || '',
+      status: response.status,
+    };
   } catch (error) {
-    return null;
+    return {
+      approved: false,
+      email: '',
+      role: '',
+      error: 'Unable to verify admin access. Check the Cloudflare Access and D1 configuration.',
+      status: 0,
+    };
   }
 };
 
@@ -634,21 +638,6 @@ const setAuthCard = ({ status, email, role, approved }) => {
   }
 };
 
-const getCloudflareIdentity = async () => {
-  try {
-    const response = await fetch('/.cloudflare/access/get-identity', {
-      headers: { Accept: 'application/json' },
-      credentials: 'same-origin',
-    });
-
-    if (!response.ok) return null;
-    const identity = await response.json();
-    return identity?.email ? identity : null;
-  } catch (error) {
-    return null;
-  }
-};
-
 const loadRemoteAccessGrants = async () => {
   if (!currentIdentity || isLocalPreview()) return;
 
@@ -716,13 +705,13 @@ const unlockWorkspace = ({ role = 'admin', identity = null, localPreview = false
   });
 };
 
-const lockWorkspace = () => {
+const lockWorkspace = ({ status, email = 'Admin session required', role = 'Locked' } = {}) => {
   if (adminApp) adminApp.hidden = true;
   if (rolePreview) rolePreview.hidden = true;
   setAuthCard({
-    status: 'Admin workspace is locked. Sign in with an account that has an admin role to open /admin.',
-    email: 'Admin session required',
-    role: 'Locked',
+    status: status || 'Admin workspace is locked. Sign in with an account that has an active admin grant.',
+    email,
+    role,
     approved: false,
   });
 };
@@ -739,21 +728,18 @@ const initialiseAdminAccess = async () => {
     return true;
   }
 
-  const identity = await getCloudflareIdentity();
-  if (!identity) {
-    lockWorkspace();
-    redirectNonAdmin(session);
-    return false;
-  }
-
-  const remoteAccount = await loadRemoteAccountRole();
-  if (remoteAccount?.role === 'admin') {
-    unlockWorkspace({ role: 'admin', identity });
+  const remoteSession = await loadRemoteAdminSession();
+  if (remoteSession.approved) {
+    unlockWorkspace({ role: remoteSession.role, identity: { email: remoteSession.email } });
     return true;
   }
 
-  lockWorkspace();
-  redirectNonAdmin(remoteAccount ? { identity, profile: remoteAccount.profile, role: remoteAccount.role } : session);
+  const roleLabel = remoteSession.role ? `${formatRole(remoteSession.role)} — not admin` : 'Locked';
+  lockWorkspace({
+    status: remoteSession.error || 'Admin access could not be verified.',
+    email: remoteSession.email || 'No verified Cloudflare Access email received',
+    role: roleLabel,
+  });
   return false;
 };
 
