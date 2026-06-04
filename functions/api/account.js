@@ -1,4 +1,4 @@
-import { errorJson, getActiveGrant, getIdentityEmail, json, makeId, normalizeEmail, nowIso, requireDb } from './_utils.js';
+import { getActiveGrant, getIdentityEmail, makeId, normalizeEmail, nowIso, privateErrorJson, privateJson, requireDb } from './_utils.js';
 
 const profileSelect = `
   SELECT id, email, full_name AS name, default_role AS defaultRole, requested_role AS requestedRole,
@@ -7,13 +7,13 @@ const profileSelect = `
   FROM profiles
 `;
 
-const getProfile = async (db, email) => db.prepare(`${profileSelect} WHERE email = ? LIMIT 1`).bind(email).first();
+const getProfile = async (db, email) => db.prepare(`${profileSelect} WHERE lower(trim(email)) = ? LIMIT 1`).bind(email).first();
 
 export const onRequestGet = async ({ request, env }) => {
   try {
     const email = getIdentityEmail(request);
 
-    if (!email) return errorJson('Verified email is required.', 401);
+    if (!email) return privateErrorJson('Verified email is required.', 401);
 
     const db = requireDb(env);
     const [profile, grant] = await Promise.all([
@@ -21,14 +21,14 @@ export const onRequestGet = async ({ request, env }) => {
       getActiveGrant(db, email),
     ]);
 
-    return json({
+    return privateJson({
       identityEmail: email,
       profile,
       grant,
       role: grant?.role || profile?.defaultRole || 'customer',
     });
   } catch (error) {
-    return errorJson(error.message || 'Unable to load account profile.', 500);
+    return privateErrorJson(error.message || 'Unable to load account profile.', 500);
   }
 };
 
@@ -38,20 +38,20 @@ export const onRequestPost = async ({ request, env }) => {
     const body = await request.json().catch(() => ({}));
     const submittedEmail = normalizeEmail(body.email);
     const email = normalizeEmail(identityEmail);
-    const name = String(body.name || '').trim();
+    const name = String(body.name || '').trim().slice(0, 220);
     const requestedRole = ['customer', 'owner', 'manager'].includes(body.requestedRole) ? body.requestedRole : 'customer';
-    const companyName = String(body.companyName || '').trim();
-    const companyWebsite = String(body.companyWebsite || '').trim();
-    const businessContext = String(body.businessContext || '').trim();
-    const notes = String(body.notes || '').trim();
+    const companyName = String(body.companyName || '').trim().slice(0, 220);
+    const companyWebsite = String(body.companyWebsite || '').trim().slice(0, 1000);
+    const businessContext = String(body.businessContext || '').trim().slice(0, 4000);
+    const notes = String(body.notes || '').trim().slice(0, 4000);
     const profileStatus = requestedRole === 'customer' ? 'active' : 'pending_admin_grant';
     const timestamp = nowIso();
 
-    if (!email) return errorJson('Verified email is required.', 401);
+    if (!email) return privateErrorJson('Verified email is required.', 401);
     if (submittedEmail && submittedEmail !== email) {
-      return errorJson('Profile email must match the verified account email.', 403);
+      return privateErrorJson('Profile email must match the verified account email.', 403);
     }
-    if (!name) return errorJson('Full name is required.', 400);
+    if (!name) return privateErrorJson('Full name is required.', 400);
 
     const db = requireDb(env);
     await db.prepare(`
@@ -83,8 +83,8 @@ export const onRequestPost = async ({ request, env }) => {
       getActiveGrant(db, email),
     ]);
 
-    return json({ profile, grant, role: grant?.role || 'customer' }, { status: 201 });
+    return privateJson({ profile, grant, role: grant?.role || 'customer' }, { status: 201 });
   } catch (error) {
-    return errorJson(error.message || 'Unable to save account profile.', 500);
+    return privateErrorJson(error.message || 'Unable to save account profile.', 500);
   }
 };

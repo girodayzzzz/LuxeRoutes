@@ -1,419 +1,114 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Admin Overview | LuxeRoutes Admin</title>
-  <meta name="description" content="LuxeRoutes internal admin, manager, and owner workspace for property submissions, partner reviews, inquiries, and publishing workflows." />
+  <title>Admin Console | LuxeRoutes</title>
+  <meta name="description" content="Secure LuxeRoutes administration console." />
   <meta name="robots" content="noindex, nofollow" />
-  <meta property="og:title" content="Admin Panel | LuxeRoutes" />
-  <meta property="og:description" content="Operational workspace for LuxeRoutes property partners, managers, owners, and admins." />
-  <meta property="og:type" content="website" />
-  <meta property="og:url" content="https://luxeroutes.eu/admin/index.html" />
-  <meta name="twitter:card" content="summary" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@600;700;800&display=swap" rel="stylesheet" />
   <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
-  <link rel="manifest" href="../site.webmanifest" />
   <link rel="stylesheet" href="../styles.css" />
   <link rel="stylesheet" href="admin.css" />
 </head>
-<body class="admin-page">
+<body class="admin-page admin-console-page">
   <a class="skip-link" href="#main-content">Skip to content</a>
-  <header class="site-header" data-header>
-    <div class="header-top" aria-label="LuxeRoutes admin highlights">
-      <div class="container header-top-inner">
-        <span>Internal Partner Operations</span>
-        <a href="mailto:info@luxeroutes.eu">info@luxeroutes.eu</a>
-        <span>Admin · Manager · Owner</span>
-      </div>
-    </div>
+  <header class="site-header">
     <div class="container nav-shell">
-      <a class="brand" href="../index.html" aria-label="LuxeRoutes home"><img src="../logo.svg" alt="LuxeRoutes wordmark"  width="620" height="160" loading="eager" decoding="async" /></a>
-      <button class="menu-toggle" type="button" aria-label="Open navigation" aria-controls="primary-navigation" aria-expanded="false">
-        <span></span><span></span><span></span>
-      </button>
-      <nav id="primary-navigation" class="primary-nav" aria-label="Primary navigation">
-        <a href="../index.html" class="nav-link">Home</a>
-        <a href="../destinations.html" class="nav-link">Destinations</a>
-        <a href="../stays.html" class="nav-link">Stays</a>
-        <a href="../experiences.html" class="nav-link">Experiences</a>
-        <a href="../journal.html" class="nav-link">Journal</a>
-        <a class="btn btn-primary nav-cta" href="../plan-trip.html">Plan a Trip</a>
-        <a href="../login.html" class="nav-link" data-nav-login>Login</a>
-        <a href="../account.html" class="nav-link" data-nav-account hidden>Account</a>
+      <a class="brand" href="../index.html" aria-label="LuxeRoutes home"><img src="../logo.svg" alt="LuxeRoutes" width="620" height="160" /></a>
+      <nav class="primary-nav" aria-label="Admin navigation">
+        <a href="../index.html" class="nav-link">View site</a>
+        <a href="../account.html" class="nav-link">Account</a>
+        <a href="/cdn-cgi/access/logout" class="nav-link">Secure logout</a>
       </nav>
     </div>
   </header>
 
   <main id="main-content">
-    <section class="admin-hero">
-      <div class="container admin-hero-grid">
+    <section class="admin-console-hero">
+      <div class="container admin-console-heading">
         <div>
-          <p class="eyebrow">LuxeRoutes internal admin</p>
-          <h1>Admin operations overview.</h1>
-          <p class="admin-lead">A first operational dashboard for approving properties, managing owners, assigning regional managers, and tracking inquiries before a full backend is connected.</p>
-          <div class="button-row">
-            <a class="btn btn-primary" href="#workspace">Open Workspace</a>
-            <a class="btn btn-secondary" href="../login.html">Login</a>
-            <a class="btn btn-secondary" href="#owner-submission">Submit Property</a>
-          </div>
+          <p class="eyebrow">LuxeRoutes administration</p>
+          <h1>Operations console</h1>
+          <p>Review member applications, manage access, and respond to incoming inquiries.</p>
         </div>
-        <aside class="admin-login-card" aria-label="Cloudflare Access admin gate" data-auth-card>
-          <p class="eyebrow">Cloudflare Access</p>
+        <aside class="admin-login-card" aria-label="Admin authorization status">
+          <p class="eyebrow">Security status</p>
           <h2>Admin protected area</h2>
-          <p data-auth-status>Checking whether Cloudflare Access has approved this browser session.</p>
+          <p data-auth-status>Verifying Cloudflare Access and your D1 admin grant…</p>
           <div class="admin-auth-meta">
             <span class="status-pill status-pending" data-auth-role>Verifying</span>
-            <span data-auth-email>Session pending</span>
+            <span data-auth-email>Checking verified email</span>
           </div>
-          <p class="admin-helper">Everyone can register through the public Account page. Keep this admin panel protected, then grant owner, manager, customer, or admin roles by verified email.</p>
-          <p class="admin-helper account-switch-link">Need to start from the public flow? <a href="../login.html">Open Login</a>, <a href="../register.html">Create Account</a>, or continue to <a href="../account.html">Account</a>.</p>
-          <label data-role-preview hidden>Local preview role
-            <select data-role-select>
-              <option value="admin">Admin</option>
-              <option value="manager">Manager</option>
-              <option value="owner">Owner</option>
-            </select>
-          </label>
+          <p class="admin-helper">Access requires both an approved Cloudflare Access identity and an active admin grant in D1.</p>
         </aside>
       </div>
     </section>
 
-    <section class="section admin-workspace" id="workspace" data-admin-app hidden>
+    <section class="section admin-console" data-admin-app hidden>
       <div class="container">
-        <div class="admin-toolbar">
+        <div class="admin-console-toolbar">
           <div>
-            <p class="eyebrow">Dashboard</p>
-            <h2>Property operations center</h2>
-            <p>Review submitted stays, move listings through approval, and keep partner inquiries organized.</p>
+            <p class="eyebrow">Live production data</p>
+            <h2>Admin workspace</h2>
           </div>
-          
-          <nav class="admin-route-nav" aria-label="Admin sections">
-            <a href="index.html">Overview</a>
-            <a href="offers.html">Offers</a>
-            <a href="partners.html">Partners</a>
-            <a href="users.html">Users</a>
-          </nav>
-          <button class="btn btn-secondary" type="button" data-reset-demo>Reset Demo Data</button>
+          <button class="btn btn-secondary" type="button" data-refresh-admin>Refresh data</button>
         </div>
 
-        <div class="admin-stats" aria-label="Operational statistics">
-          <article><span data-stat="properties">0</span><p>Properties</p></article>
-          <article><span data-stat="pending">0</span><p>Pending review</p></article>
-          <article><span data-stat="published">0</span><p>Published</p></article>
-          <article><span data-stat="inquiries">0</span><p>Open inquiries</p></article>
-        </div>
+        <div class="admin-alert" data-admin-alert hidden></div>
+        <div class="admin-stats" data-admin-stats aria-label="Admin summary"></div>
 
-        <div class="admin-tabs" role="tablist" aria-label="Panel sections">
-          <button class="is-active" type="button" role="tab" aria-selected="true" data-admin-tab="overview">Overview</button>
-          <button type="button" role="tab" aria-selected="false" data-admin-tab="properties">Properties</button>
-          <button type="button" role="tab" aria-selected="false" data-admin-tab="offer-builder">Offer Builder</button>
-          <button type="button" role="tab" aria-selected="false" data-admin-tab="people">People</button>
-          <button type="button" role="tab" aria-selected="false" data-admin-tab="inquiries">Inquiries</button>
-          <button type="button" role="tab" aria-selected="false" data-admin-tab="settings">Workflow</button>
-        </div>
+        <section class="admin-console-section" aria-labelledby="applications-title">
+          <div class="admin-section-heading">
+            <div><p class="eyebrow">Review queue</p><h2 id="applications-title">Owner and manager applications</h2></div>
+            <p>Approve only verified partners who should receive privileged access.</p>
+          </div>
+          <div class="admin-record-list" data-applications></div>
+        </section>
 
-        <section class="admin-panel is-active" data-panel="overview" aria-label="Overview panel">
-          <div class="admin-grid two">
-            <article class="admin-card">
-              <div class="card-head">
-                <p class="eyebrow">Approval queue</p>
-                <span class="status-pill status-pending">Live</span>
-              </div>
-              <h3>Listings needing attention</h3>
-              <div data-review-list class="stack-list"></div>
-            </article>
-            <article class="admin-card">
-              <div class="card-head">
-                <p class="eyebrow">Regional focus</p>
-                <span class="status-pill">Managers</span>
-              </div>
-              <h3>Manager responsibilities</h3>
-              <ul class="check-list compact-list">
-                <li>Source luxury-fit apartments, villas, chalets, hotels, cabins, and retreats.</li>
-                <li>Review owner submissions before admin publishing.</li>
-                <li>Coordinate first partner conversations and property notes.</li>
-                <li>Track inquiry status without seeing unrelated private data.</li>
-              </ul>
-            </article>
+        <section class="admin-console-section" aria-labelledby="members-title">
+          <div class="admin-section-heading">
+            <div><p class="eyebrow">Access control</p><h2 id="members-title">Members and roles</h2></div>
+            <p>All active grants, including invited users and registered members.</p>
+          </div>
+          <div class="table-wrap">
+            <table class="admin-table">
+              <thead><tr><th>Member</th><th>Role</th><th>Status</th><th>Company</th><th>Updated</th><th>Manage</th></tr></thead>
+              <tbody data-members></tbody>
+            </table>
+          </div>
+          <form class="admin-grant-form" data-grant-form>
+            <h3>Grant access by email</h3>
+            <label>Email<input type="email" name="email" required autocomplete="off" /></label>
+            <label>Role<select name="role" required><option value="customer">Customer</option><option value="owner">Owner</option><option value="manager">Manager</option><option value="admin">Admin</option></select></label>
+            <label>Internal note<input type="text" name="note" maxlength="500" placeholder="Reason for access" /></label>
+            <button class="btn btn-primary" type="submit">Save access grant</button>
+          </form>
+        </section>
+
+        <section class="admin-console-section" aria-labelledby="inquiries-title">
+          <div class="admin-section-heading">
+            <div><p class="eyebrow">Incoming requests</p><h2 id="inquiries-title">Inquiries</h2></div>
+            <p>Track new travel, partner, and property requests through resolution.</p>
+          </div>
+          <div class="table-wrap">
+            <table class="admin-table">
+              <thead><tr><th>Contact</th><th>Type</th><th>Received</th><th>Status</th><th>Details</th></tr></thead>
+              <tbody data-inquiries></tbody>
+            </table>
           </div>
         </section>
-
-        <section class="admin-panel" data-panel="properties" aria-label="Properties panel">
-          <div class="admin-grid properties-layout">
-            <article class="admin-card">
-              <div class="card-head">
-                <p class="eyebrow">Create listing</p>
-                <span class="status-pill">Owner/Admin</span>
-              </div>
-              <h3>Add property</h3>
-              <form class="admin-form" data-property-form>
-                <label>Property name<input name="title" type="text" placeholder="Lake View Residence" required></label>
-                <label>Owner<input name="owner" type="text" placeholder="Owner or company" required></label>
-                <label>Country
-                  <select name="country" required>
-                    <option value="Slovenia">Slovenia</option>
-                    <option value="Croatia">Croatia</option>
-                    <option value="Italy">Italy</option>
-                    <option value="Austria">Austria</option>
-                    <option value="Switzerland">Switzerland</option>
-                    <option value="France">France</option>
-                  </select>
-                </label>
-                <label>Region<input name="region" type="text" placeholder="Alps, Adriatic, City" required></label>
-                <label>Type
-                  <select name="type" required>
-                    <option value="Apartment">Apartment</option>
-                    <option value="Villa">Villa</option>
-                    <option value="Chalet">Chalet</option>
-                    <option value="Boutique hotel">Boutique hotel</option>
-                    <option value="Cabin">Cabin</option>
-                    <option value="Wellness retreat">Wellness retreat</option>
-                  </select>
-                </label>
-                <label>Manager<input name="manager" type="text" placeholder="Assigned manager"></label>
-                <label class="full">Notes<textarea name="notes" rows="4" placeholder="Guest capacity, amenities, owner terms, next action"></textarea></label>
-                <button class="btn btn-primary" type="submit">Create Draft Listing</button>
-              </form>
-            </article>
-            <article class="admin-card wide-card">
-              <div class="card-head">
-                <p class="eyebrow">Listings</p>
-                <span class="status-pill">Editable</span>
-              </div>
-              <h3>Property pipeline</h3>
-              <div class="table-wrap">
-                <table class="admin-table">
-                  <thead><tr><th>Property</th><th>Owner</th><th>Region</th><th>Type</th><th>Status</th><th>Action</th></tr></thead>
-                  <tbody data-property-table></tbody>
-                </table>
-              </div>
-            </article>
-          </div>
-        </section>
-
-
-        <section class="admin-panel" data-panel="offer-builder" aria-label="Offer builder panel">
-          <div class="admin-grid builder-layout">
-            <article class="admin-card">
-              <div class="card-head">
-                <p class="eyebrow">Content workspace</p>
-                <span class="status-pill">Markdown export</span>
-              </div>
-              <h3>Create offer draft</h3>
-              <p class="admin-helper">Build a taxonomy-safe offer file for <code>content/offers</code>, preview the public card copy, then copy or download the Markdown draft.</p>
-              <form class="admin-form offer-builder-form" data-offer-builder-form>
-                <label>Offer kind
-                  <select name="kind" data-offer-kind required>
-                    <option value="accommodation">Accommodation</option>
-                    <option value="trip">Trip / Route</option>
-                  </select>
-                </label>
-                <label>Title<input name="title" type="text" placeholder="Lake View Villa Bled" required></label>
-                <label>Country
-                  <select name="country" required>
-                    <option value="slovenia">Slovenia</option>
-                    <option value="croatia">Croatia</option>
-                    <option value="italy">Italy</option>
-                    <option value="austria">Austria</option>
-                    <option value="switzerland">Switzerland</option>
-                    <option value="france">France</option>
-                  </select>
-                </label>
-                <label>Region
-                  <select name="region" required>
-                    <option value="alps">Alps</option>
-                    <option value="adriatic">Adriatic coast</option>
-                    <option value="lakes">Lakes</option>
-                    <option value="wine-country">Wine country</option>
-                    <option value="city">City</option>
-                    <option value="countryside">Countryside</option>
-                    <option value="riviera">Riviera</option>
-                  </select>
-                </label>
-                <label data-accommodation-field>Accommodation type
-                  <select name="type">
-                    <option value="villa">Private villa</option>
-                    <option value="chalet">Chalet</option>
-                    <option value="boutique-hotel">Boutique hotel</option>
-                    <option value="apartment">Apartment</option>
-                    <option value="cabin">Cabin</option>
-                    <option value="retreat">Wellness retreat</option>
-                  </select>
-                </label>
-                <label data-trip-field hidden>Trip type
-                  <select name="trip_type">
-                    <option value="signature-route">Signature route</option>
-                    <option value="romantic-getaway">Romantic getaway</option>
-                    <option value="wine-tour">Wine tour</option>
-                    <option value="wellness-retreat">Wellness retreat</option>
-                    <option value="yacht-experience">Yacht experience</option>
-                    <option value="fishing-escape">Fishing escape</option>
-                  </select>
-                </label>
-                <label>Slug<input name="slug" type="text" placeholder="lake-view-villa-bled" data-slug-input required></label>
-                <label>Price / duration note<input name="price_from" type="text" placeholder="From €620 / night or 5 days"></label>
-                <label>Best for<input name="best_for" type="text" placeholder="Families, couples, slow luxury"></label>
-                <div class="full admin-fieldset">
-                  <span>Options</span>
-                  <div class="admin-checkbox-grid">
-                    <label><input type="checkbox" name="options" value="pool"> Pool</label>
-                    <label><input type="checkbox" name="options" value="spa"> Spa / sauna</label>
-                    <label><input type="checkbox" name="options" value="sea-view"> Sea view</label>
-                    <label><input type="checkbox" name="options" value="family"> Family ready</label>
-                    <label><input type="checkbox" name="options" value="pet-friendly"> Pet friendly</label>
-                    <label><input type="checkbox" name="options" value="private-chef"> Private chef</label>
-                  </div>
-                </div>
-                <label class="full">Short description<textarea name="summary" rows="4" placeholder="A polished public-facing summary for the offer card and Markdown body." required></textarea></label>
-                <label class="full">Highlights<textarea name="highlights" rows="4" placeholder="One highlight per line: private pool, lake access, chef partner..."></textarea></label>
-                <div class="button-row full">
-                  <button class="btn btn-primary" type="submit">Generate Markdown</button>
-                  <button class="btn btn-secondary" type="button" data-copy-markdown>Copy Markdown</button>
-                  <button class="btn btn-secondary" type="button" data-download-markdown>Download .md</button>
-                </div>
-              </form>
-            </article>
-            <article class="admin-card offer-output-card">
-              <div class="card-head">
-                <p class="eyebrow">Preview</p>
-                <span class="status-pill status-pending" data-offer-path>Draft path</span>
-              </div>
-              <div class="offer-preview-card" data-offer-preview>
-                <span class="status-pill">Waiting for draft</span>
-                <h3>Your offer preview will appear here.</h3>
-                <p>Fill in the form to generate a content-ready Markdown draft.</p>
-              </div>
-              <label class="markdown-output-label">Generated Markdown
-                <textarea class="markdown-output" data-markdown-output rows="18" readonly placeholder="Generated Markdown will appear here after you submit the builder form."></textarea>
-              </label>
-              <p class="admin-helper">Static sites cannot write files directly from the browser, so download or copy this draft into the generated path before publishing.</p>
-            </article>
-          </div>
-        </section>
-
-        <section class="admin-panel" data-panel="people" aria-label="People panel">
-          <div class="admin-grid two">
-            <article class="admin-card">
-              <div class="card-head"><p class="eyebrow">Owners</p><span class="status-pill">Partner accounts</span></div>
-              <h3>Owner directory</h3>
-              <div data-owner-list class="stack-list"></div>
-            </article>
-            <article class="admin-card">
-              <div class="card-head"><p class="eyebrow">Managers</p><span class="status-pill">Regional team</span></div>
-              <h3>Manager directory</h3>
-              <div data-manager-list class="stack-list"></div>
-            </article>
-            <article class="admin-card admin-card-full">
-              <div class="card-head"><p class="eyebrow">Registrations</p><span class="status-pill status-approved">People</span></div>
-              <h3>People → Registrations</h3>
-              <p class="admin-helper">Customers are accepted automatically. Owner and manager registrations stay pending here until you approve or reject them. Approved and rejected registrations remain visible for audit.</p>
-              <div data-registration-list class="registration-columns"></div>
-              <h3>Grant access by email</h3>
-              <p class="admin-helper">Use this admin-only workflow for manual corrections, direct invitations, or adding another trusted admin.</p>
-              <form class="admin-form" data-access-grant-form>
-                <label>Email<input name="email" type="email" placeholder="person@example.com" required></label>
-                <label>Role
-                  <select name="role">
-                    <option value="customer">Customer</option>
-                    <option value="owner">Owner</option>
-                    <option value="manager">Manager</option>
-                    <option value="admin">Admin</option>
-                  </select>
-                </label>
-                <label class="full">Access note<textarea name="note" rows="3" placeholder="Example: owner for Villa Bled, manager for Slovenia, VIP customer..."></textarea></label>
-                <button class="btn btn-primary" type="submit">Save Access Grant</button>
-              </form>
-              <div data-access-grant-list class="stack-list access-grant-list"></div>
-            </article>
-          </div>
-        </section>
-
-        <section class="admin-panel" data-panel="inquiries" aria-label="Inquiries panel">
-          <article class="admin-card">
-            <div class="card-head"><p class="eyebrow">Client requests</p><span class="status-pill">CRM Lite</span></div>
-            <h3>Inquiry tracker</h3>
-            <div class="table-wrap">
-              <table class="admin-table">
-                <thead><tr><th>Guest</th><th>Interest</th><th>Dates</th><th>Status</th><th>Next step</th><th>Action</th></tr></thead>
-                <tbody data-inquiry-table></tbody>
-              </table>
-            </div>
-          </article>
-        </section>
-
-        <section class="admin-panel" data-panel="settings" aria-label="Workflow panel">
-          <div class="admin-grid two">
-            <article class="admin-card">
-              <div class="card-head"><p class="eyebrow">Rules</p><span class="status-pill">Access control</span></div>
-              <h3>Role permissions</h3>
-              <ul class="permission-list">
-                <li><strong>Admin</strong><span>Can approve, publish, archive, assign managers, and see every inquiry.</span></li>
-                <li><strong>Manager</strong><span>Can review assigned properties, manage regional owner notes, and update inquiry progress.</span></li>
-                <li><strong>Owner</strong><span>Can create drafts, submit their own listings, and view status for their properties.</span></li>
-              </ul>
-            </article>
-            <article class="admin-card">
-              <div class="card-head"><p class="eyebrow">Publishing flow</p><span class="status-pill">Quality first</span></div>
-              <h3>Approval workflow</h3>
-              <ol class="workflow-list">
-                <li>Owner creates draft listing.</li>
-                <li>Owner submits listing for review.</li>
-                <li>Manager adds regional notes and recommends next action.</li>
-                <li>Admin approves and publishes or requests changes.</li>
-              </ol>
-            </article>
-          </div>
-        </section>
-      </div>
-    </section>
-
-    <section class="section section-soft" id="owner-submission">
-      <div class="container form-shell owner-intake">
-        <div>
-          <p class="eyebrow">Owner intake</p>
-          <h2>Invite owners to submit stays.</h2>
-          <p>This intake mirrors what the owner portal should collect once authentication and database storage are connected.</p>
-        </div>
-        <form class="luxury-form" data-inquiry-form data-endpoint="/api/inquiries" data-form-type="Owner property application" data-recipient="info@luxeroutes.eu">
-          <input type="hidden" name="source_page" value="Admin Panel Owner Intake">
-          <label class="honeypot" aria-hidden="true">Leave this field empty<input name="website" type="text" tabindex="-1" autocomplete="off"></label>
-          <label>Owner name<input name="owner_name" type="text" required></label>
-          <label>Email<input name="email" type="email" required></label>
-          <label>Property type
-            <select name="property_type" required>
-              <option value="Apartment">Apartment</option>
-              <option value="Villa">Villa</option>
-              <option value="Chalet">Chalet</option>
-              <option value="Boutique hotel">Boutique hotel</option>
-              <option value="Cabin">Cabin</option>
-              <option value="Wellness retreat">Wellness retreat</option>
-            </select>
-          </label>
-          <label>Country / region<input name="country_region" type="text" required></label>
-          <label class="full">Property summary<textarea name="property_summary" rows="6" placeholder="Location, bedrooms, guest capacity, amenities, owner terms, and why it fits LuxeRoutes." required></textarea></label>
-          <button class="btn btn-primary" type="submit">Send Owner Application</button>
-        </form>
       </div>
     </section>
   </main>
 
-  <footer class="site-footer">
-    <div class="container footer-consultation">
-      <div>
-        <p class="eyebrow">Build the partner network</p>
-        <h2>Keep every property curated before it goes public.</h2>
-        <p>Use this first panel as the operational map for owners, managers, admin approvals, and future backend development.</p>
-      </div>
-      <a class="btn btn-primary" href="../partners.html">Partner Page</a>
-    </div>
-    <div class="container footer-bottom">
-      <p>© <span data-current-year>2026</span> LuxeRoutes. All rights reserved.</p>
-      <p>Internal operations prototype.</p>
-    </div>
-  </footer>
+  <dialog class="admin-detail-dialog" data-inquiry-dialog>
+    <form method="dialog"><button class="dialog-close" aria-label="Close inquiry details">×</button></form>
+    <p class="eyebrow">Inquiry details</p>
+    <h2 data-inquiry-dialog-title>Inquiry</h2>
+    <dl data-inquiry-dialog-content></dl>
+  </dialog>
+
+  <footer class="site-footer"><div class="container footer-bottom"><p>© <span data-current-year>2026</span> LuxeRoutes.</p><p>Restricted administration console.</p></div></footer>
   <script src="../script.js"></script>
   <script src="../admin-panel.js"></script>
 </body>
