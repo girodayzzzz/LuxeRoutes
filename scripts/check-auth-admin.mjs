@@ -52,6 +52,16 @@ assert.doesNotMatch(
   /fetch\('\/api\/account'/,
   'Admin authorization must not depend on the separately protected customer account API.',
 );
+assert.match(
+  adminPanelSource,
+  /fetch\('\/api\/admin\/session'/,
+  'Production admin panel must verify its role through the admin-scoped session API.',
+);
+assert.doesNotMatch(
+  adminPanelSource,
+  /fetch\('\/api\/account'/,
+  'Admin authorization must not depend on the separately protected customer account API.',
+);
 
 const tempRoot = mkdtempSync(join(tmpdir(), 'luxeroutes-auth-admin-'));
 cpSync('functions', join(tempRoot, 'functions'), { recursive: true });
