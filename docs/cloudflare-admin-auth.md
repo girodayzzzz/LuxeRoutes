@@ -18,7 +18,7 @@ Implemented in this repository:
 - `migrations/0003_login_otps.sql` — stores short-lived hashed OTP challenges for passwordless login.
 - `wrangler.toml` — keeps Pages build output at the repository root and intentionally omits placeholder D1 IDs; bind `DB` in the Pages dashboard or add a real D1 UUID only after creation.
 
-The property/inquiry workspace is still demo data in browser storage. Move it to D1 later when account and role setup is confirmed.
+The production inquiry queue and stay-offer publishing workflow are D1-backed. Public property offers arrive as inquiries; admins review and complete a public card, then publish it to the live stay finder.
 
 ## Owner/manager approval workflow now included
 
@@ -155,30 +155,32 @@ wrangler d1 execute luxeroutes-db --remote --command "SELECT p.email, p.requeste
 
 ## Exact production checklist for the site owner
 
+The production domain must be served by **Cloudflare Pages**, not GitHub Pages. A GitHub Pages `404 File not found` at `/api/offers` proves that the static GitHub host currently owns the domain; GitHub Pages cannot execute Pages Functions or access D1. Disable GitHub Pages/custom-domain publishing for this repository, remove any GitHub Pages DNS records, and attach `luxeroutes.eu` under the Cloudflare Pages project's custom domains.
+
 You still need to complete these steps outside the repository in Cloudflare:
 
-1. Create the D1 database named `luxeroutes-db` if it does not already exist.
-2. Apply all D1 migrations remotely with `wrangler d1 migrations apply luxeroutes-db --remote` (the OTP endpoint also self-creates its required `login_otps` table as a deployment safeguard).
-3. Bind that D1 database to the Pages project with binding name `DB`.
-4. Keep `/login.html` and `/login` public; do not add them to an Access application.
-5. Create or restore the public-customer Cloudflare Access application for the exact paths `/account.html`, `/account`, `/register.html`, `/register`, and `/api/account`, using an **Allow / Include Everyone** policy and the One-time PIN login method.
-6. Keep `/api/auth/otp` outside the public-customer Access application. No Resend secrets are required for the primary Cloudflare Access flow.
-7. Create a separate Cloudflare Access application for `/admin/index.html`, `/admin/*`, and `/api/admin/*` that only allows your trusted admin email addresses.
-8. Seed your first admin email into `access_grants` with the command in Phase 4.
-9. Complete the Phase 5 private-window test, then test with three different emails: one customer, one owner request, and one manager request.
-10. From the admin email, approve one owner/manager request and reject the other to confirm both paths work.
+1. Disable GitHub Pages for this repository and ensure `luxeroutes.eu` is configured as a Cloudflare Pages custom domain; the repository must not contain a GitHub Pages `CNAME` file.
+2. Create the D1 database named `luxeroutes-db` if it does not already exist.
+3. Apply all D1 migrations remotely with `wrangler d1 migrations apply luxeroutes-db --remote` (the OTP endpoint also self-creates its required `login_otps` table as a deployment safeguard).
+4. Bind that D1 database to the Pages project with binding name `DB`.
+5. Keep `/login.html` and `/login` public; do not add them to an Access application.
+6. Create or restore the public-customer Cloudflare Access application for the exact paths `/account.html`, `/account`, `/register.html`, `/register`, and `/api/account`, using an **Allow / Include Everyone** policy and the One-time PIN login method.
+7. Keep `/api/auth/otp` outside the public-customer Access application. No Resend secrets are required for the primary Cloudflare Access flow.
+8. Create a separate Cloudflare Access application for `/admin/index.html`, `/admin/*`, and `/api/admin/*` that only allows your trusted admin email addresses.
+9. Seed your first admin email into `access_grants` with the command in Phase 4.
+10. Complete the Phase 5 private-window test, then test with three different emails: one customer, one owner request, and one manager request.
+11. From the admin email, approve one owner/manager request and reject the other to confirm both paths work.
 
 Do not share the admin URL until the Phase 5 private-window test and admin access checks succeed.
 
 ## Phase 6 — Next backend work
 
-After account and role grants are stable, move these modules from browser demo storage into D1/API routes:
+The inquiry and stay-offer publishing modules are now in D1. Future backend work can extend the same model for:
 
-- properties,
-- owners,
-- managers,
-- inquiries,
-- offer publishing workflow.
+- owner self-service listing edits,
+- manager assignments,
+- R2 photo uploads,
+- booking availability and pricing.
 
 Use D1 for records and R2 for property photos/documents.
 
@@ -228,9 +230,22 @@ After Cloudflare Access and the D1 admin grant approve the current email, the co
 - a member and role list for active access grants, including direct email invitations;
 - self-lockout protection that prevents an admin from removing or downgrading their own admin role;
 - a D1-backed inquiry queue with status management through `/api/admin/inquiries`;
+- an approve-and-publish stay workflow through `/api/admin/offers`, with live offers served publicly by `/api/offers`;
+- publish/unpublish controls that immediately add or remove database-backed cards from `/offers.html`;
 - a secure Cloudflare Access logout link.
 
 All admin API responses are marked `Cache-Control: no-store`, and every admin data read or mutation calls `requireAdmin` before accessing D1. Property applications submitted through public inquiry forms appear in the inquiry queue; owner and manager account applications appear in the role-review queue.
+
+## Stay offer approval and publishing workflow
+
+1. An owner submits the structured property form on `/partners.html`; `/api/inquiries` stores the full payload in D1.
+2. An admin opens `/admin/index.html` and clicks **Publish stay** beside an eligible property inquiry.
+3. The admin reviews and completes the public title, taxonomy placement, card copy, image, options, guest label, and price label.
+4. **Approve and publish stay** inserts a `published` row in `stay_offers` and marks the source inquiry `resolved`.
+5. `/offers.html` loads `/api/offers`, adds published D1 offers to the stay finder, and applies the same country, region, type, option, and search filters as static curated offers.
+6. **Unpublish** removes the offer from the public API response without deleting its admin record.
+
+Apply `migrations/0005_stay_offers.sql` before using the workflow in production. Admin publishing will fail safely until that migration exists.
 
 ## Optional custom OTP table maintenance
 

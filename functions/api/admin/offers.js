@@ -1,0 +1,124 @@
+import { makeId, nowIso, privateErrorJson, privateJson, requireAdmin } from '../_utils.js';
+
+const COUNTRIES = ['slovenia', 'croatia', 'italy', 'austria', 'switzerland', 'france'];
+const REGIONS = ['alps', 'adriatic', 'lakes', 'wine-country', 'city', 'countryside', 'riviera'];
+const STAY_TYPES = ['villa', 'chalet', 'boutique-hotel', 'apartment', 'cabin', 'retreat'];
+const OPTIONS = ['pool', 'spa', 'sea-view', 'family', 'pet-friendly', 'private-chef'];
+const STATUSES = ['draft', 'published', 'unpublished'];
+
+const cleanString = (value, maxLength = 2000) => String(value || '').trim().slice(0, maxLength);
+const slugify = (value) => cleanString(value, 160).toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 120);
+const safeImageUrl = (value) => {
+  const input = cleanString(value, 1500);
+  if (!input) return '';
+  try {
+    const url = new URL(input);
+    return ['http:', 'https:'].includes(url.protocol) ? url.href : '';
+  } catch (error) {
+    return '';
+  }
+};
+const normalizeOptions = (value) => {
+  const values = Array.isArray(value) ? value : cleanString(value, 500).split(/[\s,]+/);
+  return [...new Set(values.map((item) => cleanString(item, 80)).filter((item) => OPTIONS.includes(item)))].join(' ');
+};
+
+const offerSelect = `
+  SELECT id, source_inquiry_id AS sourceInquiryId, title, slug, country, region,
+    stay_type AS stayType, options, location_label AS locationLabel, guest_label AS guestLabel,
+    price_label AS priceLabel, description, image_url AS imageUrl, image_alt AS imageAlt,
+    status, published_at AS publishedAt, created_by_email AS createdByEmail,
+    created_at AS createdAt, updated_at AS updatedAt
+  FROM stay_offers
+`;
+
+const normalizeOffer = (body) => ({
+  sourceInquiryId: cleanString(body.sourceInquiryId, 160),
+  title: cleanString(body.title, 180),
+  slug: slugify(body.slug || body.title),
+  country: cleanString(body.country, 80).toLowerCase(),
+  region: cleanString(body.region, 80).toLowerCase(),
+  stayType: cleanString(body.stayType, 80).toLowerCase(),
+  options: normalizeOptions(body.options),
+  locationLabel: cleanString(body.locationLabel, 180),
+  guestLabel: cleanString(body.guestLabel, 120),
+  priceLabel: cleanString(body.priceLabel, 180),
+  description: cleanString(body.description, 1200),
+  imageUrl: safeImageUrl(body.imageUrl),
+  imageAlt: cleanString(body.imageAlt, 240),
+  status: cleanString(body.status, 30).toLowerCase() || 'published',
+});
+
+const validateOffer = (offer) => {
+  if (!offer.title || !offer.slug || !offer.locationLabel || !offer.description) return 'Title, location, and description are required.';
+  if (!COUNTRIES.includes(offer.country)) return 'Invalid country.';
+  if (!REGIONS.includes(offer.region)) return 'Invalid region.';
+  if (!STAY_TYPES.includes(offer.stayType)) return 'Invalid stay type.';
+  if (!STATUSES.includes(offer.status)) return 'Invalid offer status.';
+  return '';
+};
+
+export const onRequestGet = async ({ request, env }) => {
+  try {
+    const auth = await requireAdmin(request, env);
+    if (auth.error) return auth.error;
+    const offers = await auth.db.prepare(`${offerSelect} ORDER BY updated_at DESC LIMIT 200`).all();
+    return privateJson({ offers: offers.results || [] });
+  } catch (error) {
+    return privateErrorJson(error.message || 'Unable to load offers.', 500);
+  }
+};
+
+export const onRequestPost = async ({ request, env }) => {
+  try {
+    const auth = await requireAdmin(request, env);
+    if (auth.error) return auth.error;
+    const body = await request.json().catch(() => ({}));
+    const offer = normalizeOffer(body);
+    const validationError = validateOffer(offer);
+    if (validationError) return privateErrorJson(validationError, 400);
+
+    const timestamp = nowIso();
+    const id = makeId('offer');
+    const publishedAt = offer.status === 'published' ? timestamp : null;
+    await auth.db.prepare(`
+      INSERT INTO stay_offers (
+        id, source_inquiry_id, title, slug, country, region, stay_type, options,
+        location_label, guest_label, price_label, description, image_url, image_alt,
+        status, published_at, created_by_email, created_at, updated_at
+      ) VALUES (?, NULLIF(?, ''), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).bind(id, offer.sourceInquiryId, offer.title, offer.slug, offer.country, offer.region, offer.stayType,
+      offer.options, offer.locationLabel, offer.guestLabel, offer.priceLabel, offer.description, offer.imageUrl,
+      offer.imageAlt || offer.title, offer.status, publishedAt, auth.email, timestamp, timestamp).run();
+
+    if (offer.sourceInquiryId && offer.status === 'published') {
+      await auth.db.prepare("UPDATE inquiries SET status = 'resolved', updated_at = ? WHERE id = ?")
+        .bind(timestamp, offer.sourceInquiryId).run();
+    }
+    const saved = await auth.db.prepare(`${offerSelect} WHERE id = ? LIMIT 1`).bind(id).first();
+    return privateJson({ offer: saved }, { status: 201 });
+  } catch (error) {
+    if (String(error.message).includes('UNIQUE')) return privateErrorJson('This inquiry or offer slug has already been published.', 409);
+    return privateErrorJson(error.message || 'Unable to publish offer.', 500);
+  }
+};
+
+export const onRequestPatch = async ({ request, env }) => {
+  try {
+    const auth = await requireAdmin(request, env);
+    if (auth.error) return auth.error;
+    const body = await request.json().catch(() => ({}));
+    const id = cleanString(body.id, 160);
+    const status = cleanString(body.status, 30).toLowerCase();
+    if (!id) return privateErrorJson('Offer ID is required.', 400);
+    if (!STATUSES.includes(status)) return privateErrorJson('Invalid offer status.', 400);
+    const timestamp = nowIso();
+    await auth.db.prepare(`UPDATE stay_offers SET status = ?, published_at = CASE WHEN ? = 'published' THEN COALESCE(published_at, ?) ELSE published_at END, updated_at = ? WHERE id = ?`)
+      .bind(status, status, timestamp, timestamp, id).run();
+    const offer = await auth.db.prepare(`${offerSelect} WHERE id = ? LIMIT 1`).bind(id).first();
+    if (!offer) return privateErrorJson('Offer not found.', 404);
+    return privateJson({ offer });
+  } catch (error) {
+    return privateErrorJson(error.message || 'Unable to update offer.', 500);
+  }
+};

@@ -10,10 +10,20 @@ Static LuxeRoutes website prepared for GitHub source control and Cloudflare Page
 4. Use these build settings:
    - **Framework preset:** None
    - **Build command:** `exit 0`
-   - **Build output directory:** `/`
+   - **Build output directory:** `.`
 5. Add the production custom domain in Cloudflare Pages after the first deploy.
 
 Cloudflare Pages will publish the static files from the repository root. The `_headers`, `_redirects`, and `_routes.json` files are included for security headers, clean admin routing, and limiting Pages Functions invocation to `/api/*`.
+
+> **Do not enable GitHub Pages for the production domain.** GitHub Pages can display the static site, but it cannot execute `functions/api/*` or connect to D1. The repository intentionally does not include a root `CNAME` file because that file makes GitHub Pages claim `luxeroutes.eu`. Configure `luxeroutes.eu` as a custom domain on the Cloudflare Pages project instead.
+
+After deployment, verify that the domain is running the Cloudflare API rather than GitHub Pages:
+
+```bash
+node scripts/check-production-api.mjs https://luxeroutes.eu
+```
+
+A successful check returns JSON from `/api/offers`. A GitHub Pages `404 File not found` means the domain/DNS is still connected to GitHub Pages and the inquiry, admin, account, and publishing APIs cannot work.
 
 ## Account and admin access
 
@@ -36,3 +46,15 @@ Offer source content lives under `content/offers`. To regenerate offer cards loc
 ```bash
 python3 scripts/generate-offers.py
 ```
+
+## Production stay publishing workflow
+
+The static Markdown offers remain the curated baseline collection. New owner-submitted properties use the D1-backed workflow:
+
+1. Owners submit the structured property offer on `partners.html`; `/api/inquiries` saves it.
+2. Admins review the inquiry at `/admin/index.html` and choose **Publish stay**.
+3. The admin completes the public card and approves it through `/api/admin/offers`.
+4. Published offers are returned by `/api/offers` and automatically appear in the filtered collection on `offers.html`.
+5. Admins can unpublish a stay without deleting its record.
+
+Apply all D1 migrations, including `migrations/0005_stay_offers.sql`, before using this workflow. See `docs/cloudflare-admin-auth.md` for deployment and security details.

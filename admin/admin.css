@@ -100,3 +100,11 @@
 .admin-detail-dialog dl div { padding: .75rem; border-radius: 10px; background: #f6f2eb; }
 .admin-detail-dialog dt { font-weight: 800; text-transform: capitalize; }
 .admin-detail-dialog dd { margin: .25rem 0 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.admin-publish-form { display: grid; grid-template-columns: 1fr 1fr; gap: .9rem; margin-top: 1.25rem; }
+.admin-publish-form label, .admin-publish-form fieldset { display: grid; gap: .4rem; font-weight: 700; }
+.admin-publish-form input, .admin-publish-form select, .admin-publish-form textarea { width: 100%; border: 1px solid rgba(40, 51, 45, .22); border-radius: 8px; background: #fff; padding: .65rem; }
+.admin-publish-form fieldset, .admin-publish-form .full { grid-column: 1 / -1; }
+.admin-option-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: .5rem; }
+.admin-option-grid label { display: flex; align-items: center; gap: .4rem; font-weight: 600; }
+.admin-option-grid input { width: auto; }
+@media (max-width: 700px) { .admin-publish-form, .admin-option-grid { grid-template-columns: 1fr; } }
