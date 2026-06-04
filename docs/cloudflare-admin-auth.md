@@ -18,7 +18,7 @@ Implemented in this repository:
 - `migrations/0003_login_otps.sql` — stores short-lived hashed OTP challenges for passwordless login.
 - `wrangler.toml` — keeps Pages build output at the repository root and intentionally omits placeholder D1 IDs; bind `DB` in the Pages dashboard or add a real D1 UUID only after creation.
 
-The property/inquiry workspace is still demo data in browser storage. Move it to D1 later when account and role setup is confirmed.
+The production inquiry queue and stay-offer publishing workflow are D1-backed. Public property offers arrive as inquiries; admins review and complete a public card, then publish it to the live stay finder.
 
 ## Owner/manager approval workflow now included
 
@@ -172,13 +172,12 @@ Do not share the admin URL until the Phase 5 private-window test and admin acces
 
 ## Phase 6 — Next backend work
 
-After account and role grants are stable, move these modules from browser demo storage into D1/API routes:
+The inquiry and stay-offer publishing modules are now in D1. Future backend work can extend the same model for:
 
-- properties,
-- owners,
-- managers,
-- inquiries,
-- offer publishing workflow.
+- owner self-service listing edits,
+- manager assignments,
+- R2 photo uploads,
+- booking availability and pricing.
 
 Use D1 for records and R2 for property photos/documents.
 
@@ -228,9 +227,22 @@ After Cloudflare Access and the D1 admin grant approve the current email, the co
 - a member and role list for active access grants, including direct email invitations;
 - self-lockout protection that prevents an admin from removing or downgrading their own admin role;
 - a D1-backed inquiry queue with status management through `/api/admin/inquiries`;
+- an approve-and-publish stay workflow through `/api/admin/offers`, with live offers served publicly by `/api/offers`;
+- publish/unpublish controls that immediately add or remove database-backed cards from `/offers.html`;
 - a secure Cloudflare Access logout link.
 
 All admin API responses are marked `Cache-Control: no-store`, and every admin data read or mutation calls `requireAdmin` before accessing D1. Property applications submitted through public inquiry forms appear in the inquiry queue; owner and manager account applications appear in the role-review queue.
+
+## Stay offer approval and publishing workflow
+
+1. An owner submits the structured property form on `/partners.html`; `/api/inquiries` stores the full payload in D1.
+2. An admin opens `/admin/index.html` and clicks **Publish stay** beside an eligible property inquiry.
+3. The admin reviews and completes the public title, taxonomy placement, card copy, image, options, guest label, and price label.
+4. **Approve and publish stay** inserts a `published` row in `stay_offers` and marks the source inquiry `resolved`.
+5. `/offers.html` loads `/api/offers`, adds published D1 offers to the stay finder, and applies the same country, region, type, option, and search filters as static curated offers.
+6. **Unpublish** removes the offer from the public API response without deleting its admin record.
+
+Apply `migrations/0005_stay_offers.sql` before using the workflow in production. Admin publishing will fail safely until that migration exists.
 
 ## Optional custom OTP table maintenance
 
