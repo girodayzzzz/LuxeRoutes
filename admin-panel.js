@@ -1,1000 +1,255 @@
 const adminApp = document.querySelector('[data-admin-app]');
-const roleSelect = document.querySelector('[data-role-select]');
-const rolePreview = document.querySelector('[data-role-preview]');
 const authStatus = document.querySelector('[data-auth-status]');
 const authEmail = document.querySelector('[data-auth-email]');
 const authRole = document.querySelector('[data-auth-role]');
-const storageKey = 'luxeroutes-admin-panel-v1';
-const accountProfileStorageKey = 'luxeroutes-account-profile-v1';
-const adminAccountSessionKey = 'luxeroutes-account-session-v1';
-const offerBuilderForm = document.querySelector('[data-offer-builder-form]');
-const markdownOutput = document.querySelector('[data-markdown-output]');
-const offerPreview = document.querySelector('[data-offer-preview]');
-const offerPathTarget = document.querySelector('[data-offer-path]');
+const alertBox = document.querySelector('[data-admin-alert]');
+const refreshButton = document.querySelector('[data-refresh-admin]');
+const statsTarget = document.querySelector('[data-admin-stats]');
+const applicationsTarget = document.querySelector('[data-applications]');
+const membersTarget = document.querySelector('[data-members]');
+const inquiriesTarget = document.querySelector('[data-inquiries]');
+const grantForm = document.querySelector('[data-grant-form]');
+const inquiryDialog = document.querySelector('[data-inquiry-dialog]');
+const inquiryDialogTitle = document.querySelector('[data-inquiry-dialog-title]');
+const inquiryDialogContent = document.querySelector('[data-inquiry-dialog-content]');
 
-const seedData = {
-  properties: [
-    {
-      id: 'prop-ble-lake',
-      title: 'Lake View Apartment Bled',
-      owner: 'Alpine Private Stays',
-      country: 'Slovenia',
-      region: 'Lakes',
-      type: 'Apartment',
-      manager: 'Maja Novak',
-      status: 'pending_review',
-      notes: 'Two-bedroom lake apartment with parking, chef partner option, and premium arrival flow.',
-    },
-    {
-      id: 'prop-adriatic-villa',
-      title: 'Adriatic Stone Villa',
-      owner: 'Dalmatia Estate Partners',
-      country: 'Croatia',
-      region: 'Adriatic',
-      type: 'Villa',
-      manager: 'Luka Marin',
-      status: 'published',
-      notes: 'Private pool, sea view, concierge-ready villa for coastal routes.',
-    },
-    {
-      id: 'prop-dolomites-chalet',
-      title: 'Dolomites Hideaway Chalet',
-      owner: 'Northern Peaks Collection',
-      country: 'Italy',
-      region: 'Alps',
-      type: 'Chalet',
-      manager: 'Elena Rossi',
-      status: 'draft',
-      notes: 'Needs winter transfer details and exact cancellation terms before review.',
-    },
-  ],
-  owners: [
-    { name: 'Alpine Private Stays', email: 'owners@alpinestays.example', status: 'Verification pending', region: 'Slovenia · Lakes' },
-    { name: 'Dalmatia Estate Partners', email: 'partners@dalmatia.example', status: 'Approved partner', region: 'Croatia · Adriatic' },
-    { name: 'Northern Peaks Collection', email: 'hello@northernpeaks.example', status: 'Draft onboarding', region: 'Italy · Alps' },
-  ],
-  managers: [
-    { name: 'Maja Novak', email: 'maja@example.com', region: 'Slovenia', status: 'Active' },
-    { name: 'Luka Marin', email: 'luka@example.com', region: 'Croatia', status: 'Active' },
-    { name: 'Elena Rossi', email: 'elena@example.com', region: 'Italy', status: 'Candidate' },
-  ],
-  inquiries: [
-    { id: 'inq-001', guest: 'Sophia Keller', interest: 'Lake View Apartment Bled', dates: '14–18 Aug', status: 'new', next: 'Confirm availability with owner' },
-    { id: 'inq-002', guest: 'Marco Laurent', interest: 'Adriatic Stone Villa', dates: 'Flexible September', status: 'proposal_sent', next: 'Follow up on proposed route' },
-    { id: 'inq-003', guest: 'Amelia Grant', interest: 'Dolomites chalet ideas', dates: 'Winter holiday', status: 'researching', next: 'Wait for manager notes' },
-  ],
-  accessGrants: [
-    { email: 'traveler@example.com', role: 'customer', note: 'Default public account role', status: 'Active' },
-    { email: 'partners@dalmatia.example', role: 'owner', note: 'Owner access for Adriatic Stone Villa', status: 'Active' },
-    { email: 'maja@example.com', role: 'manager', note: 'Manager access for Slovenia listings', status: 'Active' },
-  ],
-};
+let currentAdminEmail = '';
+let profiles = [];
+let grants = [];
+let inquiries = [];
 
-const statusLabels = {
-  draft: 'Draft',
-  pending_review: 'Pending review',
-  needs_changes: 'Needs changes',
-  approved: 'Approved',
-  published: 'Published',
-  archived: 'Archived',
-};
-
-const inquiryStatusLabels = {
-  new: 'New',
-  researching: 'Researching',
-  proposal_sent: 'Proposal sent',
-  won: 'Won',
-  lost: 'Lost',
-};
-
-const taxonomyLabels = {
-  countries: {
-    slovenia: 'Slovenia',
-    croatia: 'Croatia',
-    italy: 'Italy',
-    austria: 'Austria',
-    switzerland: 'Switzerland',
-    france: 'France',
-  },
-  regions: {
-    alps: 'Alps',
-    adriatic: 'Adriatic coast',
-    lakes: 'Lakes',
-    'wine-country': 'Wine country',
-    city: 'City',
-    countryside: 'Countryside',
-    riviera: 'Riviera',
-  },
-  accommodationTypes: {
-    villa: 'Private villa',
-    chalet: 'Chalet',
-    'boutique-hotel': 'Boutique hotel',
-    apartment: 'Apartment',
-    cabin: 'Cabin',
-    retreat: 'Wellness retreat',
-  },
-  tripTypes: {
-    'signature-route': 'Signature route',
-    'romantic-getaway': 'Romantic getaway',
-    'wine-tour': 'Wine tour',
-    'wellness-retreat': 'Wellness retreat',
-    'yacht-experience': 'Yacht experience',
-    'fishing-escape': 'Fishing escape',
-  },
-};
-
-const accommodationFolders = {
-  villa: 'villas',
-  chalet: 'chalets',
-  'boutique-hotel': 'boutique-hotels',
-  apartment: 'apartments',
-  cabin: 'cabins',
-  retreat: 'wellness-retreats',
-};
-
-const tripFolders = {
-  'signature-route': 'signature-routes',
-  'romantic-getaway': 'romantic-getaways',
-  'wine-tour': 'wine-tours',
-  'wellness-retreat': 'wellness-retreats',
-  'yacht-experience': 'yacht-experiences',
-  'fishing-escape': 'fishing-escapes',
-};
-
-const cloneData = (data) => JSON.parse(JSON.stringify(data));
-
-let state = cloneData(seedData);
-let currentRole = 'admin';
-let currentIdentity = null;
-let remoteProfiles = [];
-let remoteAccessEnabled = false;
-
-const isLocalPreview = () => ['localhost', '127.0.0.1', ''].includes(window.location.hostname);
-const currentPanelRole = () => (isLocalPreview() ? (roleSelect?.value || currentRole) : currentRole);
-
-const getAdminPathPrefix = () => (window.location.pathname.includes('/admin/') ? '../' : '');
-
-const loadAdminAccountSession = () => {
-  try {
-    const session = JSON.parse(sessionStorage.getItem(adminAccountSessionKey) || 'null');
-    if (!session?.expiresAt || Date.now() >= session.expiresAt) return null;
-    return session;
-  } catch (error) {
-    return null;
-  }
-};
-
-const redirectNonAdmin = (session = null) => {
-  const prefix = getAdminPathPrefix();
-  const hasAccount = Boolean(session?.identity?.email || session?.profile?.email);
-  window.location.replace(`${prefix}${hasAccount ? 'account.html' : 'login.html'}`);
-};
-
-const loadRemoteAccountRole = async () => {
-  try {
-    const response = await fetch('/api/account', {
-      headers: { Accept: 'application/json' },
-      credentials: 'same-origin',
-    });
-
-    if (!response.ok) return null;
-    return response.json();
-  } catch (error) {
-    return null;
-  }
-};
-
-const saveState = () => {
-  localStorage.setItem(storageKey, JSON.stringify(state));
-};
-
-const loadState = () => {
-  const stored = localStorage.getItem(storageKey);
-  if (!stored) {
-    saveState();
-    return;
-  }
-
-  const parsed = JSON.parse(stored);
-  state = {
-    properties: Array.isArray(parsed.properties) ? parsed.properties : cloneData(seedData.properties),
-    owners: Array.isArray(parsed.owners) ? parsed.owners : cloneData(seedData.owners),
-    managers: Array.isArray(parsed.managers) ? parsed.managers : cloneData(seedData.managers),
-    inquiries: Array.isArray(parsed.inquiries) ? parsed.inquiries : cloneData(seedData.inquiries),
-    accessGrants: Array.isArray(parsed.accessGrants) ? parsed.accessGrants : cloneData(seedData.accessGrants),
-  };
-};
-
-const escapeHtml = (value) => String(value || '').replace(/[&<>"]/g, (character) => ({
-  '&': '&amp;',
-  '<': '&lt;',
-  '>': '&gt;',
-  '"': '&quot;',
+const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (character) => ({
+  '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;',
 }[character]));
 
-const formatStatus = (status) => statusLabels[status] || inquiryStatusLabels[status] || status;
-
-const formatRole = (role) => ({
-  admin: 'Admin',
-  manager: 'Manager',
-  owner: 'Owner',
-  customer: 'Customer',
-}[role] || role);
-
-const roleStatusClass = (role) => {
-  if (role === 'admin') return 'status-warning';
-  if (role === 'manager' || role === 'owner') return 'status-approved';
-  return 'status-pending';
+const formatDate = (value) => {
+  if (!value) return '—';
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleString();
 };
 
-const profileStatusLabel = (status) => ({
-  active: 'Active',
-  pending_admin_grant: 'Pending approval',
-  rejected: 'Rejected',
-}[status] || status || 'Pending approval');
-
-const profileStatusClass = (status) => {
-  if (status === 'active') return 'status-approved';
-  if (status === 'rejected') return 'status-warning';
-  return 'status-pending';
-};
-
-const toUiGrant = (grant) => ({
-  email: grant.email,
-  role: grant.role,
-  note: grant.note || 'Cloudflare D1 access grant',
-  status: grant.status === 'active' ? 'Active' : grant.status,
-});
-
-const getLocalAccountProfile = () => {
-  const stored = localStorage.getItem(accountProfileStorageKey);
-  if (!stored) return null;
-
+const roleLabel = (role) => ({ customer: 'Customer', owner: 'Owner', manager: 'Manager', admin: 'Admin' }[role] || role || 'Customer');
+const statusLabel = (status) => String(status || 'unknown').replaceAll('_', ' ');
+const normalizeEmail = (email) => String(email || '').trim().toLowerCase();
+const safeExternalUrl = (value) => {
   try {
-    return JSON.parse(stored);
+    const url = new URL(String(value || ''));
+    return ['http:', 'https:'].includes(url.protocol) ? url.href : '';
   } catch (error) {
-    return null;
+    return '';
   }
 };
 
-const normalizeProfileRole = (role) => (['customer', 'owner', 'manager'].includes(role) ? role : 'customer');
-
-const normalizeProfileStatus = (profile) => profile.status || (normalizeProfileRole(profile.requestedRole) === 'customer' ? 'active' : 'pending_admin_grant');
-
-const registrationStatusGroups = [
-  { key: 'pending', label: 'Pending', statuses: ['pending_admin_grant'] },
-  { key: 'accepted', label: 'Accepted', statuses: ['active'] },
-  { key: 'rejected', label: 'Rejected', statuses: ['rejected'] },
-];
-
-const profileCompanySummary = (profile) => [
-  profile.companyName ? `Company: ${escapeHtml(profile.companyName)}` : '',
-  profile.businessContext ? `Context: ${escapeHtml(profile.businessContext)}` : '',
-  profile.companyWebsite ? `Website: ${escapeHtml(profile.companyWebsite)}` : '',
-].filter(Boolean).join(' · ');
-
-const getProfileActiveRole = (profile) => {
-  const grant = state.accessGrants.find((item) => item.email?.toLowerCase() === profile.email?.toLowerCase());
-  return grant?.role || profile.grantedRole || profile.defaultRole || 'customer';
+const showAlert = (message = '', kind = 'error') => {
+  if (!alertBox) return;
+  alertBox.hidden = !message;
+  alertBox.textContent = message;
+  alertBox.dataset.kind = kind;
 };
 
-const renderRegistrationCard = (profile) => {
-  const requestedRole = normalizeProfileRole(profile.requestedRole);
-  const currentRole = getProfileActiveRole(profile);
-  const profileStatus = normalizeProfileStatus(profile);
-  const canReviewProfile = ['owner', 'manager'].includes(requestedRole) && profileStatus === 'pending_admin_grant';
-  const companySummary = profileCompanySummary(profile);
-
-  return `
-    <article class="registration-card">
-      <div class="registration-meta">
-        <strong>${escapeHtml(profile.name || profile.email || 'Unnamed account')}</strong>
-        <span>${escapeHtml(profile.email)}</span>
-        <span>Requested: ${escapeHtml(formatRole(requestedRole))} · Current: ${escapeHtml(formatRole(currentRole))}</span>
-        <span>Status: <span class="status-pill ${profileStatusClass(profileStatus)}">${escapeHtml(profileStatusLabel(profileStatus))}</span></span>
-        ${companySummary ? `<span>${companySummary}</span>` : '<span>Company context: not provided</span>'}
-        ${profile.notes ? `<span>Notes: ${escapeHtml(profile.notes)}</span>` : ''}
-        ${profile.localOnly ? '<span>Local preview request — save it through production D1 before final approval.</span>' : ''}
-      </div>
-      ${canReviewProfile ? `
-        <div class="access-request-actions">
-          <button class="mini-action" type="button" data-registration-action="approve" data-registration-email="${escapeHtml(profile.email)}" data-registration-role="${escapeHtml(requestedRole)}" ${!canApprove() ? 'disabled' : ''}>Approve</button>
-          <button class="mini-action mini-action-warning" type="button" data-registration-action="reject" data-registration-email="${escapeHtml(profile.email)}" data-registration-role="${escapeHtml(requestedRole)}" ${!canApprove() ? 'disabled' : ''}>Reject</button>
-        </div>
-      ` : ''}
-    </article>
-  `;
-};
-
-
-const statusClass = (status) => {
-  if (status === 'published' || status === 'approved' || status === 'won') return 'status-approved';
-  if (status === 'pending_review' || status === 'new' || status === 'researching') return 'status-pending';
-  if (status === 'needs_changes' || status === 'lost') return 'status-warning';
-  return '';
-};
-
-const canApprove = () => currentPanelRole() === 'admin';
-const canReview = () => currentPanelRole() === 'admin' || currentPanelRole() === 'manager';
-
-const nextPropertyStatus = (status) => {
-  if (status === 'draft') return 'pending_review';
-  if (status === 'pending_review') return canApprove() ? 'approved' : 'needs_changes';
-  if (status === 'needs_changes') return 'pending_review';
-  if (status === 'approved') return canApprove() ? 'published' : 'approved';
-  if (status === 'published') return canApprove() ? 'archived' : 'published';
-  return 'draft';
-};
-
-const propertyActionLabel = (status) => {
-  if (status === 'draft') return 'Submit';
-  if (status === 'pending_review') return canApprove() ? 'Approve' : 'Request changes';
-  if (status === 'needs_changes') return 'Resubmit';
-  if (status === 'approved') return canApprove() ? 'Publish' : 'Approved';
-  if (status === 'published') return canApprove() ? 'Archive' : 'Published';
-  return 'Reopen';
-};
-
-const nextInquiryStatus = (status) => {
-  if (status === 'new') return 'researching';
-  if (status === 'researching') return 'proposal_sent';
-  if (status === 'proposal_sent') return 'won';
-  if (status === 'won') return 'new';
-  return 'new';
-};
-
-const slugify = (value) => String(value || '')
-  .normalize('NFD')
-  .replace(/[\u0300-\u036f]/g, '')
-  .toLowerCase()
-  .replace(/[^a-z0-9]+/g, '-')
-  .replace(/^-+|-+$/g, '')
-  .replace(/-{2,}/g, '-');
-
-const normalizeSlug = (value, fallback = 'new-offer') => slugify(value) || fallback;
-
-const yamlString = (value) => `"${String(value || '').replace(/"/g, '\\"')}"`;
-
-const yamlList = (items) => {
-  if (!items.length) return '[]';
-  return `\n${items.map((item) => `  - ${item}`).join('\n')}`;
-};
-
-const getOfferDraft = (form) => {
-  const formData = new FormData(form);
-  const kind = String(formData.get('kind') || 'accommodation');
-  const title = String(formData.get('title') || '').trim();
-  const slug = normalizeSlug(formData.get('slug') || title);
-  const country = String(formData.get('country') || 'slovenia');
-  const region = String(formData.get('region') || 'alps');
-  const type = String(formData.get(kind === 'trip' ? 'trip_type' : 'type') || 'villa');
-  const options = formData.getAll('options').map((option) => String(option));
-  const summary = String(formData.get('summary') || '').trim();
-  const highlights = String(formData.get('highlights') || '')
-    .split('\n')
-    .map((item) => item.trim())
-    .filter(Boolean);
-  const priceFrom = String(formData.get('price_from') || '').trim();
-  const bestFor = String(formData.get('best_for') || '').trim();
-  const folder = kind === 'trip' ? tripFolders[type] : accommodationFolders[type];
-  const path = kind === 'trip'
-    ? `content/offers/${country}/trips/${folder}/${slug}.md`
-    : `content/offers/${country}/accommodation/${folder}/${slug}.md`;
-  const typeLabel = kind === 'trip' ? taxonomyLabels.tripTypes[type] : taxonomyLabels.accommodationTypes[type];
-
-  const fields = kind === 'trip'
-    ? [
-      ['title', yamlString(title)],
-      ['slug', slug],
-      ['status', 'draft'],
-      ['country', country],
-      ['trip_type', type],
-      ['route_regions', yamlList([region])],
-      ['duration', yamlString(priceFrom || 'To be confirmed')],
-      ['best_for', yamlList(bestFor ? bestFor.split(',').map((item) => item.trim()).filter(Boolean) : [])],
-    ]
-    : [
-      ['title', yamlString(title)],
-      ['slug', slug],
-      ['status', 'draft'],
-      ['country', country],
-      ['region', region],
-      ['type', type],
-      ['options', yamlList(options)],
-      ['price_from', yamlString(priceFrom || 'Upon request')],
-      ['best_for', yamlString(bestFor)],
-    ];
-
-  const frontMatter = fields.map(([key, value]) => `${key}: ${value}`).join('\n');
-  const highlightMarkdown = highlights.length
-    ? `\n\n## Highlights\n\n${highlights.map((item) => `- ${item}`).join('\n')}`
-    : '';
-  const body = `---\n${frontMatter}\n---\n\n${summary || 'Add public-facing offer summary here.'}${highlightMarkdown}\n`;
-
-  return {
-    kind,
-    title,
-    slug,
-    country,
-    region,
-    type,
-    options,
-    summary,
-    highlights,
-    priceFrom,
-    bestFor,
-    path,
-    typeLabel,
-    markdown: body,
-  };
-};
-
-const renderOfferDraft = (draft) => {
-  if (markdownOutput) markdownOutput.value = draft.markdown;
-  if (offerPathTarget) offerPathTarget.textContent = draft.path;
-  if (offerPreview) {
-    const regionLabel = taxonomyLabels.regions[draft.region] || draft.region;
-    const countryLabel = taxonomyLabels.countries[draft.country] || draft.country;
-    const meta = draft.kind === 'trip'
-      ? `${countryLabel} route · ${draft.typeLabel}`
-      : `${countryLabel} · ${regionLabel} · ${draft.typeLabel}`;
-    offerPreview.innerHTML = `
-      <span class="status-pill status-pending">Draft</span>
-      <h3>${escapeHtml(draft.title || 'Untitled offer')}</h3>
-      <p>${escapeHtml(draft.summary || 'Add public-facing offer summary here.')}</p>
-      <div class="offer-preview-meta">
-        <span>${escapeHtml(meta)}</span>
-        <span>${escapeHtml(draft.priceFrom || 'Upon request')}</span>
-      </div>
-      ${draft.highlights.length ? `<ul>${draft.highlights.slice(0, 4).map((item) => `<li>${escapeHtml(item)}</li>`).join('')}</ul>` : ''}
-    `;
-  }
-};
-
-const toggleOfferKindFields = () => {
-  const kind = offerBuilderForm?.querySelector('[data-offer-kind]')?.value || 'accommodation';
-  offerBuilderForm?.querySelectorAll('[data-accommodation-field]').forEach((field) => {
-    field.hidden = kind === 'trip';
+const requestJson = async (url, options = {}) => {
+  const response = await fetch(url, {
+    credentials: 'same-origin',
+    headers: { Accept: 'application/json', ...(options.body ? { 'Content-Type': 'application/json' } : {}) },
+    ...options,
   });
-  offerBuilderForm?.querySelectorAll('[data-trip-field]').forEach((field) => {
-    field.hidden = kind !== 'trip';
-  });
-};
-
-const copyMarkdown = () => {
-  const markdown = markdownOutput?.value || '';
-  if (!markdown) return;
-  if (navigator.clipboard) {
-    navigator.clipboard.writeText(markdown);
-    return;
-  }
-  markdownOutput?.select();
-  document.execCommand('copy');
-};
-
-const downloadMarkdown = () => {
-  const markdown = markdownOutput?.value || '';
-  if (!markdown) return;
-  const slug = normalizeSlug(offerBuilderForm?.querySelector('[data-slug-input]')?.value || 'offer-draft');
-  const url = URL.createObjectURL(new Blob([markdown], { type: 'text/markdown' }));
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = `${slug}.md`;
-  link.click();
-  URL.revokeObjectURL(url);
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data.error || `Request failed with HTTP ${response.status}.`);
+  return data;
 };
 
 const renderStats = () => {
-  const statTargets = {
-    properties: state.properties.length,
-    pending: state.properties.filter((property) => property.status === 'pending_review').length,
-    published: state.properties.filter((property) => property.status === 'published').length,
-    inquiries: state.inquiries.filter((inquiry) => !['won', 'lost'].includes(inquiry.status)).length,
-  };
-
-  Object.entries(statTargets).forEach(([key, value]) => {
-    const target = document.querySelector(`[data-stat="${key}"]`);
-    if (target) target.textContent = String(value);
-  });
+  const pending = profiles.filter((profile) => profile.status === 'pending_admin_grant').length;
+  const activeMembers = grants.filter((grant) => grant.status === 'active').length;
+  const openInquiries = inquiries.filter((inquiry) => !['resolved', 'closed'].includes(inquiry.status)).length;
+  const admins = grants.filter((grant) => grant.status === 'active' && grant.role === 'admin').length;
+  statsTarget.innerHTML = [
+    ['Pending applications', pending],
+    ['Active members', activeMembers],
+    ['Open inquiries', openInquiries],
+    ['Active admins', admins],
+  ].map(([label, value]) => `<article><strong>${value}</strong><span>${label}</span></article>`).join('');
 };
 
-const renderReviewList = () => {
-  const target = document.querySelector('[data-review-list]');
-  if (!target) return;
+const renderApplications = () => {
+  const pending = profiles.filter((profile) => profile.status === 'pending_admin_grant');
+  applicationsTarget.innerHTML = pending.map((profile) => {
+    const website = safeExternalUrl(profile.companyWebsite);
+    return `
+    <article class="admin-record">
+      <div>
+        <span class="status-pill status-warning">${escapeHtml(roleLabel(profile.requestedRole))} request</span>
+        <h3>${escapeHtml(profile.name || profile.email)}</h3>
+        <p><strong>${escapeHtml(profile.email)}</strong>${profile.companyName ? ` · ${escapeHtml(profile.companyName)}` : ''}</p>
+        ${website ? `<p><a href="${escapeHtml(website)}" target="_blank" rel="noopener noreferrer">${escapeHtml(website)}</a></p>` : ''}
+        ${profile.businessContext ? `<p>${escapeHtml(profile.businessContext)}</p>` : ''}
+        <small>Submitted ${escapeHtml(formatDate(profile.updatedAt))}</small>
+      </div>
+      <div class="admin-record-actions">
+        <button class="btn btn-primary" type="button" data-grant-action="approve" data-email="${escapeHtml(profile.email)}" data-role="${escapeHtml(profile.requestedRole)}">Approve</button>
+        <button class="btn btn-secondary" type="button" data-grant-action="reject" data-email="${escapeHtml(profile.email)}" data-role="customer">Reject</button>
+      </div>
+    </article>
+  `;
+  }).join('') || '<p class="empty-state">No owner or manager applications are waiting for review.</p>';
+};
 
-  const reviewItems = state.properties.filter((property) => ['pending_review', 'needs_changes', 'approved'].includes(property.status));
-  if (!reviewItems.length) {
-    target.innerHTML = '<p class="empty-state">No listings need review right now.</p>';
+const renderMembers = () => {
+  const profileByEmail = new Map(profiles.map((profile) => [profile.email, profile]));
+  membersTarget.innerHTML = grants.map((grant) => {
+    const profile = profileByEmail.get(grant.email) || {};
+    const isSelf = normalizeEmail(grant.email) === normalizeEmail(currentAdminEmail);
+    return `
+      <tr>
+        <td><strong>${escapeHtml(profile.name || grant.email)}</strong><br><small>${escapeHtml(grant.email)}</small></td>
+        <td>${escapeHtml(roleLabel(grant.role))}</td>
+        <td>${escapeHtml(statusLabel(grant.status))}</td>
+        <td>${escapeHtml(profile.companyName || '—')}</td>
+        <td>${escapeHtml(formatDate(grant.updatedAt))}</td>
+        <td>
+          <form class="inline-role-form" data-member-form data-email="${escapeHtml(grant.email)}">
+            <select name="role" aria-label="Role for ${escapeHtml(grant.email)}" ${isSelf ? 'disabled' : ''}>
+              ${['customer', 'owner', 'manager', 'admin'].map((role) => `<option value="${role}" ${grant.role === role ? 'selected' : ''}>${roleLabel(role)}</option>`).join('')}
+            </select>
+            <button class="mini-action" type="submit" ${isSelf ? 'disabled' : ''}>Save</button>
+          </form>
+        </td>
+      </tr>`;
+  }).join('') || '<tr><td colspan="6" class="empty-state">No member grants found.</td></tr>';
+};
+
+const renderInquiries = () => {
+  inquiriesTarget.innerHTML = inquiries.map((inquiry) => `
+    <tr>
+      <td><strong>${escapeHtml(inquiry.name || 'Unnamed')}</strong><br><small>${escapeHtml(inquiry.email || inquiry.phone || 'No contact')}</small></td>
+      <td>${escapeHtml(inquiry.inquiryType)}</td>
+      <td>${escapeHtml(formatDate(inquiry.createdAt))}</td>
+      <td>
+        <select data-inquiry-status data-id="${escapeHtml(inquiry.id)}" aria-label="Status for ${escapeHtml(inquiry.inquiryType)}">
+          ${['new', 'in_progress', 'waiting', 'resolved', 'closed'].map((status) => `<option value="${status}" ${inquiry.status === status ? 'selected' : ''}>${statusLabel(status)}</option>`).join('')}
+        </select>
+      </td>
+      <td><button class="mini-action" type="button" data-inquiry-detail="${escapeHtml(inquiry.id)}">View details</button></td>
+    </tr>
+  `).join('') || '<tr><td colspan="5" class="empty-state">No inquiries received yet.</td></tr>';
+};
+
+const renderAll = () => {
+  renderStats();
+  renderApplications();
+  renderMembers();
+  renderInquiries();
+};
+
+const loadAdminData = async () => {
+  showAlert('');
+  refreshButton.disabled = true;
+  try {
+    const [grantData, inquiryData] = await Promise.all([
+      requestJson('/api/admin/grants'),
+      requestJson('/api/admin/inquiries'),
+    ]);
+    profiles = Array.isArray(grantData.profiles) ? grantData.profiles : [];
+    grants = Array.isArray(grantData.grants) ? grantData.grants : [];
+    inquiries = Array.isArray(inquiryData.inquiries) ? inquiryData.inquiries : [];
+    renderAll();
+  } catch (error) {
+    showAlert(error.message);
+  } finally {
+    refreshButton.disabled = false;
+  }
+};
+
+const verifyAdmin = async () => {
+  try {
+    const session = await requestJson('/api/admin/session');
+    currentAdminEmail = session.email;
+    authStatus.textContent = 'Verified by Cloudflare Access and the D1 admin grant.';
+    authEmail.textContent = session.email;
+    authRole.textContent = 'Admin';
+    authRole.className = 'status-pill status-approved';
+    adminApp.hidden = false;
+    await loadAdminData();
+  } catch (error) {
+    authStatus.textContent = error.message;
+    authEmail.textContent = 'No verified admin session';
+    authRole.textContent = 'Locked';
+    authRole.className = 'status-pill status-warning';
+    adminApp.hidden = true;
+  }
+};
+
+const saveGrant = async ({ email, role, action = 'approve', note = '' }) => {
+  await requestJson('/api/admin/grants', {
+    method: 'POST',
+    body: JSON.stringify({ email, role, action, note }),
+  });
+  showAlert(`${email} was updated successfully.`, 'success');
+  await loadAdminData();
+};
+
+document.addEventListener('click', async (event) => {
+  const grantButton = event.target.closest('[data-grant-action]');
+  if (grantButton) {
+    grantButton.disabled = true;
+    try {
+      await saveGrant({ email: grantButton.dataset.email, role: grantButton.dataset.role, action: grantButton.dataset.grantAction });
+    } catch (error) {
+      showAlert(error.message);
+      grantButton.disabled = false;
+    }
     return;
   }
 
-  target.innerHTML = reviewItems.map((property) => `
-    <div class="stack-item">
-      <div>
-        <strong>${escapeHtml(property.title)}</strong>
-        <span>${escapeHtml(property.country)} · ${escapeHtml(property.region)} · ${escapeHtml(property.type)}</span>
-      </div>
-      <span class="status-pill ${statusClass(property.status)}">${formatStatus(property.status)}</span>
-    </div>
-  `).join('');
-};
-
-const renderPropertyTable = () => {
-  const table = document.querySelector('[data-property-table]');
-  if (!table) return;
-
-  table.innerHTML = state.properties.map((property) => `
-    <tr>
-      <td><strong>${escapeHtml(property.title)}</strong><small>${escapeHtml(property.notes)}</small></td>
-      <td>${escapeHtml(property.owner)}</td>
-      <td>${escapeHtml(property.country)}<small>${escapeHtml(property.region)}</small></td>
-      <td>${escapeHtml(property.type)}</td>
-      <td><span class="status-pill ${statusClass(property.status)}">${formatStatus(property.status)}</span></td>
-      <td><button class="mini-action" type="button" data-property-action="${property.id}" ${!canReview() ? 'disabled' : ''}>${propertyActionLabel(property.status)}</button></td>
-    </tr>
-  `).join('');
-};
-
-const renderPeople = () => {
-  const ownerList = document.querySelector('[data-owner-list]');
-  const managerList = document.querySelector('[data-manager-list]');
-  const registrationList = document.querySelector('[data-registration-list]');
-  const accessGrantList = document.querySelector('[data-access-grant-list]');
-
-  if (ownerList) {
-    ownerList.innerHTML = state.owners.map((owner) => `
-      <div class="stack-item">
-        <div><strong>${escapeHtml(owner.name)}</strong><span>${escapeHtml(owner.email)} · ${escapeHtml(owner.region)}</span></div>
-        <span class="status-pill">${escapeHtml(owner.status)}</span>
-      </div>
-    `).join('');
+  const detailButton = event.target.closest('[data-inquiry-detail]');
+  if (detailButton) {
+    const inquiry = inquiries.find((item) => item.id === detailButton.dataset.inquiryDetail);
+    if (!inquiry) return;
+    let payload = {};
+    try { payload = JSON.parse(inquiry.payloadJson || '{}'); } catch (error) { payload = {}; }
+    inquiryDialogTitle.textContent = inquiry.inquiryType || 'Inquiry';
+    const details = { name: inquiry.name, email: inquiry.email, phone: inquiry.phone, received: formatDate(inquiry.createdAt), ...payload };
+    inquiryDialogContent.innerHTML = Object.entries(details)
+      .filter(([, value]) => value)
+      .map(([key, value]) => `<div><dt>${escapeHtml(key.replaceAll('_', ' '))}</dt><dd>${escapeHtml(value)}</dd></div>`)
+      .join('') || '<p>No additional details.</p>';
+    inquiryDialog.showModal();
   }
+});
 
-  if (managerList) {
-    managerList.innerHTML = state.managers.map((manager) => `
-      <div class="stack-item">
-        <div><strong>${escapeHtml(manager.name)}</strong><span>${escapeHtml(manager.email)} · ${escapeHtml(manager.region)}</span></div>
-        <span class="status-pill ${manager.status === 'Active' ? 'status-approved' : 'status-pending'}">${escapeHtml(manager.status)}</span>
-      </div>
-    `).join('');
-  }
-
-  if (registrationList) {
-    const accountProfile = getLocalAccountProfile();
-    const localProfiles = accountProfile?.email ? [{
-      ...accountProfile,
-      id: 'local-preview-request',
-      status: accountProfile.status || (accountProfile.requestedRole === 'customer' ? 'active' : 'pending_admin_grant'),
-      localOnly: true,
-    }] : [];
-    const profileMap = new Map();
-    [...(isLocalPreview() ? localProfiles : []), ...remoteProfiles].forEach((profile) => {
-      if (!profile?.email) return;
-      profileMap.set(profile.email.toLowerCase(), profile);
-    });
-    const profiles = Array.from(profileMap.values());
-
-    registrationList.innerHTML = registrationStatusGroups.map((group) => {
-      const groupProfiles = profiles.filter((profile) => group.statuses.includes(normalizeProfileStatus(profile)));
-      return `
-        <section class="registration-column" aria-label="${escapeHtml(group.label)} registrations">
-          <div class="card-head"><p class="eyebrow">${escapeHtml(group.label)}</p><span class="status-pill">${groupProfiles.length}</span></div>
-          ${groupProfiles.map(renderRegistrationCard).join('') || `<p class="empty-state">No ${escapeHtml(group.label.toLowerCase())} registrations.</p>`}
-        </section>
-      `;
-    }).join('');
-  }
-
-
-  if (accessGrantList) {
-    accessGrantList.innerHTML = state.accessGrants.map((grant) => `
-      <div class="stack-item">
-        <div><strong>${escapeHtml(grant.email)}</strong><span>${escapeHtml(grant.note || 'No access note')}</span></div>
-        <span class="status-pill ${roleStatusClass(grant.role)}">${escapeHtml(formatRole(grant.role))}</span>
-      </div>
-    `).join('') || '<p class="empty-state">No access grants yet.</p>';
-  }
-};
-
-const renderInquiryTable = () => {
-  const table = document.querySelector('[data-inquiry-table]');
-  if (!table) return;
-
-  table.innerHTML = state.inquiries.map((inquiry) => `
-    <tr>
-      <td><strong>${escapeHtml(inquiry.guest)}</strong></td>
-      <td>${escapeHtml(inquiry.interest)}</td>
-      <td>${escapeHtml(inquiry.dates)}</td>
-      <td><span class="status-pill ${statusClass(inquiry.status)}">${formatStatus(inquiry.status)}</span></td>
-      <td>${escapeHtml(inquiry.next)}</td>
-      <td><button class="mini-action" type="button" data-inquiry-action="${inquiry.id}" ${currentPanelRole() === 'owner' ? 'disabled' : ''}>Advance</button></td>
-    </tr>
-  `).join('');
-};
-
-const renderRoleAccess = () => {
-  const role = currentPanelRole();
-  document.body.dataset.panelRole = role;
-  document.querySelectorAll('[data-admin-tab]').forEach((button) => {
-    const tab = button.dataset.adminTab;
-    const restrictedForOwner = role === 'owner' && ['people', 'settings'].includes(tab);
-    button.disabled = restrictedForOwner;
-  });
-};
-
-
-const setAuthCard = ({ status, email, role, approved }) => {
-  if (authStatus) authStatus.textContent = status;
-  if (authEmail) authEmail.textContent = email || 'No verified session';
-  if (authRole) {
-    authRole.textContent = role || 'Blocked';
-    authRole.classList.toggle('status-approved', Boolean(approved));
-    authRole.classList.toggle('status-warning', !approved);
-    authRole.classList.toggle('status-pending', false);
-  }
-};
-
-const getCloudflareIdentity = async () => {
-  try {
-    const response = await fetch('/.cloudflare/access/get-identity', {
-      headers: { Accept: 'application/json' },
-      credentials: 'same-origin',
-    });
-
-    if (!response.ok) return null;
-    const identity = await response.json();
-    return identity?.email ? identity : null;
-  } catch (error) {
-    return null;
-  }
-};
-
-const loadRemoteAccessGrants = async () => {
-  if (!currentIdentity || isLocalPreview()) return;
-
-  try {
-    const response = await fetch('/api/admin/grants', {
-      headers: { Accept: 'application/json' },
-      credentials: 'same-origin',
-    });
-
-    if (!response.ok) {
-      remoteAccessEnabled = false;
-      return;
-    }
-
-    const data = await response.json();
-    remoteAccessEnabled = true;
-    remoteProfiles = Array.isArray(data.profiles) ? data.profiles : [];
-    state.accessGrants = Array.isArray(data.grants) ? data.grants.map(toUiGrant) : state.accessGrants;
-    saveState();
-    render();
-  } catch (error) {
-    remoteAccessEnabled = false;
-  }
-};
-
-const saveRemoteAccessGrant = async ({ email, role, note, action = 'approve' }) => {
-  if (!currentIdentity || isLocalPreview()) return null;
-
-  const response = await fetch('/api/admin/grants', {
-    method: 'POST',
-    headers: {
-      Accept: 'application/json',
-      'Content-Type': 'application/json',
-    },
-    credentials: 'same-origin',
-    body: JSON.stringify({ email, role, note, action }),
-  });
-
-  if (!response.ok) {
-    const message = await response.json().catch(() => ({}));
-    throw new Error(message.error || 'Unable to save access grant in D1.');
-  }
-
-  const data = await response.json();
-  remoteAccessEnabled = true;
-  return {
-    grant: data.grant ? toUiGrant(data.grant) : null,
-    profile: data.profile || null,
-    action: data.action || action,
-  };
-};
-
-const unlockWorkspace = ({ role = 'admin', identity = null, localPreview = false } = {}) => {
-  currentRole = role;
-  currentIdentity = identity;
-  if (adminApp) adminApp.hidden = false;
-  if (rolePreview) rolePreview.hidden = !localPreview;
-  setAuthCard({
-    status: localPreview
-      ? 'Local preview mode is active. Production access should be enforced by Cloudflare Access.'
-      : 'Cloudflare Access session approved. Admin workspace is unlocked.',
-    email: identity?.email || (localPreview ? 'localhost preview' : ''),
-    role: localPreview ? 'Local preview' : role.toUpperCase(),
-    approved: true,
-  });
-};
-
-const lockWorkspace = () => {
-  if (adminApp) adminApp.hidden = true;
-  if (rolePreview) rolePreview.hidden = true;
-  setAuthCard({
-    status: 'Admin workspace is locked. Sign in with an account that has an admin role to open /admin.',
-    email: 'Admin session required',
-    role: 'Locked',
-    approved: false,
-  });
-};
-
-const initialiseAdminAccess = async () => {
-  const session = loadAdminAccountSession();
-
-  if (isLocalPreview()) {
-    unlockWorkspace({
-      role: roleSelect?.value || 'admin',
-      identity: session?.identity || (session?.profile?.email ? { email: session.profile.email } : null),
-      localPreview: true,
-    });
-    return true;
-  }
-
-  const identity = await getCloudflareIdentity();
-  if (!identity) {
-    lockWorkspace();
-    redirectNonAdmin(session);
-    return false;
-  }
-
-  const remoteAccount = await loadRemoteAccountRole();
-  if (remoteAccount?.role === 'admin') {
-    unlockWorkspace({ role: 'admin', identity });
-    return true;
-  }
-
-  lockWorkspace();
-  redirectNonAdmin(remoteAccount ? { identity, profile: remoteAccount.profile, role: remoteAccount.role } : session);
-  return false;
-};
-
-const adminRoutePanel = () => {
-  const page = window.location.pathname.split('/').pop() || 'index.html';
-  return {
-    'index.html': 'overview',
-    'offers.html': 'offer-builder',
-    'partners.html': 'properties',
-    'users.html': 'people',
-  }[page] || 'overview';
-};
-
-const applyAdminRoutePanel = () => {
-  const activePanel = adminRoutePanel();
-  document.querySelectorAll('[data-admin-tab]').forEach((tab) => {
-    const isActive = tab.dataset.adminTab === activePanel;
-    tab.classList.toggle('is-active', isActive);
-    tab.setAttribute('aria-selected', String(isActive));
-  });
-  document.querySelectorAll('[data-panel]').forEach((panel) => {
-    panel.classList.toggle('is-active', panel.dataset.panel === activePanel);
-  });
-  document.querySelectorAll('.admin-route-nav a').forEach((link) => {
-    const isActive = link.getAttribute('href') === (window.location.pathname.split('/').pop() || 'index.html');
-    link.classList.toggle('is-active', isActive);
-    if (isActive) link.setAttribute('aria-current', 'page');
-  });
-};
-
-const render = () => {
-  renderRoleAccess();
-  renderStats();
-  renderReviewList();
-  renderPropertyTable();
-  renderPeople();
-  renderInquiryTable();
-  applyAdminRoutePanel();
-};
-
-const initialiseAdminPanel = async () => {
-  if (!adminApp) return;
-
-  const isUnlocked = await initialiseAdminAccess();
-  if (!isUnlocked) return;
-
-  loadState();
-  render();
-  await loadRemoteAccessGrants();
-
-  document.querySelectorAll('[data-admin-tab]').forEach((button) => {
-    button.addEventListener('click', () => {
-      if (button.disabled) return;
-      document.querySelectorAll('[data-admin-tab]').forEach((tab) => {
-        const isActive = tab === button;
-        tab.classList.toggle('is-active', isActive);
-        tab.setAttribute('aria-selected', String(isActive));
-      });
-      document.querySelectorAll('[data-panel]').forEach((panel) => {
-        panel.classList.toggle('is-active', panel.dataset.panel === button.dataset.adminTab);
-      });
-    });
-  });
-
-  roleSelect?.addEventListener('change', () => {
-    currentRole = roleSelect.value;
-    render();
-  });
-
-  if (offerBuilderForm) {
-    toggleOfferKindFields();
-
-    const titleInput = offerBuilderForm.querySelector('input[name="title"]');
-    const slugInput = offerBuilderForm.querySelector('[data-slug-input]');
-    let slugEdited = Boolean(slugInput?.value);
-
-    slugInput?.addEventListener('input', () => {
-      slugEdited = true;
-      slugInput.value = normalizeSlug(slugInput.value);
-    });
-
-    titleInput?.addEventListener('input', () => {
-      if (!slugInput || slugEdited) return;
-      slugInput.value = normalizeSlug(titleInput.value, '');
-    });
-
-    offerBuilderForm.querySelector('[data-offer-kind]')?.addEventListener('change', toggleOfferKindFields);
-
-    offerBuilderForm.addEventListener('submit', (event) => {
-      event.preventDefault();
-      const draft = getOfferDraft(offerBuilderForm);
-      if (slugInput) slugInput.value = draft.slug;
-      renderOfferDraft(draft);
-    });
-  }
-
-  document.querySelector('[data-copy-markdown]')?.addEventListener('click', copyMarkdown);
-  document.querySelector('[data-download-markdown]')?.addEventListener('click', downloadMarkdown);
-
-  document.querySelector('[data-registration-list]')?.addEventListener('click', async (event) => {
-    const actionButton = event.target.closest('[data-registration-action]');
-    if (!actionButton || !canApprove()) return;
-
-    const email = String(actionButton.dataset.registrationEmail || '').trim().toLowerCase();
-    const role = String(actionButton.dataset.registrationRole || 'customer');
-    const action = String(actionButton.dataset.registrationAction || 'approve');
-    const note = action === 'approve'
-      ? `Approved ${formatRole(role)} access from admin review`
-      : `Rejected ${formatRole(role)} access from admin review`;
-    if (!email || !['owner', 'manager'].includes(role)) return;
-
-    try {
-      const remoteResult = await saveRemoteAccessGrant({ email, role, note, action });
-      const remoteGrant = remoteResult?.grant;
-      const status = action === 'approve' ? 'active' : 'rejected';
-      const fallbackRole = action === 'approve' ? role : 'customer';
-      const localProfile = updateLocalAccountProfileStatus({ email, role, status, note });
-      const remoteProfile = remoteResult?.profile || localProfile || { email, requestedRole: role, defaultRole: fallbackRole, status, notes: note };
-      const existingGrant = state.accessGrants.find((grant) => grant.email.toLowerCase() === email);
-
-      if (existingGrant) {
-        existingGrant.role = remoteGrant?.role || fallbackRole;
-        existingGrant.note = remoteGrant?.note || note;
-        existingGrant.status = remoteGrant?.status || 'Active';
-      } else {
-        state.accessGrants.unshift(remoteGrant || { email, role: fallbackRole, note, status: 'Active' });
-      }
-
-      upsertRemoteProfile({ ...remoteProfile, status, requestedRole: remoteProfile.requestedRole || role });
-      saveState();
-      render();
-    } catch (error) {
-      setAuthCard({
-        status: `${error.message} Check the D1 binding and that your email has an admin access_grant.`,
-        email: currentIdentity?.email || 'Cloudflare Access required',
-        role: 'D1 warning',
-        approved: false,
-      });
-    }
-  });
-
-  document.querySelector('[data-access-grant-form]')?.addEventListener('submit', async (event) => {
+document.addEventListener('submit', async (event) => {
+  const memberForm = event.target.closest('[data-member-form]');
+  if (memberForm) {
     event.preventDefault();
-    if (!canApprove()) return;
-
-    const form = event.currentTarget;
-    const formData = new FormData(form);
-    const email = String(formData.get('email') || '').trim().toLowerCase();
-    const role = String(formData.get('role') || 'customer');
-    const note = String(formData.get('note') || '').trim();
-    if (!email) return;
-
     try {
-      const remoteResult = await saveRemoteAccessGrant({ email, role, note });
-      const remoteGrant = remoteResult?.grant;
-      const existingGrant = state.accessGrants.find((grant) => grant.email.toLowerCase() === email);
-      if (existingGrant) {
-        existingGrant.role = remoteGrant?.role || role;
-        existingGrant.note = remoteGrant?.note || note || existingGrant.note;
-        existingGrant.status = remoteGrant?.status || 'Active';
-      } else {
-        state.accessGrants.unshift(remoteGrant || { email, role, note, status: 'Active' });
-      }
-      remoteProfiles = remoteProfiles.filter((profile) => profile.email !== email);
-    } catch (error) {
-      setAuthCard({
-        status: `${error.message} Check the D1 binding and that your email has an admin access_grant.`,
-        email: currentIdentity?.email || 'Cloudflare Access required',
-        role: 'D1 warning',
-        approved: false,
-      });
-      return;
-    }
+      await saveGrant({ email: memberForm.dataset.email, role: new FormData(memberForm).get('role'), note: 'Role updated from admin console' });
+    } catch (error) { showAlert(error.message); }
+    return;
+  }
 
-    saveState();
-    form.reset();
-    render();
-  });
-
-  document.querySelector('[data-property-form]')?.addEventListener('submit', (event) => {
+  if (event.target === grantForm) {
     event.preventDefault();
-    const form = event.currentTarget;
-    const formData = new FormData(form);
-    const title = String(formData.get('title') || '').trim();
-    const owner = String(formData.get('owner') || '').trim();
-    if (!title || !owner) return;
+    const data = new FormData(grantForm);
+    try {
+      await saveGrant({ email: data.get('email'), role: data.get('role'), note: data.get('note') });
+      grantForm.reset();
+    } catch (error) { showAlert(error.message); }
+  }
+});
 
-    state.properties.unshift({
-      id: `prop-${Date.now()}`,
-      title,
-      owner,
-      country: String(formData.get('country') || '').trim(),
-      region: String(formData.get('region') || '').trim(),
-      type: String(formData.get('type') || '').trim(),
-      manager: String(formData.get('manager') || '').trim() || 'Unassigned',
-      status: 'draft',
-      notes: String(formData.get('notes') || '').trim() || 'New draft listing. Add review notes before publishing.',
-    });
+document.addEventListener('change', async (event) => {
+  const select = event.target.closest('[data-inquiry-status]');
+  if (!select) return;
+  select.disabled = true;
+  try {
+    await requestJson('/api/admin/inquiries', { method: 'PATCH', body: JSON.stringify({ id: select.dataset.id, status: select.value }) });
+    showAlert('Inquiry status updated.', 'success');
+    await loadAdminData();
+  } catch (error) {
+    showAlert(error.message);
+    select.disabled = false;
+  }
+});
 
-    if (!state.owners.some((existingOwner) => existingOwner.name.toLowerCase() === owner.toLowerCase())) {
-      state.owners.unshift({
-        name: owner,
-        email: 'Owner email pending',
-        status: 'Draft onboarding',
-        region: `${String(formData.get('country') || '').trim()} · ${String(formData.get('region') || '').trim()}`,
-      });
-    }
-
-    saveState();
-    form.reset();
-    render();
-  });
-
-  adminApp.addEventListener('click', (event) => {
-    const propertyButton = event.target.closest('[data-property-action]');
-    if (propertyButton) {
-      const property = state.properties.find((item) => item.id === propertyButton.dataset.propertyAction);
-      if (property && canReview()) {
-        property.status = nextPropertyStatus(property.status);
-        saveState();
-        render();
-      }
-    }
-
-    const inquiryButton = event.target.closest('[data-inquiry-action]');
-    if (inquiryButton && currentPanelRole() !== 'owner') {
-      const inquiry = state.inquiries.find((item) => item.id === inquiryButton.dataset.inquiryAction);
-      if (inquiry) {
-        inquiry.status = nextInquiryStatus(inquiry.status);
-        inquiry.next = inquiry.status === 'won' ? 'Confirm commission and owner handoff' : 'Update partner and guest notes';
-        saveState();
-        render();
-      }
-    }
-  });
-
-  document.querySelector('[data-reset-demo]')?.addEventListener('click', () => {
-    state = cloneData(seedData);
-    saveState();
-    render();
-  });
-};
-
-initialiseAdminPanel();
+refreshButton?.addEventListener('click', loadAdminData);
+verifyAdmin();
