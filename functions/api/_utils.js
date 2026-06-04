@@ -142,7 +142,7 @@ export const getActiveGrant = async (db, email) => {
     FROM access_grants
     WHERE lower(trim(email)) = ? AND status = 'active'
     LIMIT 1
-  `).bind(email).first();
+  `).bind(normalizeEmail(email)).first();
 };
 
 export const requireAdmin = async (request, env) => {
