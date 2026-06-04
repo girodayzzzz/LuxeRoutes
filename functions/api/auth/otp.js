@@ -74,10 +74,20 @@ const requestOtp = async ({ request, env }) => {
 
   await ensureOtpSchema(db);
 
+  const timestamp = nowIso();
+  await db.prepare(`
+    UPDATE login_otps
+    SET status = 'expired', updated_at = ?
+    WHERE email = ? AND status = 'pending' AND expires_at <= ?
+  `).bind(timestamp, email, timestamp).run();
+  await db.prepare(`
+    DELETE FROM login_otps
+    WHERE email = ? AND status IN ('verified', 'expired', 'locked') AND updated_at < datetime('now', '-7 days')
+  `).bind(email).run();
+
   const otp = generateOtp();
   const otpHash = await hashOtp(otp);
   const otpId = makeId('otp');
-  const timestamp = nowIso();
   const expiresAt = minutesFromNow(OTP_TTL_MINUTES);
 
   await db.prepare(`
