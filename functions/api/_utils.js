@@ -125,6 +125,16 @@ export const requireDb = (env) => {
   return env.DB;
 };
 
+const grantSelect = `
+  SELECT id, email, role, note, granted_by_email AS grantedByEmail, status, created_at AS createdAt, updated_at AS updatedAt
+  FROM access_grants
+`;
+
+export const getGrantByEmail = async (db, email) => {
+  if (!email) return null;
+  return db.prepare(`${grantSelect} WHERE lower(trim(email)) = ? LIMIT 1`).bind(normalizeEmail(email)).first();
+};
+
 export const getActiveGrant = async (db, email) => {
   if (!email) return null;
   return db.prepare(`

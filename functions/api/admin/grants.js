@@ -17,7 +17,7 @@ export const onRequestGet = async ({ request, env }) => {
         p.notes, p.status, p.created_at AS createdAt, p.updated_at AS updatedAt,
         g.role AS grantedRole, g.note AS grantNote, g.status AS grantStatus
       FROM profiles p
-      LEFT JOIN access_grants g ON g.email = p.email
+      LEFT JOIN access_grants g ON lower(trim(g.email)) = lower(trim(p.email))
       ORDER BY p.updated_at DESC
       LIMIT 500
     `).all();
@@ -37,7 +37,7 @@ export const onRequestPost = async ({ request, env }) => {
     const body = await request.json().catch(() => ({}));
     const email = normalizeEmail(body.email);
     const role = String(body.role || 'customer');
-    const note = String(body.note || '').trim();
+    const note = String(body.note || '').trim().slice(0, 500);
     const action = String(body.action || 'approve');
     const timestamp = nowIso();
 
@@ -53,26 +53,22 @@ export const onRequestPost = async ({ request, env }) => {
       await auth.db.prepare(`
         UPDATE profiles
         SET status = 'rejected', default_role = 'customer', updated_at = ?
-        WHERE email = ?
+        WHERE lower(trim(email)) = ?
       `).bind(timestamp, email).run();
 
-      await auth.db.prepare(`
-        INSERT INTO access_grants (id, email, role, note, granted_by_email, status, created_at, updated_at)
-        VALUES (?, ?, 'customer', ?, ?, 'active', ?, ?)
-        ON CONFLICT(email) DO UPDATE SET
-          role = CASE WHEN access_grants.role = 'admin' THEN access_grants.role ELSE 'customer' END,
-          note = excluded.note,
-          granted_by_email = excluded.granted_by_email,
-          status = 'active',
-          updated_at = excluded.updated_at
-      `).bind(
-        makeId('grant'),
-        email,
-        note || 'Owner/manager request rejected; customer access retained',
-        auth.email,
-        timestamp,
-        timestamp,
-      ).run();
+      const rejectionNote = note || 'Owner/manager request rejected; customer access retained';
+      if (existingGrant) {
+        await auth.db.prepare(`
+          UPDATE access_grants
+          SET email = ?, role = 'customer', note = ?, granted_by_email = ?, status = 'active', updated_at = ?
+          WHERE id = ?
+        `).bind(email, rejectionNote, auth.email, timestamp, existingGrant.id).run();
+      } else {
+        await auth.db.prepare(`
+          INSERT INTO access_grants (id, email, role, note, granted_by_email, status, created_at, updated_at)
+          VALUES (?, ?, 'customer', ?, ?, 'active', ?, ?)
+        `).bind(makeId('grant'), email, rejectionNote, auth.email, timestamp, timestamp).run();
+      }
 
       const [profile, grant] = await Promise.all([
         auth.db.prepare(`
@@ -80,34 +76,39 @@ export const onRequestPost = async ({ request, env }) => {
             company_name AS companyName, company_website AS companyWebsite, business_context AS businessContext,
             notes, status, created_at AS createdAt, updated_at AS updatedAt
           FROM profiles
-          WHERE email = ?
+          WHERE lower(trim(email)) = ?
           LIMIT 1
         `).bind(email).first(),
-        auth.db.prepare(`${grantSelect} WHERE email = ? LIMIT 1`).bind(email).first(),
+        auth.db.prepare(`${grantSelect} WHERE lower(trim(email)) = ? LIMIT 1`).bind(email).first(),
       ]);
 
       return privateJson({ profile, grant, action: 'reject' });
     }
 
-    await auth.db.prepare(`
-      INSERT INTO access_grants (id, email, role, note, granted_by_email, status, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, 'active', ?, ?)
-      ON CONFLICT(email) DO UPDATE SET
-        role = excluded.role,
-        note = excluded.note,
-        granted_by_email = excluded.granted_by_email,
-        status = 'active',
-        updated_at = excluded.updated_at
-    `).bind(makeId('grant'), email, role, note, auth.email, timestamp, timestamp).run();
+    if (existingGrant) {
+      await auth.db.prepare(`
+        UPDATE access_grants
+        SET email = ?, role = ?, note = ?, granted_by_email = ?, status = 'active', updated_at = ?
+        WHERE id = ?
+      `).bind(email, role, note, auth.email, timestamp, existingGrant.id).run();
+    } else {
+      await auth.db.prepare(`
+        INSERT INTO access_grants (id, email, role, note, granted_by_email, status, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, 'active', ?, ?)
+      `).bind(makeId('grant'), email, role, note, auth.email, timestamp, timestamp).run();
+    }
 
-    await auth.db.prepare(`
-      INSERT INTO profiles (id, email, full_name, default_role, requested_role, notes, status, created_at, updated_at)
-      VALUES (?, ?, NULL, ?, 'customer', NULL, 'active', ?, ?)
-      ON CONFLICT(email) DO UPDATE SET
-        default_role = excluded.default_role,
-        status = 'active',
-        updated_at = excluded.updated_at
-    `).bind(makeId('profile'), email, role, timestamp, timestamp).run();
+    const existingProfile = await auth.db.prepare('SELECT id FROM profiles WHERE lower(trim(email)) = ? LIMIT 1').bind(email).first();
+    if (existingProfile) {
+      await auth.db.prepare(`
+        UPDATE profiles SET email = ?, default_role = ?, status = 'active', updated_at = ? WHERE id = ?
+      `).bind(email, role, timestamp, existingProfile.id).run();
+    } else {
+      await auth.db.prepare(`
+        INSERT INTO profiles (id, email, full_name, default_role, requested_role, notes, status, created_at, updated_at)
+        VALUES (?, ?, NULL, ?, 'customer', NULL, 'active', ?, ?)
+      `).bind(makeId('profile'), email, role, timestamp, timestamp).run();
+    }
 
     const [profile, grant] = await Promise.all([
       auth.db.prepare(`
@@ -115,10 +116,10 @@ export const onRequestPost = async ({ request, env }) => {
           company_name AS companyName, company_website AS companyWebsite, business_context AS businessContext,
           notes, status, created_at AS createdAt, updated_at AS updatedAt
         FROM profiles
-        WHERE email = ?
+        WHERE lower(trim(email)) = ?
         LIMIT 1
       `).bind(email).first(),
-      auth.db.prepare(`${grantSelect} WHERE email = ? LIMIT 1`).bind(email).first(),
+      auth.db.prepare(`${grantSelect} WHERE lower(trim(email)) = ? LIMIT 1`).bind(email).first(),
     ]);
 
     return privateJson({ profile, grant, action: 'approve' }, { status: 201 });

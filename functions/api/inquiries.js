@@ -45,6 +45,11 @@ export const onRequestPost = async ({ request, env }) => {
       return json({ ok: true, spam: true });
     }
 
+    const payloadJson = JSON.stringify(body);
+    if (new TextEncoder().encode(payloadJson).length > 25000) {
+      return errorJson('Inquiry is too large.', 413);
+    }
+
     const inquiry = normalizeInquiry(body);
 
     if (!inquiry.inquiryType) {
@@ -85,7 +90,7 @@ export const onRequestPost = async ({ request, env }) => {
       inquiry.phone,
       inquiry.sourcePage,
       inquiry.submittedFrom,
-      JSON.stringify(body),
+      payloadJson,
       timestamp,
       timestamp,
     ).run();

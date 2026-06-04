@@ -93,12 +93,16 @@ class FakeStatement {
       return this.db.grants.find((grant) => grant.email.trim().toLowerCase() === email && grant.status === 'active') || null;
     }
 
-    if (sql.includes('FROM access_grants') && sql.includes('WHERE email = ?')) {
-      return this.db.grants.find((grant) => grant.email === email) || null;
+    if (sql.includes('FROM access_grants') && sql.includes('WHERE')) {
+      return this.db.grants.find((grant) => grant.email.trim().toLowerCase() === email) || null;
     }
 
-    if (sql.includes('FROM profiles') && sql.includes('WHERE email = ?')) {
-      return this.db.profiles.find((profile) => profile.email === email) || null;
+    if (sql.includes('FROM profiles') && sql.includes('WHERE')) {
+      return this.db.profiles.find((profile) => profile.email.trim().toLowerCase() === email) || null;
+    }
+
+    if (sql.includes('FROM inquiries') && sql.includes('WHERE id = ?')) {
+      return this.db.inquiries.find((inquiry) => inquiry.id === email) || null;
     }
 
     if (sql.includes('FROM inquiries') && sql.includes('WHERE id = ?')) {
@@ -177,7 +181,7 @@ class FakeStatement {
 
     if (sql.includes('UPDATE profiles') && sql.includes("status = 'rejected'")) {
       const [updatedAt, email] = this.params;
-      const profile = this.db.profiles.find((item) => item.email === email);
+      const profile = this.db.profiles.find((item) => item.email.trim().toLowerCase() === email);
       if (profile) Object.assign(profile, { status: 'rejected', defaultRole: 'customer', updatedAt });
       return { success: true };
     }
@@ -259,6 +263,19 @@ const env = { DB: db };
 
 const noIdentityResponse = await accountModule.onRequestGet({ request: makeRequest(''), env });
 assert.equal(noIdentityResponse.status, 401, 'Account API should require a verified identity email.');
+assert.equal(noIdentityResponse.headers.get('Cache-Control'), 'no-store', 'Sensitive account errors must not be cached.');
+
+const noAdminIdentityResponse = await adminSessionModule.onRequestGet({ request: makeRequest(''), env });
+assert.equal(noAdminIdentityResponse.status, 401, 'Admin session API should require a Cloudflare Access identity.');
+
+const adminSessionResponse = await adminSessionModule.onRequestGet({ request: makeRequest('ADMIN@example.com'), env });
+assert.equal(adminSessionResponse.status, 200, 'Active admin grant should unlock the admin session.');
+assert.deepEqual(await adminSessionResponse.json(), { email: 'admin@example.com', role: 'admin' }, 'Admin session should return the normalized verified identity and D1 role.');
+
+const nonAdminSessionResponse = await adminSessionModule.onRequestGet({ request: makeRequest('owner@example.com'), env });
+assert.equal(nonAdminSessionResponse.status, 403, 'An email without an active admin grant must not unlock the admin panel.');
+const nonAdminSessionPayload = await nonAdminSessionResponse.json();
+assert.equal(nonAdminSessionPayload.email, 'owner@example.com', 'Rejected admin checks should identify which verified email needs a D1 admin grant.');
 
 const noAdminIdentityResponse = await adminSessionModule.onRequestGet({ request: makeRequest(''), env });
 assert.equal(noAdminIdentityResponse.status, 401, 'Admin session API should require a Cloudflare Access identity.');
@@ -283,6 +300,7 @@ const registrationResponse = await accountModule.onRequestPost({
   env,
 });
 assert.equal(registrationResponse.status, 201, 'Owner registration should save successfully.');
+assert.equal(registrationResponse.headers.get('Cache-Control'), 'no-store', 'Sensitive account responses must not be cached.');
 const registrationPayload = await registrationResponse.json();
 assert.equal(registrationPayload.profile.status, 'pending_admin_grant', 'Owner registration should wait for admin approval.');
 assert.equal(registrationPayload.role, 'customer', 'Owner registration should keep customer access until approval.');
