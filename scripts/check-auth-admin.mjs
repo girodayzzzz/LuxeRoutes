@@ -52,16 +52,6 @@ assert.doesNotMatch(
   /fetch\('\/api\/account'/,
   'Admin authorization must not depend on the separately protected customer account API.',
 );
-assert.match(
-  adminPanelSource,
-  /fetch\('\/api\/admin\/session'/,
-  'Production admin panel must verify its role through the admin-scoped session API.',
-);
-assert.doesNotMatch(
-  adminPanelSource,
-  /fetch\('\/api\/account'/,
-  'Admin authorization must not depend on the separately protected customer account API.',
-);
 
 const tempRoot = mkdtempSync(join(tmpdir(), 'luxeroutes-auth-admin-'));
 cpSync('functions', join(tempRoot, 'functions'), { recursive: true });
@@ -99,10 +89,6 @@ class FakeStatement {
 
     if (sql.includes('FROM profiles') && sql.includes('WHERE')) {
       return this.db.profiles.find((profile) => profile.email.trim().toLowerCase() === email) || null;
-    }
-
-    if (sql.includes('FROM inquiries') && sql.includes('WHERE id = ?')) {
-      return this.db.inquiries.find((inquiry) => inquiry.id === email) || null;
     }
 
     if (sql.includes('FROM inquiries') && sql.includes('WHERE id = ?')) {
@@ -147,6 +133,24 @@ class FakeStatement {
       const [status, updatedAt, id] = this.params;
       const inquiry = this.db.inquiries.find((item) => item.id === id);
       if (inquiry) Object.assign(inquiry, { status, updatedAt });
+      return { success: true };
+    }
+
+    if (sql.includes('UPDATE access_grants')) {
+      const [email, roleOrNote, noteOrGrantedBy, grantedByOrUpdatedAt, updatedAtOrId, maybeId] = this.params;
+      const id = maybeId || updatedAtOrId;
+      const grant = this.db.grants.find((item) => item.id === id);
+      if (grant) {
+        if (maybeId) Object.assign(grant, { email, role: roleOrNote, note: noteOrGrantedBy, grantedByEmail: grantedByOrUpdatedAt, status: 'active', updatedAt: updatedAtOrId });
+        else Object.assign(grant, { email, role: 'customer', note: roleOrNote, grantedByEmail: noteOrGrantedBy, status: 'active', updatedAt: grantedByOrUpdatedAt });
+      }
+      return { success: true };
+    }
+
+    if (sql.includes('UPDATE profiles SET email')) {
+      const [email, role, updatedAt, id] = this.params;
+      const profile = this.db.profiles.find((item) => item.id === id);
+      if (profile) Object.assign(profile, { email, defaultRole: role, status: 'active', updatedAt });
       return { success: true };
     }
 
@@ -277,18 +281,6 @@ assert.equal(nonAdminSessionResponse.status, 403, 'An email without an active ad
 const nonAdminSessionPayload = await nonAdminSessionResponse.json();
 assert.equal(nonAdminSessionPayload.email, 'owner@example.com', 'Rejected admin checks should identify which verified email needs a D1 admin grant.');
 
-const noAdminIdentityResponse = await adminSessionModule.onRequestGet({ request: makeRequest(''), env });
-assert.equal(noAdminIdentityResponse.status, 401, 'Admin session API should require a Cloudflare Access identity.');
-
-const adminSessionResponse = await adminSessionModule.onRequestGet({ request: makeRequest('ADMIN@example.com'), env });
-assert.equal(adminSessionResponse.status, 200, 'Active admin grant should unlock the admin session.');
-assert.deepEqual(await adminSessionResponse.json(), { email: 'admin@example.com', role: 'admin' }, 'Admin session should return the normalized verified identity and D1 role.');
-
-const nonAdminSessionResponse = await adminSessionModule.onRequestGet({ request: makeRequest('owner@example.com'), env });
-assert.equal(nonAdminSessionResponse.status, 403, 'An email without an active admin grant must not unlock the admin panel.');
-const nonAdminSessionPayload = await nonAdminSessionResponse.json();
-assert.equal(nonAdminSessionPayload.email, 'owner@example.com', 'Rejected admin checks should identify which verified email needs a D1 admin grant.');
-
 const registrationResponse = await accountModule.onRequestPost({
   request: makeRequest('owner@example.com', {
     name: 'Owner Example',
@@ -381,5 +373,21 @@ const selfDowngradeResponse = await grantsModule.onRequestPost({
   env,
 });
 assert.equal(selfDowngradeResponse.status, 400, 'An admin must not be able to remove their own admin access.');
+
+db.grants.push({ id: 'grant-second-admin', email: 'second-admin@example.com', role: 'admin', note: '', grantedByEmail: 'system', status: 'active', createdAt: '2026-06-03T00:00:00.000Z', updatedAt: '2026-06-03T00:00:00.000Z' });
+const rejectAdminResponse = await grantsModule.onRequestPost({
+  request: makeRequest('admin@example.com', { email: 'second-admin@example.com', role: 'customer', action: 'reject' }),
+  env,
+});
+assert.equal(rejectAdminResponse.status, 400, 'Reject workflow must not leave an active admin grant with a rejected profile.');
+
+db.grants.push({ id: 'grant-mixed-owner', email: 'Mixed.Owner@Example.com', role: 'owner', note: '', grantedByEmail: 'system', status: 'active', createdAt: '2026-06-03T00:00:00.000Z', updatedAt: '2026-06-03T00:00:00.000Z' });
+const mixedCaseUpdateResponse = await grantsModule.onRequestPost({
+  request: makeRequest('admin@example.com', { email: 'mixed.owner@example.com', role: 'manager', action: 'approve' }),
+  env,
+});
+assert.equal(mixedCaseUpdateResponse.status, 201, 'Role updates should find existing grants case-insensitively.');
+assert.equal(db.grants.filter((grant) => grant.email.toLowerCase() === 'mixed.owner@example.com').length, 1, 'Case-insensitive role updates must not create duplicate grants.');
+assert.equal(db.grants.find((grant) => grant.id === 'grant-mixed-owner').role, 'manager', 'Case-insensitive role updates should update the existing grant.');
 
 console.log('Auth/login and admin-panel checks passed.');
