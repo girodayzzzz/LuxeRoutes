@@ -216,3 +216,30 @@ inquiries (
 ## Important security rule
 
 Cloudflare Access proves the email. Production data permissions must still be enforced in Worker/Pages Function API code by checking D1 `access_grants`. Do not rely only on hidden buttons or client-side JavaScript for real admin, manager, owner, or customer permissions.
+
+## Production admin console
+
+The production admin console at `/admin/index.html` is intentionally focused on D1-backed operational data. It does not use browser demo storage or a local-preview role bypass.
+
+After Cloudflare Access and the D1 admin grant approve the current email, the console provides:
+
+- a review queue for pending owner and manager registrations from `profiles`;
+- approve/reject actions that update `profiles` and `access_grants` through `/api/admin/grants`;
+- a member and role list for active access grants, including direct email invitations;
+- self-lockout protection that prevents an admin from removing or downgrading their own admin role;
+- a D1-backed inquiry queue with status management through `/api/admin/inquiries`;
+- a secure Cloudflare Access logout link.
+
+All admin API responses are marked `Cache-Control: no-store`, and every admin data read or mutation calls `requireAdmin` before accessing D1. Property applications submitted through public inquiry forms appear in the inquiry queue; owner and manager account applications appear in the role-review queue.
+
+## Optional custom OTP table maintenance
+
+`login_otps` contains one-time-code challenge records, not migration definitions. A row can remain `pending` after its ten-minute `expires_at` time when the code was requested but never submitted. Expired pending rows cannot successfully authenticate because `/api/auth/otp?action=verify` checks `expires_at` before accepting a code.
+
+The optional OTP endpoint now marks expired pending challenges for the requesting email as `expired` before issuing a new code and removes terminal (`verified`, `expired`, or `locked`) records older than seven days. Cloudflare Access remains the primary production login method, so `/api/auth/otp` should remain outside the customer and admin Access applications.
+
+To perform a one-time cleanup of existing remote records:
+
+```bash
+wrangler d1 execute luxeroutes-db --remote --command "UPDATE login_otps SET status = 'expired', updated_at = datetime('now') WHERE status = 'pending' AND expires_at <= datetime('now'); DELETE FROM login_otps WHERE status IN ('verified', 'expired', 'locked') AND updated_at < datetime('now', '-7 days');"
+```

@@ -1,4 +1,4 @@
-import { errorJson, isValidRole, json, makeId, normalizeEmail, nowIso, requireAdmin } from '../_utils.js';
+import { privateErrorJson, isValidRole, privateJson, makeId, normalizeEmail, nowIso, requireAdmin } from '../_utils.js';
 
 const grantSelect = `
   SELECT id, email, role, note, granted_by_email AS grantedByEmail, status,
@@ -19,13 +19,13 @@ export const onRequestGet = async ({ request, env }) => {
       FROM profiles p
       LEFT JOIN access_grants g ON g.email = p.email
       ORDER BY p.updated_at DESC
-      LIMIT 100
+      LIMIT 500
     `).all();
 
-    const grants = await auth.db.prepare(`${grantSelect} ORDER BY updated_at DESC LIMIT 100`).all();
-    return json({ profiles: profiles.results || [], grants: grants.results || [] });
+    const grants = await auth.db.prepare(`${grantSelect} ORDER BY updated_at DESC LIMIT 500`).all();
+    return privateJson({ profiles: profiles.results || [], grants: grants.results || [] });
   } catch (error) {
-    return errorJson(error.message || 'Unable to load access grants.', 500);
+    return privateErrorJson(error.message || 'Unable to load access grants.', 500);
   }
 };
 
@@ -41,9 +41,13 @@ export const onRequestPost = async ({ request, env }) => {
     const action = String(body.action || 'approve');
     const timestamp = nowIso();
 
-    if (!email) return errorJson('Email is required.', 400);
-    if (!isValidRole(role)) return errorJson('Invalid role.', 400);
-    if (!['approve', 'reject'].includes(action)) return errorJson('Invalid grant action.', 400);
+    if (!email) return privateErrorJson('Email is required.', 400);
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return privateErrorJson('Valid email is required.', 400);
+    if (!isValidRole(role)) return privateErrorJson('Invalid role.', 400);
+    if (!['approve', 'reject'].includes(action)) return privateErrorJson('Invalid grant action.', 400);
+    if (email === auth.email && (action === 'reject' || role !== 'admin')) {
+      return privateErrorJson('You cannot remove or downgrade your own admin access.', 400);
+    }
 
     if (action === 'reject') {
       await auth.db.prepare(`
@@ -82,7 +86,7 @@ export const onRequestPost = async ({ request, env }) => {
         auth.db.prepare(`${grantSelect} WHERE email = ? LIMIT 1`).bind(email).first(),
       ]);
 
-      return json({ profile, grant, action: 'reject' });
+      return privateJson({ profile, grant, action: 'reject' });
     }
 
     await auth.db.prepare(`
@@ -117,8 +121,8 @@ export const onRequestPost = async ({ request, env }) => {
       auth.db.prepare(`${grantSelect} WHERE email = ? LIMIT 1`).bind(email).first(),
     ]);
 
-    return json({ profile, grant, action: 'approve' }, { status: 201 });
+    return privateJson({ profile, grant, action: 'approve' }, { status: 201 });
   } catch (error) {
-    return errorJson(error.message || 'Unable to save access grant.', 500);
+    return privateErrorJson(error.message || 'Unable to save access grant.', 500);
   }
 };

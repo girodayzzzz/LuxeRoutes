@@ -10,6 +10,13 @@ export const json = (data, init = {}) => new Response(JSON.stringify(data), {
 
 export const errorJson = (message, status = 400) => json({ error: message }, { status });
 
+export const privateJson = (data, init = {}) => json(data, {
+  ...init,
+  headers: { 'Cache-Control': 'no-store', ...init.headers },
+});
+
+export const privateErrorJson = (message, status = 400) => privateJson({ error: message }, { status });
+
 export const normalizeEmail = (email) => String(email || '').trim().toLowerCase();
 
 export const isValidRole = (role, roles = ROLE_ORDER) => roles.includes(role);
@@ -131,11 +138,11 @@ export const getActiveGrant = async (db, email) => {
 export const requireAdmin = async (request, env) => {
   const db = requireDb(env);
   const email = getIdentityEmail(request);
-  if (!email) return { error: errorJson('Cloudflare Access identity is required.', 401) };
+  if (!email) return { error: privateErrorJson('Cloudflare Access identity is required.', 401) };
 
   const grant = await getActiveGrant(db, email);
   if (grant?.role !== 'admin') {
-    return { error: errorJson('Admin access grant is required for this API route.', 403) };
+    return { error: privateErrorJson('Admin access grant is required for this API route.', 403) };
   }
 
   return { db, email, grant };

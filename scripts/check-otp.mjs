@@ -22,9 +22,21 @@ class FakeStatement {
   }
 
   run() {
+    if (this.sql.includes("UPDATE login_otps") && this.sql.includes("status = 'expired'")) {
+      const [updatedAt, email, expiresAt] = this.params;
+      this.db.otps.forEach((otp) => {
+        if (otp.email === email && otp.status === 'pending' && otp.expiresAt <= expiresAt) Object.assign(otp, { status: 'expired', updatedAt });
+      });
+      return { success: true };
+    }
+
+    if (this.sql.includes('DELETE FROM login_otps') && this.sql.includes("status IN ('verified', 'expired', 'locked')")) {
+      return { success: true };
+    }
+
     if (this.sql.includes('INSERT INTO login_otps')) {
       const [id, email, otpHash, expiresAt, createdAt, updatedAt] = this.params;
-      this.db.otps.unshift({ id, email, otpHash, expiresAt, createdAt, updatedAt });
+      this.db.otps.unshift({ id, email, otpHash, attempts: 0, status: 'pending', expiresAt, createdAt, updatedAt });
       return { success: true };
     }
 
@@ -61,6 +73,7 @@ const makeRequest = (email) => new Request('https://luxeroutes.test/api/auth/otp
 });
 
 const db = new FakeDb();
+db.otps.push({ id: 'otp-stale', email: 'traveler@example.com', otpHash: 'stale', attempts: 0, status: 'pending', expiresAt: '2020-01-01T00:00:00.000Z', createdAt: '2020-01-01T00:00:00.000Z', updatedAt: '2020-01-01T00:00:00.000Z' });
 const env = { DB: db, RESEND_API_KEY: 'resend-test-key', OTP_EMAIL_FROM: 'LuxeRoutes <login@example.com>' };
 const originalFetch = globalThis.fetch;
 const sentEmails = [];
@@ -73,8 +86,9 @@ globalThis.fetch = async (url, init) => {
 const successResponse = await otpModule.onRequestPost({ request: makeRequest('Traveler@Example.com'), env });
 assert.equal(successResponse.status, 200, 'OTP request should succeed when email delivery succeeds.');
 assert.match(db.schemaExecutions[0], /CREATE TABLE IF NOT EXISTS login_otps/, 'OTP request should ensure its required table exists.');
-assert.equal(db.otps.length, 1, 'OTP request should save a verifiable challenge.');
+assert.equal(db.otps.length, 2, 'OTP request should retain the expired audit row and save a new challenge.');
 assert.equal(db.otps[0].email, 'traveler@example.com', 'OTP request should normalize the recipient email.');
+assert.equal(db.otps.find((otp) => otp.id === 'otp-stale').status, 'expired', 'Requesting a new code should mark stale pending challenges expired.');
 assert.equal(sentEmails.length, 1, 'OTP request should call the email provider exactly once.');
 assert.equal(sentEmails[0].body.to, 'traveler@example.com', 'OTP email should be addressed to the login email.');
 assert.match(sentEmails[0].body.text, /\b\d{6}\b/, 'OTP email should contain a 6-digit login code.');
