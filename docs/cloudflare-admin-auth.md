@@ -101,6 +101,10 @@ Recommended setup:
 
 Important: the API also checks D1. The signed-in email must have an active `admin` row in `access_grants` before `/api/admin/grants` can write role grants.
 
+The panel verifies access through `/api/admin/session`, which is intentionally inside the same `/api/admin/*` Access application as the rest of the admin API. Do not use `/api/account` as the admin gate because it belongs to the separate public-customer Access application. If the panel remains locked, it now displays the verified email and the specific D1 grant error instead of redirecting away.
+
+Admin grant lookup trims and compares email addresses case-insensitively. Even so, store grant emails in lowercase to keep profiles, grants, and Cloudflare Access identities consistent.
+
 ## Phase 4 — Seed your first admin
 
 After applying the D1 migration, insert your own verified email as the first admin. Replace the email before running:
@@ -109,7 +113,13 @@ After applying the D1 migration, insert your own verified email as the first adm
 wrangler d1 execute luxeroutes-db --remote --command "INSERT INTO access_grants (id, email, role, note, granted_by_email, status, created_at, updated_at) VALUES ('grant-initial-admin', 'YOUR_ADMIN_EMAIL@example.com', 'admin', 'Initial LuxeRoutes admin', 'system', 'active', datetime('now'), datetime('now')) ON CONFLICT(email) DO UPDATE SET role = 'admin', status = 'active', updated_at = datetime('now');"
 ```
 
-Then open `/admin/index.html`, login with the same email, and use **People → Access grants**:
+Verify the row before opening the panel:
+
+```bash
+wrangler d1 execute luxeroutes-db --remote --command "SELECT email, role, status FROM access_grants WHERE lower(trim(email)) = lower(trim('YOUR_ADMIN_EMAIL@example.com'));"
+```
+
+The result must show `role = admin` and `status = active`. Then open `/admin/index.html` directly, complete the Cloudflare Access prompt with the same email, and use **People → Access grants**:
 
 - **Review role requests** — approve or reject pending `owner` and `manager` registrations.
 - **Grant access by email** — manually grant `customer`, `owner`, `manager`, or `admin` access for direct invitations or corrections.

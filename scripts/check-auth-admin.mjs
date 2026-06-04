@@ -42,6 +42,16 @@ assert.doesNotMatch(
   /sessionRole === 'admin'[\s\S]*?unlockWorkspace/,
   'Production admin panel must not unlock solely from browser sessionStorage.',
 );
+assert.match(
+  adminPanelSource,
+  /fetch\('\/api\/admin\/session'/,
+  'Production admin panel must verify its role through the admin-scoped session API.',
+);
+assert.doesNotMatch(
+  adminPanelSource,
+  /fetch\('\/api\/account'/,
+  'Admin authorization must not depend on the separately protected customer account API.',
+);
 
 const tempRoot = mkdtempSync(join(tmpdir(), 'luxeroutes-auth-admin-'));
 cpSync('functions', join(tempRoot, 'functions'), { recursive: true });
@@ -49,6 +59,7 @@ writeFileSync(join(tempRoot, 'package.json'), '{"type":"module"}\n');
 
 const accountModule = await import(pathToFileURL(join(tempRoot, 'functions/api/account.js')));
 const grantsModule = await import(pathToFileURL(join(tempRoot, 'functions/api/admin/grants.js')));
+const adminSessionModule = await import(pathToFileURL(join(tempRoot, 'functions/api/admin/session.js')));
 const utilsModule = await import(pathToFileURL(join(tempRoot, 'functions/api/_utils.js')));
 
 class FakeStatement {
@@ -68,7 +79,7 @@ class FakeStatement {
     const [email] = this.params;
 
     if (sql.includes('FROM access_grants') && sql.includes("status = 'active'")) {
-      return this.db.grants.find((grant) => grant.email === email && grant.status === 'active') || null;
+      return this.db.grants.find((grant) => grant.email.trim().toLowerCase() === email && grant.status === 'active') || null;
     }
 
     if (sql.includes('FROM access_grants') && sql.includes('WHERE email = ?')) {
@@ -181,7 +192,7 @@ class FakeStatement {
 class FakeDb {
   constructor() {
     this.profiles = [];
-    this.grants = [{ id: 'grant-admin', email: 'admin@example.com', role: 'admin', note: 'Seed admin', grantedByEmail: 'system', status: 'active', createdAt: '2026-06-03T00:00:00.000Z', updatedAt: '2026-06-03T00:00:00.000Z' }];
+    this.grants = [{ id: 'grant-admin', email: 'Admin@Example.com', role: 'admin', note: 'Seed admin', grantedByEmail: 'system', status: 'active', createdAt: '2026-06-03T00:00:00.000Z', updatedAt: '2026-06-03T00:00:00.000Z' }];
   }
 
   prepare(sql) {
@@ -221,6 +232,18 @@ const env = { DB: db };
 
 const noIdentityResponse = await accountModule.onRequestGet({ request: makeRequest(''), env });
 assert.equal(noIdentityResponse.status, 401, 'Account API should require a verified identity email.');
+
+const noAdminIdentityResponse = await adminSessionModule.onRequestGet({ request: makeRequest(''), env });
+assert.equal(noAdminIdentityResponse.status, 401, 'Admin session API should require a Cloudflare Access identity.');
+
+const adminSessionResponse = await adminSessionModule.onRequestGet({ request: makeRequest('ADMIN@example.com'), env });
+assert.equal(adminSessionResponse.status, 200, 'Active admin grant should unlock the admin session.');
+assert.deepEqual(await adminSessionResponse.json(), { email: 'admin@example.com', role: 'admin' }, 'Admin session should return the normalized verified identity and D1 role.');
+
+const nonAdminSessionResponse = await adminSessionModule.onRequestGet({ request: makeRequest('owner@example.com'), env });
+assert.equal(nonAdminSessionResponse.status, 403, 'An email without an active admin grant must not unlock the admin panel.');
+const nonAdminSessionPayload = await nonAdminSessionResponse.json();
+assert.equal(nonAdminSessionPayload.email, 'owner@example.com', 'Rejected admin checks should identify which verified email needs a D1 admin grant.');
 
 const registrationResponse = await accountModule.onRequestPost({
   request: makeRequest('owner@example.com', {
