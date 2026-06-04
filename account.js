@@ -395,11 +395,6 @@ const initialiseAccount = async () => {
   const hasCachedSession = hasVerifiedAccountSession(cachedSession);
   setLoginAccountState(false);
 
-  if (isDashboardPage() && !hasCachedSession && !isAccountLocalPreview()) {
-    redirectToLogin();
-    return;
-  }
-
   if (hasCachedSession) {
     const cachedEmail = cachedSession.identity?.email || cachedSession.profile?.email;
     accountIdentity = cachedSession.identity || (cachedEmail ? { email: cachedEmail } : null);

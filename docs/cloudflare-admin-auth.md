@@ -64,23 +64,20 @@ For Cloudflare Pages production, add the D1 database binding in **Workers & Page
 
 ## Phase 2 — Public login, register, and account dashboard for customers
 
-Use the site's custom OTP flow for the public account area. Do **not** put the public account paths behind Cloudflare Access: a successful custom OTP login creates a LuxeRoutes session cookie, not a Cloudflare Access session. Protecting these paths with Access would add a second login prompt and can block the custom session from reaching `/api/account`.
+The production site currently uses **Cloudflare Access One-time PIN** login. Emails from `Cloudflare <noreply@notify.cloudflare.com>` with a subject such as “Cloudflare Access login code for luxeroutes.eu” confirm that Access is the active login provider. You do not need `RESEND_API_KEY`, `OTP_EMAIL_FROM`, or `AUTH_SESSION_SECRET` for this primary flow.
 
-Keep these paths outside Cloudflare Access:
+Create or restore a Cloudflare Zero Trust Access **Self-hosted** application for the production LuxeRoutes domain with these paths:
 
 - `/login.html` and `/login`
 - `/register*`
 - `/account.html` and `/account`
-- `/api/auth/otp`
 - `/api/account`
 
-Add these Pages/Workers secrets for the custom OTP flow:
+Configure the application with an **Allow** policy using **Include: Everyone**, and enable the **One-time PIN** login method under Zero Trust authentication settings. Keep `/api/auth/otp` outside this Access application; it is an optional custom Resend-based alternative and is not used by Cloudflare Access.
 
-- `RESEND_API_KEY` — API key for Resend email delivery.
-- `OTP_EMAIL_FROM` — sender address on a domain verified in Resend, for example `LuxeRoutes <login@luxeroutes.eu>`.
-- `AUTH_SESSION_SECRET` — a separate, long random secret used to sign the secure account session cookie.
+After a visitor enters the Cloudflare Access code, Access sends the verified email header to `/api/account`. The account API uses that verified identity to load and save the visitor profile. A `customer` registration is active immediately. Owner and manager requests retain customer access while waiting for admin review.
 
-The `/register*` destination covers both `/register` and `/register.html`. The custom OTP route stores only hashed codes in D1 and expires them after 10 minutes. Result: every visitor can login on `/login.html`, register with a verified email on `/register.html`, and then use `/account.html` as the dashboard for accepted offers, settings, coupons, and profile status. A `customer` registration is active immediately. If the visitor requests `owner` or `manager`, the email still receives safe customer access only, while the requested privileged role stays pending for admin review.
+Optional custom login alternative: if you intentionally decide to use the site's `/api/auth/otp` route instead of Cloudflare Access, configure `RESEND_API_KEY`, `OTP_EMAIL_FROM`, and `AUTH_SESSION_SECRET` as Pages secrets. Do not configure both login systems as the primary public flow.
 
 ## Phase 3 — Admin panel gate
 
@@ -120,9 +117,9 @@ Role meanings:
 
 ## Phase 5 — Test the real login/register flow
 
-1. Open `/login.html` in a private browser window, enter an email, and confirm that exactly one 6-digit OTP arrives from the custom route without a Cloudflare Access prompt.
-2. Enter the OTP, confirm `/account.html` opens without another login prompt, and confirm `/api/account` returns HTTP 200 in the browser network panel.
-3. Open `/register.html` for a new profile.
+1. Open `/account.html` in a private browser window and confirm Cloudflare Access requests your email.
+2. Confirm the email arrives from `Cloudflare <noreply@notify.cloudflare.com>`, enter the six-digit Access code, and verify `/account.html` opens instead of redirecting back to login.
+3. Confirm `/api/account` returns HTTP 200 in the browser network panel, then open `/register.html` for a new profile.
 4. Submit the profile form.
 5. Confirm D1 received the profile:
 
@@ -147,13 +144,12 @@ You still need to complete these steps outside the repository in Cloudflare:
 1. Create the D1 database named `luxeroutes-db` if it does not already exist.
 2. Apply all D1 migrations remotely with `wrangler d1 migrations apply luxeroutes-db --remote` (the OTP endpoint also self-creates its required `login_otps` table as a deployment safeguard).
 3. Bind that D1 database to the Pages project with binding name `DB`.
-4. Verify the sending domain in Resend, then add `RESEND_API_KEY` and the verified `OTP_EMAIL_FROM` sender as Pages secrets.
-5. Add `AUTH_SESSION_SECRET` as a separate long random Pages secret so verified OTP logins can set the secure account session cookie used by `/api/account`.
-6. Keep `/login*`, `/register*`, `/account*`, `/api/auth/otp`, and `/api/account` outside Cloudflare Access. If an existing Access application covers them, remove those paths before testing the custom OTP flow.
-7. Create a separate Cloudflare Access application for `/admin/index.html`, `/admin/*`, and `/api/admin/*` that only allows your trusted admin email addresses.
-8. Seed your first admin email into `access_grants` with the command in Phase 4.
-9. Complete the Phase 5 private-window test, then test with three different emails: one customer, one owner request, and one manager request.
-10. From the admin email, approve one owner/manager request and reject the other to confirm both paths work.
+4. Create or restore the public Cloudflare Access application for `/login*`, `/register*`, `/account*`, and `/api/account` with an **Allow / Include Everyone** policy and the One-time PIN login method.
+5. Keep `/api/auth/otp` outside the Access application. No Resend secrets are required unless you intentionally switch from Cloudflare Access to the optional custom OTP provider.
+6. Create a separate Cloudflare Access application for `/admin/index.html`, `/admin/*`, and `/api/admin/*` that only allows your trusted admin email addresses.
+7. Seed your first admin email into `access_grants` with the command in Phase 4.
+8. Complete the Phase 5 private-window test, then test with three different emails: one customer, one owner request, and one manager request.
+9. From the admin email, approve one owner/manager request and reject the other to confirm both paths work.
 
 Do not share the admin URL until the Phase 5 private-window test and admin access checks succeed.
 
