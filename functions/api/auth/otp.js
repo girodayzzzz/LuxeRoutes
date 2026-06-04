@@ -17,6 +17,21 @@ const hashOtp = async (otp) => {
 
 const minutesFromNow = (minutes) => new Date(Date.now() + (minutes * 60 * 1000)).toISOString();
 
+const ensureOtpSchema = (db) => db.exec(`
+  CREATE TABLE IF NOT EXISTS login_otps (
+    id TEXT PRIMARY KEY,
+    email TEXT NOT NULL,
+    otp_hash TEXT NOT NULL,
+    attempts INTEGER NOT NULL DEFAULT 0,
+    status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'verified', 'expired', 'locked')),
+    expires_at TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  );
+  CREATE INDEX IF NOT EXISTS idx_login_otps_email_status ON login_otps(email, status);
+  CREATE INDEX IF NOT EXISTS idx_login_otps_expires_at ON login_otps(expires_at);
+`);
+
 const getProfile = async (db, email) => db.prepare(`
   SELECT id, email, full_name AS name, default_role AS defaultRole, requested_role AS requestedRole,
     company_name AS companyName, company_website AS companyWebsite, business_context AS businessContext,
@@ -57,17 +72,25 @@ const requestOtp = async ({ request, env }) => {
   const email = normalizeEmail(body.email);
   if (!email || !email.includes('@')) return errorJson('Valid email is required.', 400);
 
+  await ensureOtpSchema(db);
+
   const otp = generateOtp();
   const otpHash = await hashOtp(otp);
+  const otpId = makeId('otp');
   const timestamp = nowIso();
   const expiresAt = minutesFromNow(OTP_TTL_MINUTES);
 
   await db.prepare(`
     INSERT INTO login_otps (id, email, otp_hash, attempts, status, expires_at, created_at, updated_at)
     VALUES (?, ?, ?, 0, 'pending', ?, ?, ?)
-  `).bind(makeId('otp'), email, otpHash, expiresAt, timestamp, timestamp).run();
+  `).bind(otpId, email, otpHash, expiresAt, timestamp, timestamp).run();
 
-  await sendOtpEmail(env, email, otp);
+  try {
+    await sendOtpEmail(env, email, otp);
+  } catch (error) {
+    await db.prepare('DELETE FROM login_otps WHERE id = ?').bind(otpId).run();
+    throw error;
+  }
 
   return json({ ok: true, email, expiresAt });
 };
@@ -124,8 +147,8 @@ const verifyOtp = async ({ request, env }) => {
 export const onRequestPost = async (context) => {
   try {
     const action = new URL(context.request.url).searchParams.get('action');
-    if (action === 'verify') return verifyOtp(context);
-    return requestOtp(context);
+    if (action === 'verify') return await verifyOtp(context);
+    return await requestOtp(context);
   } catch (error) {
     return errorJson(error.message || 'Unable to process OTP request.', 500);
   }

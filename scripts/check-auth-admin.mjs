@@ -13,6 +13,11 @@ assert.match(
   /const loginRememberInput = document\.querySelector\('\[name="remember"\]'\);/,
   'Login page should wire the remember-me checkbox into session persistence.',
 );
+assert.doesNotMatch(
+  accountSource,
+  /if \(isDashboardPage\(\) && !hasCachedSession && !isAccountLocalPreview\(\)\) \{[\s\S]*?redirectToLogin\(\);/,
+  'Account dashboard must check Cloudflare Access identity before redirecting a fresh browser session.',
+);
 assert.match(
   accountSource,
   /localStorage\.setItem\(accountSessionKey, serializedSession\)/,

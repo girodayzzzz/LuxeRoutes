@@ -64,26 +64,20 @@ For Cloudflare Pages production, add the D1 database binding in **Workers & Page
 
 ## Phase 2 — Public login, register, and account dashboard for customers
 
-Create a Cloudflare Zero Trust Access application for the public account area.
+The production site currently uses **Cloudflare Access One-time PIN** login. Emails from `Cloudflare <noreply@notify.cloudflare.com>` with a subject such as “Cloudflare Access login code for luxeroutes.eu” confirm that Access is the active login provider. You do not need `RESEND_API_KEY`, `OTP_EMAIL_FROM`, or `AUTH_SESSION_SECRET` for this primary flow.
 
-Recommended setup:
+Create or restore a Cloudflare Zero Trust Access **Self-hosted** application for the production LuxeRoutes domain with these paths:
 
-1. Open **Cloudflare Zero Trust → Access → Applications**.
-2. Create a **Self-hosted** application for the production LuxeRoutes domain.
-3. Protect these paths:
-   - `/login.html`
-   - `/login`
-   - `/register*`
-   - `/account.html`
-   - `/account`
-   - `/api/account`
-4. Add an **Allow** policy with **Include: Everyone**.
-5. Use email OTP or your chosen identity provider.
-6. Add Pages/Workers secrets for app-sent OTP emails if you use the custom `/api/auth/otp` route:
-   - `RESEND_API_KEY` — API key for Resend email delivery.
-   - `OTP_EMAIL_FROM` — verified sender address, for example `LuxeRoutes <login@luxeroutes.eu>`.
+- `/login.html` and `/login`
+- `/register*`
+- `/account.html` and `/account`
+- `/api/account`
 
-The `/register*` destination covers both `/register` and `/register.html`. The custom OTP route stores only hashed codes in D1 and expires them after 10 minutes. Result: every visitor can login on `/login.html`, register with a verified email on `/register.html`, and then use `/account.html` as the dashboard for accepted offers, settings, coupons, and profile status. A `customer` registration is active immediately. If the visitor requests `owner` or `manager`, the email still receives safe customer access only, while the requested privileged role stays pending for admin review.
+Configure the application with an **Allow** policy using **Include: Everyone**, and enable the **One-time PIN** login method under Zero Trust authentication settings. Keep `/api/auth/otp` outside this Access application; it is an optional custom Resend-based alternative and is not used by Cloudflare Access.
+
+After a visitor enters the Cloudflare Access code, Access sends the verified email header to `/api/account`. The account API uses that verified identity to load and save the visitor profile. A `customer` registration is active immediately. Owner and manager requests retain customer access while waiting for admin review.
+
+Optional custom login alternative: if you intentionally decide to use the site's `/api/auth/otp` route instead of Cloudflare Access, configure `RESEND_API_KEY`, `OTP_EMAIL_FROM`, and `AUTH_SESSION_SECRET` as Pages secrets. Do not configure both login systems as the primary public flow.
 
 ## Phase 3 — Admin panel gate
 
@@ -123,19 +117,20 @@ Role meanings:
 
 ## Phase 5 — Test the real login/register flow
 
-1. Open `/login.html` in production, enter an email, and confirm the 6-digit OTP sent by the custom route or Cloudflare Access.
-2. Open `/register.html` for a new profile and complete Cloudflare email verification if Access prompts for it.
-3. Submit the profile form.
-4. Confirm D1 received the profile:
+1. Open `/account.html` in a private browser window and confirm Cloudflare Access requests your email.
+2. Confirm the email arrives from `Cloudflare <noreply@notify.cloudflare.com>`, enter the six-digit Access code, and verify `/account.html` opens instead of redirecting back to login.
+3. Confirm `/api/account` returns HTTP 200 in the browser network panel, then open `/register.html` for a new profile.
+4. Submit the profile form.
+5. Confirm D1 received the profile:
 
 ```bash
 wrangler d1 execute luxeroutes-db --remote --command "SELECT email, full_name, requested_role, status FROM profiles ORDER BY updated_at DESC LIMIT 10;"
 ```
 
-5. Open `/admin/index.html` as the seeded admin.
-6. Confirm pending owner/manager profiles load under **Review role requests**.
-7. Click **Approve** for a suitable owner/manager request, or **Reject** if it should stay customer-only.
-8. Confirm D1 received the profile status and grant:
+6. Open `/admin/index.html` as the seeded admin.
+7. Confirm pending owner/manager profiles load under **Review role requests**.
+8. Click **Approve** for a suitable owner/manager request, or **Reject** if it should stay customer-only.
+9. Confirm D1 received the profile status and grant:
 
 ```bash
 wrangler d1 execute luxeroutes-db --remote --command "SELECT p.email, p.requested_role, p.status AS profile_status, g.role AS active_role, g.note FROM profiles p LEFT JOIN access_grants g ON g.email = p.email ORDER BY p.updated_at DESC LIMIT 10;"
@@ -147,16 +142,16 @@ wrangler d1 execute luxeroutes-db --remote --command "SELECT p.email, p.requeste
 You still need to complete these steps outside the repository in Cloudflare:
 
 1. Create the D1 database named `luxeroutes-db` if it does not already exist.
-2. Apply `migrations/0001_auth.sql` remotely with Wrangler.
+2. Apply all D1 migrations remotely with `wrangler d1 migrations apply luxeroutes-db --remote` (the OTP endpoint also self-creates its required `login_otps` table as a deployment safeguard).
 3. Bind that D1 database to the Pages project with binding name `DB`.
-4. Add `RESEND_API_KEY` and `OTP_EMAIL_FROM` secrets if the site should send OTP codes from the custom login form. Add `AUTH_SESSION_SECRET` as a long random string so verified OTP logins can set the secure account session cookie used by `/api/account`; if it is omitted, the API falls back to `RESEND_API_KEY` for signing.
-5. Create a public Cloudflare Access application for `/login.html`, `/login`, `/register*`, `/account.html`, `/account`, and `/api/account` with an **Everyone** allow policy. Keep `/api/auth/otp` reachable so the custom form can request the first email code before an Access identity exists.
+4. Create or restore the public Cloudflare Access application for `/login*`, `/register*`, `/account*`, and `/api/account` with an **Allow / Include Everyone** policy and the One-time PIN login method.
+5. Keep `/api/auth/otp` outside the Access application. No Resend secrets are required unless you intentionally switch from Cloudflare Access to the optional custom OTP provider.
 6. Create a separate Cloudflare Access application for `/admin/index.html`, `/admin/*`, and `/api/admin/*` that only allows your trusted admin email addresses.
 7. Seed your first admin email into `access_grants` with the command in Phase 4.
-8. Test with three different emails: one customer, one owner request, and one manager request.
+8. Complete the Phase 5 private-window test, then test with three different emails: one customer, one owner request, and one manager request.
 9. From the admin email, approve one owner/manager request and reject the other to confirm both paths work.
 
-Do not share the admin URL until step 8 succeeds in a private/incognito browser window.
+Do not share the admin URL until the Phase 5 private-window test and admin access checks succeed.
 
 ## Phase 6 — Next backend work
 

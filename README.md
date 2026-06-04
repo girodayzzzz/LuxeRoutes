@@ -17,12 +17,14 @@ Cloudflare Pages will publish the static files from the repository root. The `_h
 
 ## Account and admin access
 
-The site is prepared for **Cloudflare email login for everyone** plus **admin-approved role grants by email**. It now includes Cloudflare Pages Functions and D1 migrations for account profiles, access grants, and one-time login codes. Verified custom OTP logins set a secure account session cookie for `/api/account`; configure `AUTH_SESSION_SECRET` as a long random secret (or the API will fall back to `RESEND_API_KEY` for signing).
+The production site uses **Cloudflare Access email one-time codes** for public account login plus admin-approved role grants by email. The Pages Functions trust the verified Cloudflare Access email header when loading and saving account data. No Resend API key is required for the primary Cloudflare Access login flow.
 
-Start with two Cloudflare Access applications:
+Use two Cloudflare Access applications:
 
-- Public account app: protect `/login.html`, `/login`, `/register`, `/register.html`, `/account.html`, `/account`, and `/api/account` with **Include: Everyone** so customers can register/login and LuxeRoutes captures verified emails before opening the account dashboard.
-- Admin app: protect `/admin/*`, `/admin-panel.html`, and `/api/admin/*` with approved internal admin emails only.
+- Public account app: protect `/login.html`, `/login`, `/register*`, `/account.html`, `/account`, and `/api/account` with an **Allow / Include Everyone** policy and the One-time PIN login method.
+- Admin app: protect `/admin/*`, `/admin-panel.html`, and `/api/admin/*` with a separate application restricted to approved internal admin emails.
+
+The optional custom `/api/auth/otp` endpoint requires Resend secrets, but it is not required when Cloudflare Access is the login provider.
 
 Admins can then grant `customer`, `owner`, `manager`, or `admin` access by verified email after D1 is created, the `DB` binding is connected, and the first admin row is seeded. See [`docs/cloudflare-admin-auth.md`](docs/cloudflare-admin-auth.md) for the full Cloudflare + D1 plan.
 
