@@ -4361,3 +4361,158 @@ p { font-size: .98rem; }
   font-size: .9rem;
   line-height: 1.65;
 }
+
+/* Compact luxury editorial homepage */
+.home-page {
+  --home-section-y: clamp(4rem, 6.5vw, 6rem);
+  --home-section-y-compact: clamp(3.5rem, 5.5vw, 5rem);
+  --home-heading-gap: clamp(1.4rem, 3vw, 2.35rem);
+}
+
+.home-page .cinematic-hero {
+  min-height: min(820px, 82svh);
+  padding: 8rem 0 5.5rem;
+}
+
+.home-page .hero-stage {
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 330px);
+  gap: clamp(2rem, 5vw, 4rem);
+}
+
+.home-page .hero-stage h1 {
+  max-width: 760px;
+  font-size: clamp(3.5rem, 7vw, 6.7rem);
+  line-height: .91;
+}
+
+.home-page .hero-stage .hero-lead {
+  max-width: 610px;
+  font-size: clamp(1rem, 1.5vw, 1.12rem);
+}
+
+.home-page .hero-brief-card {
+  padding: 1.45rem;
+  border-radius: 26px;
+}
+
+.home-page .hero-brief-card::before { display: none; }
+.home-page .hero-brief-card h2 { font-size: clamp(1.65rem, 2.7vw, 2.35rem); }
+.home-page .hero-brief-card .brief-list { margin-top: 1.15rem; }
+.home-page .hero-brief-card .brief-list p { padding: .68rem .75rem; font-size: .86rem; }
+.home-page .hero-brief-card .text-link { display: inline-flex; margin-top: 1.15rem; }
+
+.home-page .luxury-trust .trust-grid span {
+  min-height: 72px;
+  padding: .9rem 1rem;
+}
+
+.home-page .route-card { min-height: 260px; }
+.home-page .route-card.featured-route { min-height: 315px; }
+
+.compact-destination-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-auto-rows: auto;
+  gap: .9rem;
+}
+
+.compact-destination-grid .destination-card { min-height: 330px; }
+
+.discovery-edit {
+  background:
+    radial-gradient(circle at 82% 12%, rgba(201,164,92,.13), transparent 28rem),
+    linear-gradient(180deg, #06070a, #0b1120);
+}
+
+.discovery-layout {
+  display: grid;
+  grid-template-columns: minmax(250px, .72fr) minmax(0, 1.45fr);
+  gap: clamp(2rem, 5vw, 4.5rem);
+  align-items: center;
+}
+
+.discovery-intro { max-width: 430px; }
+.discovery-intro h2 { font-size: clamp(2.3rem, 4.5vw, 4.2rem); text-wrap: balance; }
+.discovery-intro > p:not(.eyebrow) { margin-top: 1rem; color: var(--color-muted-strong); }
+.discovery-intro .button-row { margin-top: 1.5rem; gap: .75rem 1.4rem; }
+
+.discovery-grid {
+  display: grid;
+  grid-template-columns: 1.15fr .85fr;
+  grid-template-rows: repeat(2, minmax(170px, 1fr));
+  gap: .9rem;
+  min-height: 480px;
+}
+
+.discovery-card {
+  position: relative;
+  overflow: hidden;
+  min-height: 0;
+  border: 1px solid rgba(217,188,122,.16);
+  border-radius: 26px;
+  box-shadow: var(--shadow-soft);
+}
+
+.discovery-card-large { grid-row: 1 / -1; }
+.discovery-card img { width: 100%; height: 100%; object-fit: cover; transition: transform .55s ease; }
+.discovery-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 40%, rgba(6,7,10,.84));
+}
+.discovery-card span {
+  position: absolute;
+  z-index: 1;
+  left: 1.2rem;
+  bottom: 1.1rem;
+  color: var(--color-text);
+  font-family: "Playfair Display", Georgia, serif;
+  font-size: clamp(1.35rem, 2.2vw, 2rem);
+  font-weight: 600;
+}
+.discovery-card:hover img { transform: scale(1.045); }
+
+.home-page .compact-process .process-grid article {
+  min-height: 230px;
+  padding: 1.45rem;
+}
+.home-page .compact-process .process-grid span { font-size: clamp(2rem, 3.5vw, 3.2rem); }
+.home-page .compact-process .process-grid h3 { margin-top: 1rem; }
+
+.compact-faq .faq-grid { align-items: center; }
+.compact-faq .faq-list { gap: .7rem; }
+.compact-faq .faq-list details { padding: .95rem 1.1rem; }
+
+.home-page .luxury-final { padding-block: clamp(5rem, 8vw, 7rem); }
+.home-page .luxury-final h2 { font-size: clamp(2.6rem, 5.5vw, 5rem); }
+
+@media (max-width: 1100px) {
+  .compact-destination-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .compact-destination-grid .destination-card { min-height: 300px; }
+}
+
+@media (max-width: 900px) {
+  .home-page .cinematic-hero { min-height: auto; padding: 8rem 0 4.5rem; }
+  .home-page .hero-stage,
+  .discovery-layout { grid-template-columns: 1fr; }
+  .home-page .hero-brief-card { max-width: 560px; }
+  .discovery-intro { max-width: 650px; }
+}
+
+@media (max-width: 780px) {
+  .home-page { --home-section-y: 3.75rem; --home-section-y-compact: 3.25rem; }
+  .home-page .cinematic-hero { min-height: auto; padding: 7.2rem 0 3.8rem; }
+  .home-page .hero-stage h1 { font-size: clamp(3rem, 13vw, 4.5rem); }
+  .home-page .scroll-indicator { display: none; }
+  .home-page .luxury-trust .trust-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .home-page .luxury-trust .trust-grid span { min-height: 64px; }
+  .discovery-grid { min-height: 420px; }
+}
+
+@media (max-width: 560px) {
+  .compact-destination-grid { grid-template-columns: 1fr; }
+  .compact-destination-grid .destination-card { min-height: 260px; }
+  .discovery-grid { grid-template-columns: 1fr; grid-template-rows: repeat(3, 230px); min-height: 0; }
+  .discovery-card-large { grid-row: auto; }
+  .home-page .luxury-trust .trust-grid { grid-template-columns: 1fr; }
+}
