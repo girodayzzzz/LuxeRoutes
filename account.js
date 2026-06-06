@@ -13,6 +13,15 @@ const loginBoxHead = document.querySelector('.login-box-head');
 const loginSecurityList = document.querySelector('.login-security-list');
 const accountSwitchLink = document.querySelector('.account-switch-link');
 const accountLogoutButtons = document.querySelectorAll('[data-account-logout]');
+const loginOtpForm = document.querySelector('[data-login-otp-form]');
+const loginEmailStep = document.querySelector('[data-login-email-step]');
+const loginCodeStep = document.querySelector('[data-login-code-step]');
+const loginEmailInput = document.querySelector('[data-login-email-input]');
+const loginCodeInput = document.querySelector('[data-login-code-input]');
+const loginRememberInput = document.querySelector('[data-login-remember-input]');
+const loginOtpEmail = document.querySelector('[data-login-otp-email]');
+const loginOtpMessage = document.querySelector('[data-login-otp-message]');
+const loginOtpBack = document.querySelector('[data-login-otp-back]');
 const isRegisterPage = () => document.body.classList.contains('account-page') && Boolean(accountForm);
 const isDashboardPage = () => document.body.classList.contains('account-dashboard-page');
 const isProtectedAccountPage = () => isDashboardPage() || isRegisterPage();
@@ -184,6 +193,76 @@ const saveRemoteAccountProfile = async (profile) => {
 };
 
 
+const setLoginOtpMessage = (message = '', tone = 'pending') => {
+  if (!loginOtpMessage) return;
+  loginOtpMessage.textContent = message;
+  loginOtpMessage.classList.toggle('status-approved', tone === 'success');
+  loginOtpMessage.classList.toggle('status-warning', tone === 'error');
+  loginOtpMessage.classList.toggle('status-pending', tone !== 'success' && tone !== 'error');
+};
+
+const showLoginCodeStep = (email) => {
+  if (loginEmailStep) loginEmailStep.hidden = true;
+  if (loginCodeStep) loginCodeStep.hidden = false;
+  if (loginOtpEmail) loginOtpEmail.textContent = email;
+  loginCodeInput?.focus();
+};
+
+const showLoginEmailStep = () => {
+  if (loginEmailStep) loginEmailStep.hidden = false;
+  if (loginCodeStep) loginCodeStep.hidden = true;
+  loginEmailInput?.focus();
+};
+
+const requestLoginOtp = async (email) => {
+  const response = await fetch('/api/auth/otp', {
+    method: 'POST',
+    headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+    credentials: 'same-origin',
+    body: JSON.stringify({ email }),
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data.error || 'Unable to send the login code right now.');
+  return data;
+};
+
+const verifyLoginOtp = async (email, otp) => {
+  const response = await fetch('/api/auth/otp?action=verify', {
+    method: 'POST',
+    headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+    credentials: 'same-origin',
+    body: JSON.stringify({ email, otp }),
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data.error || 'Unable to verify the login code right now.');
+  return data;
+};
+
+const logoutRemoteAccountSession = async () => {
+  try {
+    await fetch('/api/auth/otp?action=logout', {
+      method: 'POST',
+      headers: { Accept: 'application/json' },
+      credentials: 'same-origin',
+    });
+  } catch (error) {
+    // Local browser state is still cleared even if the remote cookie already expired.
+  }
+};
+
+const getLoginRedirectTarget = () => {
+  const redirect = new URLSearchParams(window.location.search).get('redirect');
+  if (!redirect) return 'account.html';
+
+  try {
+    const url = new URL(redirect, window.location.origin);
+    if (url.origin !== window.location.origin) return 'account.html';
+    return `${url.pathname}${url.search}${url.hash}`;
+  } catch (error) {
+    return 'account.html';
+  }
+};
+
 const getAccountRole = (sessionOrAccount = {}) => normalizeAccountRole(sessionOrAccount?.role
   || sessionOrAccount?.grant?.role
   || sessionOrAccount?.profile?.defaultRole
@@ -207,7 +286,8 @@ const updateAccountLogout = (active = false) => {
   });
 };
 
-const logoutAccount = () => {
+const logoutAccount = async () => {
+  await logoutRemoteAccountSession();
   clearAccountSession();
   accountIdentity = null;
   updateAccountAccessCards();
@@ -386,7 +466,7 @@ const initialiseAccount = async () => {
   setAccountStatus({
     heading: 'Account access',
     status: isLoginPage()
-      ? 'Continue to account or registration to verify your email with Cloudflare Access.'
+      ? 'Enter your email above and verify the one-time code to continue.'
       : 'A verified LuxeRoutes email session is required.',
     email: 'Email pending',
     role: 'Account',
@@ -445,6 +525,49 @@ accountForm?.addEventListener('submit', async (event) => {
   }
 });
 
+
+loginOtpBack?.addEventListener('click', () => {
+  showLoginEmailStep();
+  setLoginOtpMessage('Enter your email and we will send a fresh 6-digit login code.');
+});
+
+loginOtpForm?.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const email = String(loginEmailInput?.value || '').trim().toLowerCase();
+  const otp = String(loginCodeInput?.value || '').trim();
+  const isCodeStep = Boolean(loginCodeStep && !loginCodeStep.hidden);
+
+  if (!email || !email.includes('@')) {
+    setLoginOtpMessage('Enter a valid email address.', 'error');
+    return;
+  }
+
+  try {
+    if (!isCodeStep) {
+      setLoginOtpMessage('Sending your secure login code…');
+      await requestLoginOtp(email);
+      showLoginCodeStep(email);
+      setLoginOtpMessage('Check your email for the 6-digit LuxeRoutes code.', 'success');
+      return;
+    }
+
+    if (!/^\d{6}$/.test(otp)) {
+      setLoginOtpMessage('Enter the 6-digit code from your email.', 'error');
+      return;
+    }
+
+    setLoginOtpMessage('Verifying your code…');
+    const account = await verifyLoginOtp(email, otp);
+    const identity = account.identity || { email };
+    const profile = account.profile || null;
+    accountIdentity = identity;
+    saveAccountSession({ identity, profile, grant: account.grant, role: account.role, remember: Boolean(loginRememberInput?.checked) });
+    setLoginOtpMessage('Signed in successfully. Opening your account…', 'success');
+    window.location.href = getLoginRedirectTarget();
+  } catch (error) {
+    setLoginOtpMessage(error.message || 'Unable to complete login right now.', 'error');
+  }
+});
 
 accountLogoutButtons.forEach((button) => button.addEventListener('click', logoutAccount));
 

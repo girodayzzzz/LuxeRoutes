@@ -53,7 +53,7 @@
           <div class="login-panel-content">
             <p class="eyebrow">Private access desk</p>
             <h1>Welcome back to LuxeRoutes.</h1>
-            <p class="admin-lead">Continue through Cloudflare Access email verification before opening curated offers, partner details, or registration.</p>
+            <p class="admin-lead">Enter your email and verify a secure one-time code before opening curated offers, partner details, or registration.</p>
           </div>
           <div class="login-route-preview" aria-label="Login access highlights">
             <span>Email verification</span>
@@ -76,7 +76,7 @@
           <div class="auth-card-head login-box-head">
             <p class="eyebrow">Sign in</p>
             <h2>Access your account</h2>
-            <p>Use Cloudflare Access email verification to open your private dashboard or create a reviewed LuxeRoutes profile.</p>
+            <p>Enter your email and we will send a secure one-time code before opening your private account.</p>
           </div>
 
           <div class="auth-status-card login-account-state" aria-label="Account status" data-login-account-state hidden>
@@ -91,20 +91,37 @@
             </div>
           </div>
 
-          <div class="auth-form login-actions" data-login-actions>
-            <a class="btn btn-primary" href="account.html">Continue to account</a>
-            <a class="btn btn-secondary" href="register.html">Create an account</a>
-            <p class="login-access-note">Cloudflare Access will email your one-time PIN if this browser is not already verified.</p>
-          </div>
+          <form class="auth-form login-otp-form" data-login-otp-form data-login-actions>
+            <div class="login-step" data-login-email-step>
+              <label>Email
+                <input name="email" type="email" placeholder="you@example.com" autocomplete="email" required data-login-email-input>
+              </label>
+              <label class="auth-checkbox"><input type="checkbox" data-login-remember-input> Keep me signed in on this device</label>
+              <button class="btn btn-primary" type="submit">Email me a login code</button>
+              <a class="btn btn-secondary" href="register.html">Create an account</a>
+            </div>
+            <div class="login-step" data-login-code-step hidden>
+              <div class="otp-summary">
+                <span>Code sent to</span>
+                <strong data-login-otp-email>Email pending</strong>
+              </div>
+              <label>6-digit code
+                <input name="otp" type="text" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" placeholder="123456" data-login-code-input>
+              </label>
+              <button class="btn btn-primary" type="submit">Verify and open account</button>
+              <button class="btn btn-secondary login-back-button" type="button" data-login-otp-back>Use a different email</button>
+            </div>
+            <p class="login-access-note otp-helper" data-login-otp-message>Enter your email and we will send a fresh 6-digit login code. LuxeRoutes never stores a password for this sign-in.</p>
+          </form>
 
           <ul class="login-security-list" aria-label="Security notes">
-            <li>Cloudflare Access verifies your email before private account pages load.</li>
+            <li>LuxeRoutes sends and verifies a short-lived one-time code.</li>
             <li>Partner access is reviewed by the LuxeRoutes team.</li>
           </ul>
 
           <div class="auth-status-card" aria-label="Account access" data-login-session-status>
             <h3 data-account-heading>Account access</h3>
-            <p data-account-status>Continue to account or registration to verify your email with Cloudflare Access.</p>
+            <p data-account-status>Enter your email above and verify the one-time code to continue.</p>
           </div>
 
         </aside>
