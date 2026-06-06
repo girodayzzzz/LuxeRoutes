@@ -134,6 +134,7 @@ const getAccessIdentity = async () => {
     const response = await fetch('/.cloudflare/access/get-identity', {
       headers: { Accept: 'application/json' },
       credentials: 'same-origin',
+      redirect: 'manual',
     });
 
     if (!response.ok) return null;
