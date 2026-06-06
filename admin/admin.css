@@ -100,3 +100,579 @@
 .admin-detail-dialog dl div { padding: .75rem; border-radius: 10px; background: #f6f2eb; }
 .admin-detail-dialog dt { font-weight: 800; text-transform: capitalize; }
 .admin-detail-dialog dd { margin: .25rem 0 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.admin-publish-form { display: grid; grid-template-columns: 1fr 1fr; gap: .9rem; margin-top: 1.25rem; }
+.admin-publish-form label, .admin-publish-form fieldset { display: grid; gap: .4rem; font-weight: 700; }
+.admin-publish-form input, .admin-publish-form select, .admin-publish-form textarea { width: 100%; border: 1px solid rgba(40, 51, 45, .22); border-radius: 8px; background: #fff; padding: .65rem; }
+.admin-publish-form fieldset, .admin-publish-form .full { grid-column: 1 / -1; }
+.admin-option-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: .5rem; }
+.admin-option-grid label { display: flex; align-items: center; gap: .4rem; font-weight: 600; }
+.admin-option-grid input { width: auto; }
+@media (max-width: 700px) { .admin-publish-form, .admin-option-grid { grid-template-columns: 1fr; } }
+
+/* Polished production admin console */
+.admin-console-page {
+  --admin-ink: #18231d;
+  --admin-muted: #637067;
+  --admin-line: rgba(31, 48, 39, .12);
+  --admin-soft: #f7f2e8;
+  --admin-card: rgba(255, 255, 255, .92);
+  --admin-gold: #a77a2f;
+  --admin-green: #256743;
+  --admin-shadow: 0 22px 70px rgba(18, 32, 25, .1);
+  background:
+    radial-gradient(circle at 8% 2%, rgba(198, 161, 91, .18), transparent 30rem),
+    linear-gradient(180deg, #f8f3ea 0%, #fbf8f1 36%, #f5efe5 100%);
+  color: var(--admin-ink);
+}
+
+.admin-console-page .site-header {
+  background: rgba(20, 31, 26, .9);
+  border-bottom: 1px solid rgba(241, 215, 150, .14);
+  box-shadow: 0 16px 46px rgba(7, 12, 10, .18);
+  backdrop-filter: blur(18px);
+}
+
+.admin-console-page .primary-nav .nav-link {
+  color: rgba(248, 243, 233, .82);
+}
+
+.admin-console-page .primary-nav .nav-link:hover {
+  color: #f3d994;
+}
+
+.admin-console-page .admin-console-hero {
+  position: relative;
+  overflow: hidden;
+  padding: clamp(7rem, 11vw, 9rem) 0 clamp(2.5rem, 5vw, 4.5rem);
+  background:
+    linear-gradient(135deg, rgba(20, 31, 26, .96), rgba(43, 55, 45, .9)),
+    radial-gradient(circle at 82% 20%, rgba(198, 161, 91, .32), transparent 28rem);
+  color: #f8f3e9;
+}
+
+.admin-console-page .admin-console-hero::before,
+.admin-console-page .admin-console-hero::after {
+  content: "";
+  position: absolute;
+  border-radius: 999px;
+  pointer-events: none;
+}
+
+.admin-console-page .admin-console-hero::before {
+  inset: auto -9rem -14rem auto;
+  width: 34rem;
+  height: 34rem;
+  background: radial-gradient(circle, rgba(198, 161, 91, .3), transparent 68%);
+}
+
+.admin-console-page .admin-console-hero::after {
+  inset: 5rem auto auto -12rem;
+  width: 26rem;
+  height: 26rem;
+  background: radial-gradient(circle, rgba(255, 255, 255, .08), transparent 70%);
+}
+
+.admin-console-page .admin-console-heading {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(320px, .78fr);
+  gap: clamp(1.5rem, 4vw, 3.5rem);
+  align-items: center;
+}
+
+.admin-console-page .admin-console-heading h1 {
+  max-width: 780px;
+  margin: .3rem 0 .9rem;
+  color: #fff7e8;
+  letter-spacing: -.045em;
+}
+
+.admin-console-page .admin-console-heading > div > p:last-child {
+  max-width: 660px;
+  color: rgba(248, 243, 233, .78);
+  font-size: clamp(1.02rem, 1.7vw, 1.22rem);
+}
+
+.admin-console-page .eyebrow {
+  color: var(--admin-gold);
+}
+
+.admin-console-page .admin-console-hero .eyebrow {
+  color: #f1d796;
+}
+
+.admin-console-page .admin-login-card {
+  position: relative;
+  overflow: hidden;
+  padding: clamp(1.3rem, 2.5vw, 1.9rem);
+  border: 1px solid rgba(241, 215, 150, .28);
+  border-radius: 28px;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, .14), rgba(255, 255, 255, .06)),
+    rgba(255, 255, 255, .08);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, .18);
+  backdrop-filter: blur(18px);
+}
+
+.admin-console-page .admin-login-card h2 {
+  margin: .2rem 0 .7rem;
+  color: #fff7e8;
+  font-size: clamp(1.45rem, 2.4vw, 2rem);
+}
+
+.admin-console-page .admin-login-card p:not(.eyebrow),
+.admin-console-page .admin-login-card .admin-helper {
+  color: rgba(248, 243, 233, .74);
+}
+
+.admin-console-page .admin-auth-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .65rem;
+  align-items: center;
+  margin: 1.1rem 0;
+}
+
+.admin-console-page [data-auth-email] {
+  color: rgba(248, 243, 233, .86);
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+
+.admin-console-page .admin-console {
+  padding: clamp(2.2rem, 4vw, 4rem) 0 clamp(4rem, 6vw, 6rem);
+}
+
+.admin-console-page .admin-console > .container {
+  display: grid;
+  gap: 1.35rem;
+}
+
+.admin-console-page .admin-console-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  gap: 1.5rem;
+  margin: 0;
+  padding: clamp(1.2rem, 2.5vw, 1.6rem);
+  border: 1px solid var(--admin-line);
+  border-radius: 28px;
+  background: rgba(255, 255, 255, .72);
+  box-shadow: var(--admin-shadow);
+}
+
+.admin-console-page .admin-console-toolbar h2,
+.admin-console-page .admin-section-heading h2,
+.admin-console-page .admin-grant-form h3,
+.admin-console-page .admin-detail-dialog h2 {
+  color: var(--admin-ink);
+}
+
+.admin-console-page .admin-console-toolbar .eyebrow,
+.admin-console-page .admin-section-heading .eyebrow {
+  margin-bottom: .25rem;
+}
+
+.admin-console-page .btn,
+.admin-console-page .mini-action {
+  border: 0;
+  border-radius: 999px;
+  font-weight: 900;
+  letter-spacing: .01em;
+}
+
+.admin-console-page .btn-secondary,
+.admin-console-page .mini-action {
+  border: 1px solid rgba(167, 122, 47, .24);
+  background: #fff;
+  color: var(--admin-ink);
+  box-shadow: 0 8px 20px rgba(20, 31, 26, .07);
+}
+
+.admin-console-page .btn-secondary:hover,
+.admin-console-page .mini-action:hover:not(:disabled) {
+  border-color: rgba(167, 122, 47, .5);
+  background: #fff7e8;
+  color: #7a5420;
+  transform: translateY(-1px);
+}
+
+.admin-console-page .btn-primary {
+  background: linear-gradient(135deg, #c9a45e, #967039);
+  color: #151f1a;
+  box-shadow: 0 14px 34px rgba(151, 112, 57, .25);
+}
+
+.admin-console-page .btn-primary:hover {
+  box-shadow: 0 18px 42px rgba(151, 112, 57, .34);
+}
+
+.admin-console-page .admin-alert {
+  margin: 0;
+  padding: 1rem 1.15rem;
+  border: 1px solid rgba(140, 45, 29, .16);
+  border-radius: 18px;
+  background: #fff0ec;
+  color: #8c2d1d;
+  box-shadow: 0 12px 32px rgba(140, 45, 29, .08);
+}
+
+.admin-console-page .admin-alert[data-kind="success"] {
+  border-color: rgba(36, 102, 59, .16);
+  background: #e9f7ee;
+  color: #24663b;
+}
+
+.admin-console-page .admin-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.admin-console-page .admin-stats article {
+  position: relative;
+  overflow: hidden;
+  padding: 1.15rem;
+  border: 1px solid var(--admin-line);
+  border-radius: 24px;
+  background: var(--admin-card);
+  box-shadow: 0 16px 44px rgba(18, 32, 25, .08);
+}
+
+.admin-console-page .admin-stats article::after {
+  content: "";
+  position: absolute;
+  inset: auto -2rem -2rem auto;
+  width: 7rem;
+  height: 7rem;
+  border-radius: 999px;
+  background: rgba(198, 161, 91, .16);
+}
+
+.admin-console-page .admin-stats strong {
+  display: block;
+  color: var(--admin-ink);
+  font-size: clamp(1.7rem, 4vw, 2.45rem);
+  line-height: 1;
+}
+
+.admin-console-page .admin-stats span {
+  display: block;
+  margin-top: .45rem;
+  color: var(--admin-muted);
+  font-size: .78rem;
+  font-weight: 900;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+}
+
+.admin-console-page .admin-console-section {
+  margin: 0;
+  padding: clamp(1.2rem, 2.6vw, 1.75rem);
+  border: 1px solid var(--admin-line);
+  border-radius: 28px;
+  background: var(--admin-card);
+  box-shadow: var(--admin-shadow);
+}
+
+.admin-console-page .admin-section-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  gap: 1.5rem;
+  margin-bottom: 1.15rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(31, 48, 39, .09);
+}
+
+.admin-console-page .admin-section-heading p:not(.eyebrow) {
+  max-width: 42rem;
+  margin: .2rem 0 0;
+  color: var(--admin-muted);
+}
+
+.admin-console-page .admin-record-list {
+  display: grid;
+  gap: .9rem;
+}
+
+.admin-console-page .admin-record {
+  display: flex;
+  justify-content: space-between;
+  gap: 1.25rem;
+  padding: 1.15rem;
+  border: 1px solid rgba(31, 48, 39, .1);
+  border-radius: 22px;
+  background: linear-gradient(135deg, #fff, #fbf6ed);
+}
+
+.admin-console-page .admin-record h3 {
+  margin: .55rem 0 .25rem;
+  color: var(--admin-ink);
+}
+
+.admin-console-page .admin-record p,
+.admin-console-page .admin-record small {
+  color: var(--admin-muted);
+}
+
+.admin-console-page .admin-record strong {
+  color: var(--admin-ink);
+}
+
+.admin-console-page .admin-record-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .55rem;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.admin-console-page .table-wrap {
+  border: 1px solid rgba(31, 48, 39, .1);
+  border-radius: 22px;
+  background: #fff;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .7);
+}
+
+.admin-console-page .admin-table {
+  min-width: 880px;
+}
+
+.admin-console-page .admin-table th,
+.admin-console-page .admin-table td {
+  padding: 1rem 1.05rem;
+  border-bottom: 1px solid rgba(31, 48, 39, .08);
+}
+
+.admin-console-page .admin-table th {
+  color: #7a5420;
+  background: #fbf6ed;
+  font-size: .72rem;
+  letter-spacing: .13em;
+}
+
+.admin-console-page .admin-table td {
+  color: var(--admin-ink);
+}
+
+.admin-console-page .admin-table tbody tr:hover td {
+  background: #fffaf1;
+}
+
+.admin-console-page .admin-table small {
+  color: var(--admin-muted);
+}
+
+.admin-console-page .admin-table strong {
+  color: var(--admin-ink);
+}
+
+.admin-console-page .empty-state {
+  padding: 1.1rem;
+  border: 1px dashed rgba(167, 122, 47, .3);
+  border-radius: 18px;
+  background: #fffaf1;
+  color: var(--admin-muted);
+}
+
+.admin-console-page .status-pill {
+  min-height: 30px;
+  border-color: rgba(167, 122, 47, .24);
+  background: #fff8ea;
+  color: #7a5420;
+}
+
+.admin-console-page .status-approved {
+  border-color: rgba(37, 103, 67, .24);
+  background: #eaf7ef;
+  color: var(--admin-green);
+}
+
+.admin-console-page .status-pending {
+  border-color: rgba(167, 122, 47, .32);
+  background: #fff4d6;
+  color: #8a6125;
+}
+
+.admin-console-page .status-warning {
+  border-color: rgba(154, 66, 47, .24);
+  background: #fff0ec;
+  color: #9a422f;
+}
+
+.admin-console-page .admin-grant-form {
+  display: grid;
+  grid-template-columns: minmax(180px, 1.2fr) minmax(140px, .72fr) minmax(200px, 1.2fr) auto;
+  gap: .9rem;
+  align-items: end;
+  margin-top: 1.15rem;
+  padding: 1.15rem;
+  border: 1px solid rgba(31, 48, 39, .1);
+  border-radius: 22px;
+  background: #fbf6ed;
+}
+
+.admin-console-page .admin-grant-form h3 {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+
+.admin-console-page .admin-grant-form label,
+.admin-console-page .inline-role-form,
+.admin-console-page .admin-publish-form label,
+.admin-console-page .admin-publish-form fieldset {
+  color: var(--admin-ink);
+}
+
+.admin-console-page .admin-grant-form input,
+.admin-console-page .admin-grant-form select,
+.admin-console-page .inline-role-form select,
+.admin-console-page [data-inquiry-status],
+.admin-console-page .admin-publish-form input,
+.admin-console-page .admin-publish-form select,
+.admin-console-page .admin-publish-form textarea {
+  min-height: 44px;
+  border: 1px solid rgba(31, 48, 39, .16);
+  border-radius: 13px;
+  background: #fff;
+  color: var(--admin-ink);
+  padding: .7rem .78rem;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, .75);
+}
+
+.admin-console-page .admin-grant-form input:focus,
+.admin-console-page .admin-grant-form select:focus,
+.admin-console-page .inline-role-form select:focus,
+.admin-console-page [data-inquiry-status]:focus,
+.admin-console-page .admin-publish-form input:focus,
+.admin-console-page .admin-publish-form select:focus,
+.admin-console-page .admin-publish-form textarea:focus {
+  outline: 3px solid rgba(198, 161, 91, .18);
+  border-color: rgba(167, 122, 47, .48);
+}
+
+.admin-console-page .inline-role-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .45rem;
+}
+
+.admin-console-page .admin-detail-dialog {
+  width: min(760px, calc(100% - 2rem));
+  max-height: calc(100vh - 3rem);
+  overflow: auto;
+  border: 1px solid rgba(31, 48, 39, .1);
+  border-radius: 28px;
+  padding: clamp(1.2rem, 3vw, 1.8rem);
+  background: #fffaf1;
+  color: var(--admin-ink);
+  box-shadow: 0 34px 100px rgba(18, 32, 25, .28);
+}
+
+.admin-console-page .admin-detail-dialog::backdrop {
+  background: rgba(15, 25, 20, .68);
+  backdrop-filter: blur(5px);
+}
+
+.admin-console-page .admin-detail-dialog .dialog-close {
+  float: right;
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border: 1px solid rgba(31, 48, 39, .12);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--admin-ink);
+  font-size: 1.7rem;
+  line-height: 1;
+}
+
+.admin-console-page .admin-detail-dialog dl div {
+  border: 1px solid rgba(31, 48, 39, .08);
+  background: #fff;
+}
+
+.admin-console-page .admin-detail-dialog dt {
+  color: #7a5420;
+}
+
+.admin-console-page .admin-detail-dialog dd {
+  color: var(--admin-muted);
+}
+
+.admin-console-page .admin-publish-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .95rem;
+}
+
+.admin-console-page .admin-publish-form fieldset,
+.admin-console-page .admin-publish-form .full {
+  grid-column: 1 / -1;
+}
+
+.admin-console-page .admin-publish-form fieldset {
+  padding: 1rem;
+  border: 1px solid rgba(31, 48, 39, .1);
+  border-radius: 18px;
+  background: #fff;
+}
+
+.admin-console-page .admin-option-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: .55rem;
+}
+
+.admin-console-page .admin-option-grid label {
+  display: flex;
+  align-items: center;
+  gap: .45rem;
+  color: var(--admin-muted);
+}
+
+.admin-console-page .admin-option-grid input {
+  width: auto;
+  accent-color: var(--admin-gold);
+}
+
+@media (max-width: 980px) {
+  .admin-console-page .admin-console-heading,
+  .admin-console-page .admin-grant-form {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-console-page .admin-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .admin-console-page .admin-section-heading,
+  .admin-console-page .admin-console-toolbar,
+  .admin-console-page .admin-record {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .admin-console-page .admin-record-actions {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 680px) {
+  .admin-console-page .admin-console-hero {
+    padding-top: 6.2rem;
+  }
+
+  .admin-console-page .admin-stats,
+  .admin-console-page .admin-publish-form,
+  .admin-console-page .admin-option-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-console-page .admin-table {
+    min-width: 720px;
+  }
+}

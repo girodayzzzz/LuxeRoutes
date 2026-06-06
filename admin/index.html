@@ -85,6 +85,19 @@
           </form>
         </section>
 
+        <section class="admin-console-section" aria-labelledby="offers-title">
+          <div class="admin-section-heading">
+            <div><p class="eyebrow">Published collection</p><h2 id="offers-title">Live stay offers</h2></div>
+            <p>Published offers appear automatically in the public stay finder. Unpublish an offer to remove it immediately.</p>
+          </div>
+          <div class="table-wrap">
+            <table class="admin-table">
+              <thead><tr><th>Stay</th><th>Placement</th><th>Status</th><th>Updated</th><th>Manage</th></tr></thead>
+              <tbody data-admin-offers></tbody>
+            </table>
+          </div>
+        </section>
+
         <section class="admin-console-section" aria-labelledby="inquiries-title">
           <div class="admin-section-heading">
             <div><p class="eyebrow">Incoming requests</p><h2 id="inquiries-title">Inquiries</h2></div>
@@ -106,6 +119,27 @@
     <p class="eyebrow">Inquiry details</p>
     <h2 data-inquiry-dialog-title>Inquiry</h2>
     <dl data-inquiry-dialog-content></dl>
+  </dialog>
+
+  <dialog class="admin-detail-dialog admin-publish-dialog" data-publish-dialog>
+    <form method="dialog"><button class="dialog-close" aria-label="Close publish form">×</button></form>
+    <p class="eyebrow">Approve and publish</p>
+    <h2>Publish stay offer</h2>
+    <p class="admin-helper">Review and complete the public card. Publishing resolves the source inquiry and places the stay in the public offer finder.</p>
+    <form class="admin-publish-form" data-publish-form>
+      <input type="hidden" name="sourceInquiryId" />
+      <label>Title<input name="title" required maxlength="180" /></label>
+      <label>Public location label<input name="locationLabel" required maxlength="180" placeholder="Slovenia · Lakes" /></label>
+      <label>Country<select name="country" required><option value="slovenia">Slovenia</option><option value="croatia">Croatia</option><option value="italy">Italy</option><option value="austria">Austria</option><option value="switzerland">Switzerland</option><option value="france">France</option></select></label>
+      <label>Region<select name="region" required><option value="alps">Alps</option><option value="adriatic">Adriatic coast</option><option value="lakes">Lakes</option><option value="wine-country">Wine country</option><option value="city">City</option><option value="countryside">Countryside</option><option value="riviera">Riviera</option></select></label>
+      <label>Stay type<select name="stayType" required><option value="villa">Private villa</option><option value="chalet">Chalet</option><option value="boutique-hotel">Boutique hotel</option><option value="apartment">Apartment</option><option value="cabin">Cabin</option><option value="retreat">Wellness retreat</option></select></label>
+      <label>Guest label<input name="guestLabel" maxlength="120" placeholder="2–8 guests" /></label>
+      <label>Price label<input name="priceLabel" maxlength="180" placeholder="From €450/night" /></label>
+      <label>Image URL<input name="imageUrl" type="url" maxlength="1500" placeholder="https://…" /></label>
+      <fieldset><legend>Options</legend><div class="admin-option-grid"><label><input type="checkbox" name="options" value="pool" /> Pool</label><label><input type="checkbox" name="options" value="spa" /> Spa</label><label><input type="checkbox" name="options" value="sea-view" /> Sea view</label><label><input type="checkbox" name="options" value="family" /> Family ready</label><label><input type="checkbox" name="options" value="pet-friendly" /> Pet friendly</label><label><input type="checkbox" name="options" value="private-chef" /> Private chef</label></div></fieldset>
+      <label class="full">Public description<textarea name="description" rows="5" required maxlength="1200"></textarea></label>
+      <button class="btn btn-primary full" type="submit">Approve and publish stay</button>
+    </form>
   </dialog>
 
   <footer class="site-footer"><div class="container footer-bottom"><p>© <span data-current-year>2026</span> LuxeRoutes.</p><p>Restricted administration console.</p></div></footer>

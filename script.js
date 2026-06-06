@@ -336,16 +336,18 @@ if (offerFilterRoot) {
   const selectFilters = offerFilterRoot.querySelectorAll('[data-filter-select]');
   const optionFilters = offerFilterRoot.querySelectorAll('[data-filter-option]');
   const searchInput = offerFilterRoot.querySelector('[data-filter-search]');
-  const offerCards = offerFilterRoot.querySelectorAll('[data-offer-card]');
+  const resultsTarget = offerFilterRoot.querySelector('[data-offer-results]');
   const resultCount = offerFilterRoot.querySelector('[data-result-count]');
   const noResults = offerFilterRoot.querySelector('[data-no-results]');
   const resetButton = offerFilterRoot.querySelector('[data-filter-reset]');
+  const escapeOfferHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[character]));
+  const typeLabels = { villa: 'Private villa', chalet: 'Chalet', 'boutique-hotel': 'Boutique hotel', apartment: 'Apartment', cabin: 'Cabin', retreat: 'Wellness retreat' };
+  let offerCards = offerFilterRoot.querySelectorAll('[data-offer-card]');
 
-  offerCards.forEach((card) => {
+  const wireRequestLink = (card) => {
     const requestLink = card.querySelector('.offer-footer a');
     const offerTitle = card.querySelector('h3')?.textContent.trim();
     if (!requestLink || !offerTitle) return;
-
     const query = new URLSearchParams({
       offer: offerTitle,
       request_type: 'Specific accommodation',
@@ -353,79 +355,66 @@ if (offerFilterRoot) {
       region: [formatLabel(card.dataset.country || ''), formatLabel(card.dataset.region || '')].filter(Boolean).join(' · '),
       source_url: `${window.location.origin}${window.location.pathname}#offers`,
     });
-
     requestLink.href = `plan-trip.html?${query.toString()}#trip-brief`;
     requestLink.textContent = 'Request this stay';
-  });
-
-  const getSelectedOptions = () => Array.from(optionFilters)
-    .filter((input) => input.checked)
-    .map((input) => normalizeFilterValue(input.value));
-
-  const cardMatchesSelect = (card, filterName, filterValue) => {
-    if (filterValue === 'all') return true;
-    const cardValues = normalizeFilterValue(card.dataset[filterName]).split(/\s+/);
-    return cardValues.includes(filterValue);
   };
 
-  const cardMatchesOptions = (card, selectedOptions) => {
-    if (!selectedOptions.length) return true;
-    const cardOptions = normalizeFilterValue(card.dataset.options).split(/\s+/);
-    return selectedOptions.every((option) => cardOptions.includes(option));
-  };
-
-  const cardMatchesSearch = (card, searchValue) => {
-    if (!searchValue) return true;
-    const haystack = [
-      card.dataset.search,
-      card.dataset.country,
-      card.dataset.region,
-      card.dataset.type,
-      card.dataset.options,
-      card.querySelector('h3')?.textContent,
-      card.querySelector('p')?.textContent,
-    ].filter(Boolean).join(' ').toLowerCase();
-
-    return searchValue.split(/\s+/).every((term) => haystack.includes(term));
-  };
-
+  offerCards.forEach(wireRequestLink);
+  const getSelectedOptions = () => Array.from(optionFilters).filter((input) => input.checked).map((input) => normalizeFilterValue(input.value));
+  const cardMatchesSelect = (card, filterName, filterValue) => filterValue === 'all' || normalizeFilterValue(card.dataset[filterName]).split(/\s+/).includes(filterValue);
+  const cardMatchesOptions = (card, selectedOptions) => !selectedOptions.length || selectedOptions.every((option) => normalizeFilterValue(card.dataset.options).split(/\s+/).includes(option));
+  const cardMatchesSearch = (card, searchValue) => !searchValue || searchValue.split(/\s+/).every((term) => [card.dataset.search, card.dataset.country, card.dataset.region, card.dataset.type, card.dataset.options, card.querySelector('h3')?.textContent, card.querySelector('p')?.textContent].filter(Boolean).join(' ').toLowerCase().includes(term));
   const updateOffers = () => {
     const selectedOptions = getSelectedOptions();
     const searchValue = normalizeFilterValue(searchInput?.value);
     let visibleCount = 0;
-
     offerCards.forEach((card) => {
-      const matchesSelects = Array.from(selectFilters).every((select) => {
-        const filterName = select.dataset.filterSelect;
-        const filterValue = normalizeFilterValue(select.value);
-        return cardMatchesSelect(card, filterName, filterValue);
-      });
+      const matchesSelects = Array.from(selectFilters).every((select) => cardMatchesSelect(card, select.dataset.filterSelect, normalizeFilterValue(select.value)));
       const isVisible = matchesSelects && cardMatchesOptions(card, selectedOptions) && cardMatchesSearch(card, searchValue);
-
       card.classList.toggle('is-hidden', !isVisible);
       if (isVisible) visibleCount += 1;
     });
-
     if (resultCount) resultCount.textContent = String(visibleCount);
     if (noResults) noResults.hidden = visibleCount !== 0;
+  };
+  const renderDatabaseOffers = async () => {
+    if (!resultsTarget) return;
+    try {
+      const response = await fetch('/api/offers', { headers: { Accept: 'application/json' } });
+      if (!response.ok) throw new Error(`Offer endpoint returned ${response.status}`);
+      const data = await response.json();
+      const publishedOffers = Array.isArray(data.offers) ? data.offers : [];
+      publishedOffers.forEach((offer) => {
+        const card = document.createElement('article');
+        card.className = 'stay-offer-card';
+        card.dataset.offerCard = '';
+        card.dataset.databaseOffer = offer.id;
+        card.dataset.country = offer.country;
+        card.dataset.region = offer.region;
+        card.dataset.type = offer.stayType;
+        card.dataset.options = offer.options || '';
+        card.dataset.search = [offer.title, offer.locationLabel, offer.description, offer.country, offer.region, offer.stayType, offer.options].join(' ').toLowerCase();
+        const imageUrl = offer.imageUrl || 'https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?auto=format&fit=crop&w=900&q=80';
+        card.innerHTML = `<div class="offer-image-wrap"><img src="${escapeOfferHtml(imageUrl)}" alt="${escapeOfferHtml(offer.imageAlt || offer.title)}" loading="lazy" width="900" height="600" decoding="async" /><span class="offer-badge">${escapeOfferHtml(offer.locationLabel)}</span></div><div class="stay-offer-body"><div class="offer-meta"><span>${escapeOfferHtml(typeLabels[offer.stayType] || formatLabel(offer.stayType))}</span><span>${escapeOfferHtml(offer.guestLabel || 'By private request')}</span></div><h3>${escapeOfferHtml(offer.title)}</h3><p>${escapeOfferHtml(offer.description)}</p><div class="offer-footer"><span>${escapeOfferHtml(offer.priceLabel || 'Price by private request')}</span><a class="text-link" href="plan-trip.html">Request stay</a></div></div>`;
+        resultsTarget.prepend(card);
+        wireRequestLink(card);
+      });
+      offerCards = offerFilterRoot.querySelectorAll('[data-offer-card]');
+      updateOffers();
+    } catch (error) {
+      console.warn('Database-backed offers could not be loaded; showing curated static offers.', error);
+    }
   };
 
   selectFilters.forEach((select) => select.addEventListener('change', updateOffers));
   optionFilters.forEach((input) => input.addEventListener('change', updateOffers));
   searchInput?.addEventListener('input', updateOffers);
-
-  if (resetButton) {
-    resetButton.addEventListener('click', () => {
-      selectFilters.forEach((select) => {
-        select.value = 'all';
-      });
-      optionFilters.forEach((input) => {
-        input.checked = false;
-      });
-      if (searchInput) searchInput.value = '';
-      updateOffers();
-    });
-  }
-
+  resetButton?.addEventListener('click', () => {
+    selectFilters.forEach((select) => { select.value = 'all'; });
+    optionFilters.forEach((input) => { input.checked = false; });
+    if (searchInput) searchInput.value = '';
+    updateOffers();
+  });
   updateOffers();
+  renderDatabaseOffers();
 }
