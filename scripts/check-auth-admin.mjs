@@ -18,6 +18,15 @@ assert.ok(
   accountSource.indexOf('const identity = await getAccessIdentity();') < accountSource.indexOf('if (!localPreview && isProtectedAccountPage())'),
   'Protected account pages must await Cloudflare Access identity before redirecting a fresh browser session.',
 );
+assert.ok(
+  accountSource.indexOf('if (!localPreview && hasCachedSession)') < accountSource.indexOf('if (!localPreview && isProtectedAccountPage())'),
+  'Protected account pages should restore a fresh OTP browser session before sending the browser back to login.',
+);
+assert.match(
+  accountSource,
+  /isLoginRedirectTarget\(url\.pathname\)/,
+  'Login redirects must reject login-page targets so successful OTP verification cannot bounce back to login.',
+);
 assert.match(
   accountSource,
   /email: String\(accountIdentity\?\.email \|\| \(isAccountLocalPreview\(\) \? formData\.get\('email'\) : ''\)/,

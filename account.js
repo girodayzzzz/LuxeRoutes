@@ -60,10 +60,14 @@ const unlockDashboard = () => {
   if (isDashboardPage()) document.body.dataset.accountLocked = 'false';
 };
 
+const getCurrentAccountTarget = () => `${window.location.pathname}${window.location.search}${window.location.hash}`;
+
+const isLoginRedirectTarget = (path) => ['/login', '/login.html'].includes(path.replace(/\/$/, ''));
+
 const redirectToLogin = () => {
   if (!isProtectedAccountPage()) return;
   lockDashboard();
-  const target = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+  const target = getCurrentAccountTarget();
   window.location.replace(`login.html?redirect=${encodeURIComponent(target)}`);
 };
 
@@ -256,7 +260,7 @@ const getLoginRedirectTarget = () => {
 
   try {
     const url = new URL(redirect, window.location.origin);
-    if (url.origin !== window.location.origin) return 'account.html';
+    if (url.origin !== window.location.origin || isLoginRedirectTarget(url.pathname)) return 'account.html';
     return `${url.pathname}${url.search}${url.hash}`;
   } catch (error) {
     return 'account.html';
@@ -348,6 +352,23 @@ const renderAccountProfile = (profile, grant = null) => {
       <span class="status-pill ${accountStatusClass(profileStatus)}">${accountEscapeHtml(accountStatusLabel(profileStatus))}</span>
     </div>
   `;
+};
+
+const restoreCachedAccountSession = (cachedSession, status = 'Your verified browser session is active while we reconnect to your account.') => {
+  if (!hasVerifiedAccountSession(cachedSession)) return false;
+
+  const cachedEmail = cachedSession.identity?.email || cachedSession.profile?.email;
+  accountIdentity = cachedSession.identity || (cachedEmail ? { email: cachedEmail } : null);
+  setAccountStatus({
+    heading: isAccountLocalPreview() ? 'Local preview session' : 'Email verified',
+    status,
+    email: cachedEmail,
+    role: getAccountRole(cachedSession),
+    approved: true,
+  });
+  renderAccountProfile(cachedSession.profile || loadAccountProfile(), cachedSession.grant);
+  setLoginAccountState(true);
+  return true;
 };
 
 const setAccountStatus = ({ heading, status, email, role, approved }) => {
@@ -442,24 +463,22 @@ const initialiseAccount = async () => {
     }
   }
 
+  if (!localPreview && hasCachedSession) {
+    const restored = restoreCachedAccountSession(
+      cachedSession,
+      'Your verified browser session is active while we reconnect to your account. Refresh if your latest profile details do not appear.',
+    );
+    if (restored) return;
+  }
+
   if (!localPreview && isProtectedAccountPage()) {
     redirectToLogin();
     return;
   }
 
   if (localPreview && hasCachedSession) {
-    const cachedEmail = cachedSession.identity?.email || cachedSession.profile?.email;
-    accountIdentity = cachedSession.identity || (cachedEmail ? { email: cachedEmail } : null);
-    setAccountStatus({
-      heading: 'Local preview session',
-      status: 'Your local preview session is active in this browser.',
-      email: cachedEmail,
-      role: getAccountRole(cachedSession),
-      approved: true,
-    });
-    renderAccountProfile(cachedSession.profile || loadAccountProfile(), cachedSession.grant);
-    setLoginAccountState(true);
-    return;
+    const restored = restoreCachedAccountSession(cachedSession, 'Your local preview session is active in this browser.');
+    if (restored) return;
   }
 
   if (localPreview && isRegisterPage() && accountEmailInput) accountEmailInput.readOnly = false;
