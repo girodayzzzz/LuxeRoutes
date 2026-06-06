@@ -103,6 +103,13 @@ Important: the API also checks D1. The signed-in email must have an active `admi
 
 The panel verifies access through `/api/admin/session`, which is intentionally inside the same `/api/admin/*` Access application as the rest of the admin API. Do not use `/api/account` as the admin gate because it belongs to the separate public-customer Access application. If the panel remains locked, it now displays the verified email and the specific D1 grant error instead of redirecting away.
 
+The admin API first reads `CF-Access-Authenticated-User-Email`. If Cloudflare Pages does not receive that header, it validates the signed `Cf-Access-Jwt-Assertion` token and extracts the verified `email` claim. Keep these Pages production environment variables aligned with the admin Access application:
+
+```text
+CLOUDFLARE_ACCESS_TEAM_DOMAIN=cool-heart-b7e3.cloudflareaccess.com
+CLOUDFLARE_ACCESS_AUD=9bd120625647058847770d9cd6a125d745203300af1c9f47db87fcdbbf12a0c7
+```
+
 Admin grant lookup trims and compares email addresses case-insensitively. Even so, store grant emails in lowercase to keep profiles, grants, and Cloudflare Access identities consistent.
 
 ## Phase 4 — Seed your first admin
@@ -155,18 +162,21 @@ wrangler d1 execute luxeroutes-db --remote --command "SELECT p.email, p.requeste
 
 ## Exact production checklist for the site owner
 
+The production domain must be served by **Cloudflare Pages**, not GitHub Pages. A GitHub Pages `404 File not found` at `/api/offers` proves that the static GitHub host currently owns the domain; GitHub Pages cannot execute Pages Functions or access D1. Disable GitHub Pages/custom-domain publishing for this repository, remove any GitHub Pages DNS records, and attach `luxeroutes.eu` under the Cloudflare Pages project's custom domains.
+
 You still need to complete these steps outside the repository in Cloudflare:
 
-1. Create the D1 database named `luxeroutes-db` if it does not already exist.
-2. Apply all D1 migrations remotely with `wrangler d1 migrations apply luxeroutes-db --remote` (the OTP endpoint also self-creates its required `login_otps` table as a deployment safeguard).
-3. Bind that D1 database to the Pages project with binding name `DB`.
-4. Keep `/login.html` and `/login` public; do not add them to an Access application.
-5. Create or restore the public-customer Cloudflare Access application for the exact paths `/account.html`, `/account`, `/register.html`, `/register`, and `/api/account`, using an **Allow / Include Everyone** policy and the One-time PIN login method.
-6. Keep `/api/auth/otp` outside the public-customer Access application. No Resend secrets are required for the primary Cloudflare Access flow.
-7. Create a separate Cloudflare Access application for `/admin/index.html`, `/admin/*`, and `/api/admin/*` that only allows your trusted admin email addresses.
-8. Seed your first admin email into `access_grants` with the command in Phase 4.
-9. Complete the Phase 5 private-window test, then test with three different emails: one customer, one owner request, and one manager request.
-10. From the admin email, approve one owner/manager request and reject the other to confirm both paths work.
+1. Disable GitHub Pages for this repository and ensure `luxeroutes.eu` is configured as a Cloudflare Pages custom domain; the repository must not contain a GitHub Pages `CNAME` file.
+2. Create the D1 database named `luxeroutes-db` if it does not already exist.
+3. Apply all D1 migrations remotely with `wrangler d1 migrations apply luxeroutes-db --remote` (the OTP endpoint also self-creates its required `login_otps` table as a deployment safeguard).
+4. Bind that D1 database to the Pages project with binding name `DB`.
+5. Keep `/login.html` and `/login` public; do not add them to an Access application.
+6. Create or restore the public-customer Cloudflare Access application for the exact paths `/account.html`, `/account`, `/register.html`, `/register`, and `/api/account`, using an **Allow / Include Everyone** policy and the One-time PIN login method.
+7. Keep `/api/auth/otp` outside the public-customer Access application. No Resend secrets are required for the primary Cloudflare Access flow.
+8. Create a separate Cloudflare Access application for `/admin/index.html`, `/admin/*`, and `/api/admin/*` that only allows your trusted admin email addresses.
+9. Seed your first admin email into `access_grants` with the command in Phase 4.
+10. Complete the Phase 5 private-window test, then test with three different emails: one customer, one owner request, and one manager request.
+11. From the admin email, approve one owner/manager request and reject the other to confirm both paths work.
 
 Do not share the admin URL until the Phase 5 private-window test and admin access checks succeed.
 

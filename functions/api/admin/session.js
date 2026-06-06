@@ -1,8 +1,8 @@
-import { privateErrorJson, getActiveGrant, getIdentityEmail, privateJson, requireDb } from '../_utils.js';
+import { privateErrorJson, getAccessIdentityEmail, getActiveGrant, privateJson, requireDb } from '../_utils.js';
 
 export const onRequestGet = async ({ request, env }) => {
   try {
-    const email = getIdentityEmail(request);
+    const email = await getAccessIdentityEmail(request, env);
     if (!email) {
       return privateErrorJson('Cloudflare Access did not provide a verified email for the admin application.', 401);
     }

@@ -45,8 +45,14 @@ const showAlert = (message = '', kind = 'error') => {
 };
 const requestJson = async (url, options = {}) => {
   const response = await fetch(url, { credentials: 'same-origin', headers: { Accept: 'application/json', ...(options.body ? { 'Content-Type': 'application/json' } : {}) }, ...options });
-  const data = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(data.error || `Request failed with HTTP ${response.status}.`);
+  const contentType = response.headers.get('content-type') || '';
+  const data = contentType.includes('application/json') ? await response.json().catch(() => ({})) : {};
+  if (!response.ok) {
+    if (response.status === 404 && !contentType.includes('application/json')) {
+      throw new Error('The API route was not found. This site must be deployed on Cloudflare Pages, not GitHub Pages, for admin publishing to work.');
+    }
+    throw new Error(data.error || `Request failed with HTTP ${response.status}.`);
+  }
   return data;
 };
 const isPropertyInquiry = (inquiry) => {

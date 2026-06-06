@@ -21,10 +21,93 @@ export const normalizeEmail = (email) => String(email || '').trim().toLowerCase(
 
 export const isValidRole = (role, roles = ROLE_ORDER) => roles.includes(role);
 
+const getCloudflareAccessJwt = (request) => {
+  const headerToken = request.headers.get('Cf-Access-Jwt-Assertion')
+    || request.headers.get('cf-access-jwt-assertion');
+  if (headerToken) return headerToken.trim();
+
+  return parseCookies(request).CF_Authorization || '';
+};
+
+const jsonFromBase64Url = (value) => JSON.parse(base64UrlDecode(value));
+
+const getAccessConfig = (env = {}) => ({
+  teamDomain: String(env.CLOUDFLARE_ACCESS_TEAM_DOMAIN || env.ACCESS_TEAM_DOMAIN || '').trim().replace(/^https?:\/\//, '').replace(/\/$/, ''),
+  audience: String(env.CLOUDFLARE_ACCESS_AUD || env.ACCESS_AUD || '').trim(),
+});
+
+const accessCertCache = new Map();
+
+const getAccessCerts = async (teamDomain) => {
+  const cached = accessCertCache.get(teamDomain);
+  if (cached && cached.expiresAt > Date.now()) return cached.keys;
+
+  const response = await fetch(`https://${teamDomain}/cdn-cgi/access/certs`, {
+    headers: { Accept: 'application/json' },
+  });
+  if (!response.ok) throw new Error('Unable to load Cloudflare Access signing keys.');
+  const data = await response.json();
+  const keys = Array.isArray(data.keys) ? data.keys : [];
+  accessCertCache.set(teamDomain, { keys, expiresAt: Date.now() + 10 * 60 * 1000 });
+  return keys;
+};
+
+const verifyAccessJwt = async (token, env = {}) => {
+  const [encodedHeader, encodedPayload, encodedSignature] = String(token || '').split('.');
+  if (!encodedHeader || !encodedPayload || !encodedSignature) return null;
+
+  const { teamDomain, audience } = getAccessConfig(env);
+  if (!teamDomain || !audience) throw new Error('Cloudflare Access JWT validation requires CLOUDFLARE_ACCESS_TEAM_DOMAIN and CLOUDFLARE_ACCESS_AUD environment variables.');
+
+  const header = jsonFromBase64Url(encodedHeader);
+  const payload = jsonFromBase64Url(encodedPayload);
+  const issuer = `https://${teamDomain}`;
+  const payloadAudience = Array.isArray(payload.aud) ? payload.aud : [payload.aud];
+  const now = Math.floor(Date.now() / 1000);
+
+  if (payload.iss !== issuer) throw new Error('Cloudflare Access JWT issuer did not match this team domain.');
+  if (!payloadAudience.includes(audience)) throw new Error('Cloudflare Access JWT audience did not match this application.');
+  if (payload.exp && now >= Number(payload.exp)) throw new Error('Cloudflare Access JWT is expired.');
+  if (payload.nbf && now < Number(payload.nbf)) throw new Error('Cloudflare Access JWT is not valid yet.');
+
+  const keys = await getAccessCerts(teamDomain);
+  const jwk = keys.find((key) => key.kid === header.kid) || keys[0];
+  if (!jwk) throw new Error('Cloudflare Access signing key was not found.');
+
+  const key = await crypto.subtle.importKey(
+    'jwk',
+    jwk,
+    { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
+    false,
+    ['verify'],
+  );
+  const signatureBytes = Uint8Array.from(base64UrlDecode(encodedSignature), (character) => character.charCodeAt(0));
+  const valid = await crypto.subtle.verify(
+    'RSASSA-PKCS1-v1_5',
+    key,
+    signatureBytes,
+    textEncoder.encode(`${encodedHeader}.${encodedPayload}`),
+  );
+  if (!valid) throw new Error('Cloudflare Access JWT signature is invalid.');
+
+  return payload;
+};
+
 export const getIdentityEmail = (request) => normalizeEmail(
   request.headers.get('CF-Access-Authenticated-User-Email')
   || request.headers.get('cf-access-authenticated-user-email')
 );
+
+export const getAccessIdentityEmail = async (request, env = {}) => {
+  const headerEmail = getIdentityEmail(request);
+  if (headerEmail) return headerEmail;
+
+  const token = getCloudflareAccessJwt(request);
+  if (!token) return '';
+
+  const payload = await verifyAccessJwt(token, env);
+  return normalizeEmail(payload?.email);
+};
 
 const ACCOUNT_SESSION_COOKIE = 'luxeroutes_account_session';
 const ACCOUNT_SESSION_TTL_SECONDS = 4 * 60 * 60;
@@ -147,7 +230,7 @@ export const getActiveGrant = async (db, email) => {
 
 export const requireAdmin = async (request, env) => {
   const db = requireDb(env);
-  const email = getIdentityEmail(request);
+  const email = await getAccessIdentityEmail(request, env);
   if (!email) return { error: privateErrorJson('Cloudflare Access identity is required.', 401) };
 
   const grant = await getActiveGrant(db, email);
