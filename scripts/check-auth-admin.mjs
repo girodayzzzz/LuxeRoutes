@@ -12,6 +12,7 @@ const siteScriptSource = readFileSync('script.js', 'utf8');
 assert.match(loginSource, /data-login-otp-form/, 'Public login should render the branded email one-time-code form.');
 assert.match(loginSource, /name="otp"/, 'Public login should include the one-time-code input.');
 assert.match(loginSource, /href="register\.html"[^>]*>Create an account<\/a>/, 'Public login should link to the protected registration page.');
+assert.match(accountSource, /fetch\('\/.cloudflare\/access\/get-identity',[\s\S]*?redirect: 'manual'/, 'Cloudflare Access identity checks must not follow Access redirects into a browser redirect loop.');
 assert.match(accountSource, /fetch\('\/api\/auth\/otp'/, 'Primary customer client code must request email one-time codes from the OTP endpoint.');
 assert.match(accountSource, /fetch\('\/api\/auth\/otp\?action=verify'/, 'Primary customer client code must verify email one-time codes with the OTP endpoint.');
 assert.ok(
