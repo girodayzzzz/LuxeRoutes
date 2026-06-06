@@ -15,6 +15,11 @@ Static LuxeRoutes website prepared for GitHub source control and Cloudflare Page
 
 Cloudflare Pages will publish the static files from the repository root. The `_headers`, `_redirects`, and `_routes.json` files are included for security headers, clean admin routing, and limiting Pages Functions invocation to `/api/*`.
 
+The admin APIs accept Cloudflare Access identity from either the verified email header or a validated `Cf-Access-Jwt-Assertion` token. Keep these non-secret Access values configured for the Pages production environment; they are also present in `wrangler.toml` for source-controlled deployments:
+
+- `CLOUDFLARE_ACCESS_TEAM_DOMAIN=cool-heart-b7e3.cloudflareaccess.com`
+- `CLOUDFLARE_ACCESS_AUD=9bd120625647058847770d9cd6a125d745203300af1c9f47db87fcdbbf12a0c7`
+
 > **Do not enable GitHub Pages for the production domain.** GitHub Pages can display the static site, but it cannot execute `functions/api/*` or connect to D1. The repository intentionally does not include a root `CNAME` file because that file makes GitHub Pages claim `luxeroutes.eu`. Configure `luxeroutes.eu` as a custom domain on the Cloudflare Pages project instead.
 
 After deployment, verify that the domain is running the Cloudflare API rather than GitHub Pages:

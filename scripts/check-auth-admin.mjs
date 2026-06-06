@@ -253,6 +253,34 @@ class FakeDb {
   }
 }
 
+
+const encodeBase64Url = (value) => Buffer.from(value).toString('base64url');
+const createAccessJwt = async ({ email, audience = 'admin-aud', issuer = 'https://team.cloudflareaccess.com', kid = 'test-key' }) => {
+  const keyPair = await crypto.subtle.generateKey(
+    { name: 'RSASSA-PKCS1-v1_5', modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: 'SHA-256' },
+    true,
+    ['sign', 'verify'],
+  );
+  const publicJwk = await crypto.subtle.exportKey('jwk', keyPair.publicKey);
+  publicJwk.kid = kid;
+  publicJwk.alg = 'RS256';
+  publicJwk.use = 'sig';
+
+  const now = Math.floor(Date.now() / 1000);
+  const encodedHeader = encodeBase64Url(JSON.stringify({ typ: 'JWT', alg: 'RS256', kid }));
+  const encodedPayload = encodeBase64Url(JSON.stringify({ iss: issuer, aud: [audience], email, iat: now, nbf: now - 10, exp: now + 600 }));
+  const signature = await crypto.subtle.sign(
+    'RSASSA-PKCS1-v1_5',
+    keyPair.privateKey,
+    new TextEncoder().encode(`${encodedHeader}.${encodedPayload}`),
+  );
+  return { token: `${encodedHeader}.${encodedPayload}.${Buffer.from(signature).toString('base64url')}`, publicJwk };
+};
+
+const makeJwtRequest = (token) => new Request('https://luxeroutes.test/api/admin/session', {
+  headers: { 'Cf-Access-Jwt-Assertion': token },
+});
+
 const makeRequest = (email, body = null) => new Request('https://luxeroutes.test/api/check', {
   method: body ? 'POST' : 'GET',
   headers: {
@@ -275,6 +303,24 @@ assert.equal(noAdminIdentityResponse.status, 401, 'Admin session API should requ
 const adminSessionResponse = await adminSessionModule.onRequestGet({ request: makeRequest('ADMIN@example.com'), env });
 assert.equal(adminSessionResponse.status, 200, 'Active admin grant should unlock the admin session.');
 assert.deepEqual(await adminSessionResponse.json(), { email: 'admin@example.com', role: 'admin' }, 'Admin session should return the normalized verified identity and D1 role.');
+
+const originalFetch = globalThis.fetch;
+const { token: adminAccessToken, publicJwk } = await createAccessJwt({ email: 'ADMIN@example.com' });
+globalThis.fetch = async (url) => {
+  assert.equal(String(url), 'https://team.cloudflareaccess.com/cdn-cgi/access/certs', 'Access JWT validation should fetch signing keys from the configured team domain.');
+  return new Response(JSON.stringify({ keys: [publicJwk] }), { headers: { 'Content-Type': 'application/json' } });
+};
+const jwtAdminSessionResponse = await adminSessionModule.onRequestGet({
+  request: makeJwtRequest(adminAccessToken),
+  env: { ...env, CLOUDFLARE_ACCESS_TEAM_DOMAIN: 'team.cloudflareaccess.com', CLOUDFLARE_ACCESS_AUD: 'admin-aud' },
+});
+globalThis.fetch = originalFetch;
+assert.equal(jwtAdminSessionResponse.status, 200, 'Admin session should accept a verified Cloudflare Access JWT assertion when the email header is absent.');
+assert.deepEqual(await jwtAdminSessionResponse.json(), { email: 'admin@example.com', role: 'admin' }, 'Verified Access JWT email should unlock the D1 admin role.');
+
+const missingJwtConfigResponse = await adminSessionModule.onRequestGet({ request: makeJwtRequest(adminAccessToken), env });
+assert.equal(missingJwtConfigResponse.status, 500, 'Access JWT fallback must fail closed when validation configuration is missing.');
+assert.match((await missingJwtConfigResponse.json()).error, /CLOUDFLARE_ACCESS_TEAM_DOMAIN/, 'Missing Access JWT configuration should be actionable.');
 
 const nonAdminSessionResponse = await adminSessionModule.onRequestGet({ request: makeRequest('owner@example.com'), env });
 assert.equal(nonAdminSessionResponse.status, 403, 'An email without an active admin grant must not unlock the admin panel.');

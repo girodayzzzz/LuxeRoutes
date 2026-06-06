@@ -103,6 +103,13 @@ Important: the API also checks D1. The signed-in email must have an active `admi
 
 The panel verifies access through `/api/admin/session`, which is intentionally inside the same `/api/admin/*` Access application as the rest of the admin API. Do not use `/api/account` as the admin gate because it belongs to the separate public-customer Access application. If the panel remains locked, it now displays the verified email and the specific D1 grant error instead of redirecting away.
 
+The admin API first reads `CF-Access-Authenticated-User-Email`. If Cloudflare Pages does not receive that header, it validates the signed `Cf-Access-Jwt-Assertion` token and extracts the verified `email` claim. Keep these Pages production environment variables aligned with the admin Access application:
+
+```text
+CLOUDFLARE_ACCESS_TEAM_DOMAIN=cool-heart-b7e3.cloudflareaccess.com
+CLOUDFLARE_ACCESS_AUD=9bd120625647058847770d9cd6a125d745203300af1c9f47db87fcdbbf12a0c7
+```
+
 Admin grant lookup trims and compares email addresses case-insensitively. Even so, store grant emails in lowercase to keep profiles, grants, and Cloudflare Access identities consistent.
 
 ## Phase 4 — Seed your first admin
