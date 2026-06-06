@@ -105,6 +105,12 @@ const requestOtp = async ({ request, env }) => {
   return json({ ok: true, email, expiresAt });
 };
 
+const clearAccountSession = () => json({ ok: true }, {
+  headers: {
+    'Set-Cookie': 'luxeroutes_account_session=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Lax',
+  },
+});
+
 const verifyOtp = async ({ request, env }) => {
   const db = requireDb(env);
   const body = await request.json().catch(() => ({}));
@@ -158,6 +164,7 @@ export const onRequestPost = async (context) => {
   try {
     const action = new URL(context.request.url).searchParams.get('action');
     if (action === 'verify') return await verifyOtp(context);
+    if (action === 'logout') return clearAccountSession();
     return await requestOtp(context);
   } catch (error) {
     return errorJson(error.message || 'Unable to process OTP request.', 500);
