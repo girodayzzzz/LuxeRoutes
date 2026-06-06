@@ -32,15 +32,14 @@ A successful check returns JSON from `/api/offers`. A GitHub Pages `404 File not
 
 ## Account and admin access
 
-The production site uses **Cloudflare Access email one-time codes** for public account login plus admin-approved role grants by email. The Pages Functions trust the verified Cloudflare Access email header when loading and saving account data. No Resend API key is required for the primary Cloudflare Access login flow.
+The production site uses the branded LuxeRoutes email one-time-code login for public account access plus admin-approved role grants by email. The login page calls `/api/auth/otp`, sends the code through Resend, and stores a signed `luxeroutes_account_session` cookie after verification. Configure `RESEND_API_KEY`, `OTP_EMAIL_FROM`, and `AUTH_SESSION_SECRET` for production.
 
-Use two Cloudflare Access applications:
+Use Cloudflare Access only for the admin surface:
 
-- Keep `/login.html` and `/login` public so visitors can see the custom branded entry page.
-- Public-customer Access app: protect `/account.html`, `/account`, `/register.html`, `/register`, and `/api/account` with an **Allow / Include Everyone** policy and the One-time PIN login method.
+- Keep `/login.html`, `/login`, `/account.html`, `/account`, `/register.html`, `/register`, `/api/account`, and `/api/auth/otp` public at the Cloudflare Access layer so the in-site OTP flow can load without redirect loops. The account API still requires a verified signed session cookie or Access identity before returning private data.
 - Admin app: protect `/admin/*`, `/admin-panel.html`, and `/api/admin/*` with a separate application restricted to approved internal admin emails.
 
-Keep `/api/auth/otp` outside the public-customer Access application. It is an optional Resend-based alternative, is not called by the public login page, and is not part of the primary Cloudflare Access flow. Cloudflare Access sends and verifies the production login code; no `RESEND_API_KEY`, `OTP_EMAIL_FROM`, or `AUTH_SESSION_SECRET` is required for that flow.
+If `/login.html` itself is added to a Cloudflare Access app, visitors can see browser `ERR_TOO_MANY_REDIRECTS` errors before the branded login page loads.
 
 Admins can then grant `customer`, `owner`, `manager`, or `admin` access by verified email after D1 is created, the `DB` binding is connected, and the first admin row is seeded. See [`docs/cloudflare-admin-auth.md`](docs/cloudflare-admin-auth.md) for the full Cloudflare + D1 plan.
 

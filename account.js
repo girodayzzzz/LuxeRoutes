@@ -13,6 +13,15 @@ const loginBoxHead = document.querySelector('.login-box-head');
 const loginSecurityList = document.querySelector('.login-security-list');
 const accountSwitchLink = document.querySelector('.account-switch-link');
 const accountLogoutButtons = document.querySelectorAll('[data-account-logout]');
+const loginOtpForm = document.querySelector('[data-login-otp-form]');
+const loginEmailStep = document.querySelector('[data-login-email-step]');
+const loginCodeStep = document.querySelector('[data-login-code-step]');
+const loginEmailInput = document.querySelector('[data-login-email-input]');
+const loginCodeInput = document.querySelector('[data-login-code-input]');
+const loginRememberInput = document.querySelector('[data-login-remember-input]');
+const loginOtpEmail = document.querySelector('[data-login-otp-email]');
+const loginOtpMessage = document.querySelector('[data-login-otp-message]');
+const loginOtpBack = document.querySelector('[data-login-otp-back]');
 const isRegisterPage = () => document.body.classList.contains('account-page') && Boolean(accountForm);
 const isDashboardPage = () => document.body.classList.contains('account-dashboard-page');
 const isProtectedAccountPage = () => isDashboardPage() || isRegisterPage();
@@ -183,6 +192,64 @@ const saveRemoteAccountProfile = async (profile) => {
   return response.json();
 };
 
+
+const setLoginOtpMessage = (message = '', tone = 'pending') => {
+  if (!loginOtpMessage) return;
+  loginOtpMessage.textContent = message;
+  loginOtpMessage.classList.toggle('status-approved', tone === 'success');
+  loginOtpMessage.classList.toggle('status-warning', tone === 'error');
+  loginOtpMessage.classList.toggle('status-pending', tone !== 'success' && tone !== 'error');
+};
+
+const showLoginCodeStep = (email) => {
+  if (loginEmailStep) loginEmailStep.hidden = true;
+  if (loginCodeStep) loginCodeStep.hidden = false;
+  if (loginOtpEmail) loginOtpEmail.textContent = email;
+  loginCodeInput?.focus();
+};
+
+const showLoginEmailStep = () => {
+  if (loginEmailStep) loginEmailStep.hidden = false;
+  if (loginCodeStep) loginCodeStep.hidden = true;
+  loginEmailInput?.focus();
+};
+
+const requestLoginOtp = async (email) => {
+  const response = await fetch('/api/auth/otp', {
+    method: 'POST',
+    headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+    credentials: 'same-origin',
+    body: JSON.stringify({ email }),
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data.error || 'Unable to send the login code right now.');
+  return data;
+};
+
+const verifyLoginOtp = async (email, otp) => {
+  const response = await fetch('/api/auth/otp?action=verify', {
+    method: 'POST',
+    headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+    credentials: 'same-origin',
+    body: JSON.stringify({ email, otp }),
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data.error || 'Unable to verify the login code right now.');
+  return data;
+};
+
+const logoutRemoteAccountSession = async () => {
+  try {
+    await fetch('/api/auth/otp?action=logout', {
+      method: 'POST',
+      headers: { Accept: 'application/json' },
+      credentials: 'same-origin',
+    });
+  } catch (error) {
+    // Local browser state is still cleared even if the remote cookie already expired.
+  }
+};
+
 const getLoginRedirectTarget = () => {
   const redirect = new URLSearchParams(window.location.search).get('redirect');
   if (!redirect) return 'account.html';
@@ -219,7 +286,8 @@ const updateAccountLogout = (active = false) => {
   });
 };
 
-const logoutAccount = () => {
+const logoutAccount = async () => {
+  await logoutRemoteAccountSession();
   clearAccountSession();
   accountIdentity = null;
   updateAccountAccessCards();
@@ -340,7 +408,7 @@ const initialiseAccount = async () => {
       status: profile
         ? 'Your email is verified and your LuxeRoutes profile is ready.'
         : (isLoginPage()
-          ? 'Cloudflare Access has verified your email. Your private account is ready to open.'
+          ? 'Your secure email session is active. Your private account is ready to open.'
           : 'Your email is verified. Create your profile to request customer, owner, or manager access.'),
       email: identity.email,
       role: remoteAccount?.role ? accountEscapeHtml(remoteAccount.role) : 'customer',
@@ -349,6 +417,29 @@ const initialiseAccount = async () => {
     renderAccountProfile(profile, remoteAccount?.grant);
     setLoginAccountState(true);
     return;
+  }
+
+  if (!identity && !localPreview) {
+    const remoteAccount = await loadRemoteAccountProfile();
+    if (remoteAccount?.identityEmail) {
+      accountIdentity = { email: remoteAccount.identityEmail };
+      const profile = remoteAccount.profile || null;
+      saveAccountSession({ identity: accountIdentity, profile, grant: remoteAccount.grant, role: remoteAccount.role });
+      setAccountStatus({
+        heading: 'Email verified',
+        status: profile
+          ? 'Your email is verified and your LuxeRoutes profile is ready.'
+          : (isLoginPage()
+            ? 'Your secure email session is active. Your private account is ready to open.'
+            : 'Your email is verified. Create your profile to request customer, owner, or manager access.'),
+        email: remoteAccount.identityEmail,
+        role: remoteAccount.role ? accountEscapeHtml(remoteAccount.role) : 'customer',
+        approved: true,
+      });
+      renderAccountProfile(profile, remoteAccount.grant);
+      setLoginAccountState(true);
+      return;
+    }
   }
 
   if (!localPreview && isProtectedAccountPage()) {
@@ -375,8 +466,8 @@ const initialiseAccount = async () => {
   setAccountStatus({
     heading: 'Account access',
     status: isLoginPage()
-      ? 'Continue to a protected page and Cloudflare will verify your email.'
-      : 'A verified Cloudflare Access identity is required.',
+      ? 'Enter your email above and verify the one-time code to continue.'
+      : 'A verified LuxeRoutes email session is required.',
     email: 'Email pending',
     role: 'Account',
     approved: false,
@@ -431,6 +522,50 @@ accountForm?.addEventListener('submit', async (event) => {
       role: 'Profile notice',
       approved: false,
     });
+  }
+});
+
+
+loginOtpBack?.addEventListener('click', () => {
+  showLoginEmailStep();
+  setLoginOtpMessage('Enter your email and we will send a fresh 6-digit login code.');
+});
+
+loginOtpForm?.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const email = String(loginEmailInput?.value || '').trim().toLowerCase();
+  const otp = String(loginCodeInput?.value || '').trim();
+  const isCodeStep = Boolean(loginCodeStep && !loginCodeStep.hidden);
+
+  if (!email || !email.includes('@')) {
+    setLoginOtpMessage('Enter a valid email address.', 'error');
+    return;
+  }
+
+  try {
+    if (!isCodeStep) {
+      setLoginOtpMessage('Sending your secure login code…');
+      await requestLoginOtp(email);
+      showLoginCodeStep(email);
+      setLoginOtpMessage('Check your email for the 6-digit LuxeRoutes code.', 'success');
+      return;
+    }
+
+    if (!/^\d{6}$/.test(otp)) {
+      setLoginOtpMessage('Enter the 6-digit code from your email.', 'error');
+      return;
+    }
+
+    setLoginOtpMessage('Verifying your code…');
+    const account = await verifyLoginOtp(email, otp);
+    const identity = account.identity || { email };
+    const profile = account.profile || null;
+    accountIdentity = identity;
+    saveAccountSession({ identity, profile, grant: account.grant, role: account.role, remember: Boolean(loginRememberInput?.checked) });
+    setLoginOtpMessage('Signed in successfully. Opening your account…', 'success');
+    window.location.href = getLoginRedirectTarget();
+  } catch (error) {
+    setLoginOtpMessage(error.message || 'Unable to complete login right now.', 'error');
   }
 });
 
