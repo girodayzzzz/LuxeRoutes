@@ -9,10 +9,11 @@ const adminPanelSource = readFileSync('admin-panel.js', 'utf8');
 const accountSource = readFileSync('account.js', 'utf8');
 const loginSource = readFileSync('login.html', 'utf8');
 const siteScriptSource = readFileSync('script.js', 'utf8');
-assert.doesNotMatch(loginSource, /\/api\/auth\/otp|data-login-otp|name="otp"/, 'Public login must not call or render the custom OTP flow.');
-assert.match(loginSource, /href="account\.html"[^>]*>Continue to account<\/a>/, 'Public login should link to the protected account page.');
+assert.match(loginSource, /data-login-otp-form/, 'Public login should render the branded email one-time-code form.');
+assert.match(loginSource, /name="otp"/, 'Public login should include the one-time-code input.');
 assert.match(loginSource, /href="register\.html"[^>]*>Create an account<\/a>/, 'Public login should link to the protected registration page.');
-assert.doesNotMatch(accountSource, /\/api\/auth\/otp/, 'Primary customer client code must not call the optional custom OTP endpoint.');
+assert.match(accountSource, /fetch\('\/api\/auth\/otp'/, 'Primary customer client code must request email one-time codes from the OTP endpoint.');
+assert.match(accountSource, /fetch\('\/api\/auth\/otp\?action=verify'/, 'Primary customer client code must verify email one-time codes with the OTP endpoint.');
 assert.ok(
   accountSource.indexOf('const identity = await getAccessIdentity();') < accountSource.indexOf('if (!localPreview && isProtectedAccountPage())'),
   'Protected account pages must await Cloudflare Access identity before redirecting a fresh browser session.',
@@ -20,7 +21,7 @@ assert.ok(
 assert.match(
   accountSource,
   /email: String\(accountIdentity\?\.email \|\| \(isAccountLocalPreview\(\) \? formData\.get\('email'\) : ''\)/,
-  'Production registration must derive its submitted email from Cloudflare Access identity.',
+  'Production registration must derive its submitted email from the verified account identity.',
 );
 assert.doesNotMatch(
   siteScriptSource,
@@ -355,13 +356,14 @@ const cookieAccountResponse = await accountModule.onRequestGet({
   request: new Request('https://luxeroutes.test/api/account', { headers: { Cookie: sessionCookieHeader } }),
   env: { DB: db, AUTH_SESSION_SECRET: 'test-secret' },
 });
-assert.equal(cookieAccountResponse.status, 401, 'Account API must require Cloudflare Access even when an optional OTP session cookie exists.');
+assert.equal(cookieAccountResponse.status, 200, 'Account API should accept a verified OTP account session cookie.');
+assert.equal((await cookieAccountResponse.json()).identityEmail, 'owner@example.com', 'OTP account sessions should restore the normalized account email.');
 
 const mismatchedRegistrationResponse = await accountModule.onRequestPost({
   request: makeRequest('owner@example.com', { email: 'attacker@example.com', name: 'Wrong Email' }),
   env,
 });
-assert.equal(mismatchedRegistrationResponse.status, 403, 'Registration must reject a submitted email that differs from Cloudflare Access identity.');
+assert.equal(mismatchedRegistrationResponse.status, 403, 'Registration must reject a submitted email that differs from the verified account identity.');
 assert.equal(db.profiles.some((profile) => profile.email === 'attacker@example.com'), false, 'Registration must never save a profile for an unverified submitted email.');
 
 const forbiddenGrantResponse = await grantsModule.onRequestGet({ request: makeRequest('owner@example.com'), env });
