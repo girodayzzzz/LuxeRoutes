@@ -13,7 +13,7 @@ Static LuxeRoutes website prepared for GitHub source control and Cloudflare Page
    - **Build output directory:** `.`
 5. Add the production custom domain in Cloudflare Pages after the first deploy.
 
-Cloudflare Pages will publish the static files from the repository root. The `_headers`, `_redirects`, and `_routes.json` files are included for security headers, clean admin routing, and limiting Pages Functions invocation to `/api/*`.
+Cloudflare Pages will publish the static files from the repository root. The `_headers`, `_redirects`, and `_routes.json` files are included for security headers, clean admin routing, and limiting Pages Functions invocation to `/api/*`. Do not add `_redirects` rewrites from extensionless public account URLs such as `/account`, `/login`, or `/register` back to their `.html` files; Cloudflare Pages already serves those clean URLs, and explicit rewrites can loop against Pages' built-in pretty-URL handling.
 
 The admin APIs accept Cloudflare Access identity from either the verified email header or a validated `Cf-Access-Jwt-Assertion` token. Keep these non-secret Access values configured for the Pages production environment; they are also present in `wrangler.toml` for source-controlled deployments:
 
@@ -32,7 +32,7 @@ A successful check returns JSON from `/api/offers`. A GitHub Pages `404 File not
 
 ## Account and admin access
 
-The production site uses the branded LuxeRoutes email one-time-code login for public account access plus admin-approved role grants by email. The login page calls `/api/auth/otp`, sends the code through Resend, and stores a signed `luxeroutes_account_session` cookie after verification. Configure `RESEND_API_KEY`, `OTP_EMAIL_FROM`, and `AUTH_SESSION_SECRET` for production.
+The production site uses the branded LuxeRoutes email one-time-code login for public account access plus admin-approved role grants by email. The login page calls `/api/auth/otp`, sends the code through Resend, and stores a signed `luxeroutes_account_session` cookie after verification. Configure `RESEND_API_KEY` and `AUTH_SESSION_SECRET` as Cloudflare Pages production runtime secrets. `OTP_EMAIL_FROM` defaults to `LuxeRoutes <login@luxeroutes.eu>` in `wrangler.toml`; override it only if Resend uses a different verified sender.
 
 Use Cloudflare Access only for the admin surface:
 

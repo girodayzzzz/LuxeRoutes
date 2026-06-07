@@ -22,6 +22,10 @@ class FakeStatement {
   }
 
   run() {
+    if (this.sql.includes('CREATE TABLE IF NOT EXISTS login_otps') || this.sql.includes('CREATE INDEX IF NOT EXISTS')) {
+      return { success: true };
+    }
+
     if (this.sql.includes("UPDATE login_otps") && this.sql.includes("status = 'expired'")) {
       const [updatedAt, email, expiresAt] = this.params;
       this.db.otps.forEach((otp) => {
@@ -56,12 +60,12 @@ class FakeDb {
     this.schemaExecutions = [];
   }
 
-  exec(sql) {
-    this.schemaExecutions.push(sql);
-    return { count: 0, duration: 0 };
+  exec() {
+    throw new Error('OTP schema should use prepared statements instead of db.exec().');
   }
 
   prepare(sql) {
+    this.schemaExecutions.push(sql);
     return new FakeStatement(this, sql);
   }
 }
@@ -86,12 +90,26 @@ globalThis.fetch = async (url, init) => {
 const successResponse = await otpModule.onRequestPost({ request: makeRequest('Traveler@Example.com'), env });
 assert.equal(successResponse.status, 200, 'OTP request should succeed when email delivery succeeds.');
 assert.match(db.schemaExecutions[0], /CREATE TABLE IF NOT EXISTS login_otps/, 'OTP request should ensure its required table exists.');
+assert.ok(db.schemaExecutions.includes('CREATE INDEX IF NOT EXISTS idx_login_otps_email_status ON login_otps(email, status)'), 'OTP request should ensure its email/status index exists.');
+assert.ok(db.schemaExecutions.includes('CREATE INDEX IF NOT EXISTS idx_login_otps_expires_at ON login_otps(expires_at)'), 'OTP request should ensure its expires_at index exists.');
 assert.equal(db.otps.length, 2, 'OTP request should retain the expired audit row and save a new challenge.');
 assert.equal(db.otps[0].email, 'traveler@example.com', 'OTP request should normalize the recipient email.');
 assert.equal(db.otps.find((otp) => otp.id === 'otp-stale').status, 'expired', 'Requesting a new code should mark stale pending challenges expired.');
 assert.equal(sentEmails.length, 1, 'OTP request should call the email provider exactly once.');
+assert.equal(sentEmails[0].body.from, 'LuxeRoutes <login@example.com>', 'OTP email should use the configured sender when provided.');
 assert.equal(sentEmails[0].body.to, 'traveler@example.com', 'OTP email should be addressed to the login email.');
 assert.match(sentEmails[0].body.text, /\b\d{6}\b/, 'OTP email should contain a 6-digit login code.');
+
+
+const fallbackDb = new FakeDb();
+const fallbackEnv = { DB: fallbackDb, RESEND_API_TOKEN: 'resend-alias-key' };
+globalThis.fetch = async (url, init) => {
+  sentEmails.push({ url, init, body: JSON.parse(init.body) });
+  return new Response(JSON.stringify({ id: 'email-fallback' }), { status: 200 });
+};
+const fallbackResponse = await otpModule.onRequestPost({ request: makeRequest('fallback@example.com'), env: fallbackEnv });
+assert.equal(fallbackResponse.status, 200, 'OTP request should accept supported Resend API key aliases.');
+assert.equal(sentEmails.at(-1).body.from, 'LuxeRoutes <login@luxeroutes.eu>', 'OTP email should default to the production sender when no sender env is provided.');
 
 globalThis.fetch = async () => new Response('provider unavailable', { status: 503 });
 const failedResponse = await otpModule.onRequestPost({ request: makeRequest('failed@example.com'), env });

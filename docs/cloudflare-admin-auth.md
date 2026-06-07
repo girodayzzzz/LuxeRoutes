@@ -6,10 +6,10 @@ This site now includes the first production-ready Cloudflare Pages Functions + D
 
 Implemented in this repository:
 
-- `login.html`, `register.html`, `account.html`, and `account.js` — a public branded entry page plus Access-protected registration and account dashboard screens. The login page only directs visitors into Cloudflare Access; protected pages wait for verified Access identity before loading or saving `/api/account`. Local browser fallback is limited to localhost preview behavior.
+- `login.html`, `register.html`, `account.html`, and `account.js` — public branded account screens protected by the in-site Resend OTP flow. Protected pages wait for a verified signed account session or Access identity before loading or saving `/api/account`. Local browser fallback is limited to localhost preview behavior.
 - `/admin/index.html` (plus `/admin/offers.html`, `/admin/partners.html`, `/admin/users.html`) + `admin-panel.js` — operations panel. It now tries to load and save access grants from `/api/admin/grants`; local preview still works on `localhost`.
 - `functions/api/account.js` — Cloudflare Pages Function for reading/upserting the verified visitor profile.
-- `functions/api/auth/otp.js` — optional Cloudflare Pages Function for issuing and verifying Resend-based email OTP codes. It is not part of the primary customer login flow.
+- `functions/api/auth/otp.js` — Cloudflare Pages Function for issuing and verifying Resend-based email OTP codes for the primary branded customer login flow.
 - `functions/api/admin/grants.js` — Cloudflare Pages Function for admin-only role grant reads/writes.
 - `functions/api/_utils.js` — shared API helpers; it also returns 404 if Pages maps it as `/api/_utils` during function bundling.
 - `_routes.json` — explicitly invokes Pages Functions only for `/api/*`, keeping static pages on the asset path.
@@ -24,7 +24,7 @@ The production inquiry queue and stay-offer publishing workflow are D1-backed. P
 
 The repository now separates public customer registration from privileged partner access:
 
-- Customers start on public `/login.html`, then choose the Access-protected `/register.html` and become `active` after saving a profile for their verified Cloudflare Access email. `/account.html` is reserved for accepted offers, settings, coupons, and profile status.
+- Customers start on public `/login.html`, verify a Resend OTP, then choose `/register.html` and become `active` after saving a profile for their verified email session. `/account.html` is reserved for accepted offers, settings, coupons, and profile status.
 - Owners and managers register on `/register.html`, keep the default `customer` access, and wait in the admin panel as `pending_admin_grant`.
 - Admins review pending requests in **Admin Panel → People → Registrations**.
 - **Approve** promotes the verified email to `owner` or `manager` in `access_grants` and marks the profile active.
@@ -64,14 +64,14 @@ For Cloudflare Pages production, add the D1 database binding in **Workers & Page
 
 ## Phase 2 — Public login, register, and account dashboard for customers
 
-The production site currently uses **Cloudflare Access One-time PIN** login. Emails from `Cloudflare <noreply@notify.cloudflare.com>` with a subject such as “Cloudflare Access login code for luxeroutes.eu” confirm that Access is the active login provider. You do not need `RESEND_API_KEY`, `OTP_EMAIL_FROM`, or `AUTH_SESSION_SECRET` for this primary flow.
+The production site currently uses the branded LuxeRoutes Resend OTP login on `/login.html`. Emails should come from the verified Resend sender configured as `OTP_EMAIL_FROM` (default: `LuxeRoutes <login@luxeroutes.eu>`). Configure `RESEND_API_KEY` and `AUTH_SESSION_SECRET` as Cloudflare Pages production runtime secrets.
 
 Keep the custom LuxeRoutes entry page public:
 
 - `/login.html`
 - `/login`
 
-Create or restore a Cloudflare Zero Trust Access **Self-hosted** public-customer application for the production LuxeRoutes domain with these exact protected paths:
+Do not put the public customer login, account, registration, or account API paths inside a Cloudflare Zero Trust Access application. Keep these paths public so the in-site OTP flow can send and verify codes:
 
 - `/account.html`
 - `/account`
@@ -79,11 +79,11 @@ Create or restore a Cloudflare Zero Trust Access **Self-hosted** public-customer
 - `/register`
 - `/api/account`
 
-Configure this application with an **Allow** policy using **Include: Everyone**, and enable the **One-time PIN** login method under Zero Trust authentication settings. The public login page directs existing customers to `/account.html` and new customers to `/register.html`; Cloudflare Access then sends and verifies the email code before serving either protected page.
+The public login page sends the Resend OTP code, verifies it through `/api/auth/otp?action=verify`, and then opens `/account.html` or `/register.html` with the signed account session cookie.
 
-Keep `/api/auth/otp` outside the public-customer Access application. It is an optional custom Resend-based alternative, is not called by `login.html`, and cannot authorize `/api/account`. Do not configure it as a competing primary login system. `RESEND_API_KEY`, `OTP_EMAIL_FROM`, and `AUTH_SESSION_SECRET` are not required for the primary Cloudflare Access flow.
+Keep `/api/auth/otp` public as part of the customer OTP flow. Protect only the admin application with Cloudflare Access so it does not compete with the branded login.
 
-After a visitor enters the Cloudflare Access code, Access sends `CF-Access-Authenticated-User-Email` to `/api/account`. The account API only uses that verified header to load and save the visitor profile; submitted form email, query parameters, browser storage, and optional OTP cookies do not authorize account data. A `customer` registration is active immediately. Owner and manager requests retain customer access while waiting for admin review.
+After a visitor enters the Resend OTP code, `/api/auth/otp?action=verify` sets a signed `luxeroutes_account_session` cookie. `/api/account` accepts that signed cookie or an admin Access identity to load and save the visitor profile. A `customer` registration is active immediately. Owner and manager requests retain customer access while waiting for admin review.
 
 ## Phase 3 — Admin panel gate
 
@@ -171,8 +171,8 @@ You still need to complete these steps outside the repository in Cloudflare:
 3. Apply all D1 migrations remotely with `wrangler d1 migrations apply luxeroutes-db --remote` (the OTP endpoint also self-creates its required `login_otps` table as a deployment safeguard).
 4. Bind that D1 database to the Pages project with binding name `DB`.
 5. Keep `/login.html` and `/login` public; do not add them to an Access application.
-6. Create or restore the public-customer Cloudflare Access application for the exact paths `/account.html`, `/account`, `/register.html`, `/register`, and `/api/account`, using an **Allow / Include Everyone** policy and the One-time PIN login method.
-7. Keep `/api/auth/otp` outside the public-customer Access application. No Resend secrets are required for the primary Cloudflare Access flow.
+6. Keep `/account.html`, `/account`, `/register.html`, `/register`, `/api/account`, and `/api/auth/otp` public so the customer OTP flow can set and read the signed account session.
+7. Configure `RESEND_API_KEY` plus `AUTH_SESSION_SECRET` in the Pages production runtime environment; `OTP_EMAIL_FROM` has a production default in `wrangler.toml`.
 8. Create a separate Cloudflare Access application for `/admin/index.html`, `/admin/*`, and `/api/admin/*` that only allows your trusted admin email addresses.
 9. Seed your first admin email into `access_grants` with the command in Phase 4.
 10. Complete the Phase 5 private-window test, then test with three different emails: one customer, one owner request, and one manager request.
@@ -254,11 +254,11 @@ All admin API responses are marked `Cache-Control: no-store`, and every admin da
 
 Apply `migrations/0005_stay_offers.sql` before using the workflow in production. Admin publishing will fail safely until that migration exists.
 
-## Optional custom OTP table maintenance
+## OTP table maintenance
 
 `login_otps` contains one-time-code challenge records, not migration definitions. A row can remain `pending` after its ten-minute `expires_at` time when the code was requested but never submitted. Expired pending rows cannot successfully authenticate because `/api/auth/otp?action=verify` checks `expires_at` before accepting a code.
 
-The optional OTP endpoint now marks expired pending challenges for the requesting email as `expired` before issuing a new code and removes terminal (`verified`, `expired`, or `locked`) records older than seven days. Cloudflare Access remains the primary production login method, so `/api/auth/otp` should remain outside the customer and admin Access applications.
+The OTP endpoint marks expired pending challenges for the requesting email as `expired` before issuing a new code and removes terminal (`verified`, `expired`, or `locked`) records older than seven days. Keep `/api/auth/otp` public for customers and outside the admin Access application.
 
 To perform a one-time cleanup of existing remote records:
 

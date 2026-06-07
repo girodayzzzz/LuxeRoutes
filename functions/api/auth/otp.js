@@ -17,8 +17,8 @@ const hashOtp = async (otp) => {
 
 const minutesFromNow = (minutes) => new Date(Date.now() + (minutes * 60 * 1000)).toISOString();
 
-const ensureOtpSchema = (db) => db.exec(`
-  CREATE TABLE IF NOT EXISTS login_otps (
+const otpSchemaStatements = [
+  `CREATE TABLE IF NOT EXISTS login_otps (
     id TEXT PRIMARY KEY,
     email TEXT NOT NULL,
     otp_hash TEXT NOT NULL,
@@ -27,10 +27,16 @@ const ensureOtpSchema = (db) => db.exec(`
     expires_at TEXT NOT NULL,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
-  );
-  CREATE INDEX IF NOT EXISTS idx_login_otps_email_status ON login_otps(email, status);
-  CREATE INDEX IF NOT EXISTS idx_login_otps_expires_at ON login_otps(expires_at);
-`);
+  )`,
+  'CREATE INDEX IF NOT EXISTS idx_login_otps_email_status ON login_otps(email, status)',
+  'CREATE INDEX IF NOT EXISTS idx_login_otps_expires_at ON login_otps(expires_at)',
+];
+
+const ensureOtpSchema = async (db) => {
+  for (const statement of otpSchemaStatements) {
+    await db.prepare(statement).run();
+  }
+};
 
 const getProfile = async (db, email) => db.prepare(`
   SELECT id, email, full_name AS name, default_role AS defaultRole, requested_role AS requestedRole,
@@ -41,19 +47,31 @@ const getProfile = async (db, email) => db.prepare(`
   LIMIT 1
 `).bind(email).first();
 
+const getEnvValue = (env = {}, keys = []) => keys
+  .map((key) => String(env[key] || '').trim())
+  .find(Boolean) || '';
+
+const getOtpEmailConfig = (env = {}) => ({
+  apiKey: getEnvValue(env, ['RESEND_API_KEY', 'RESEND_API_TOKEN', 'RESEND_TOKEN']),
+  from: getEnvValue(env, ['OTP_EMAIL_FROM', 'RESEND_EMAIL_FROM', 'RESEND_FROM_EMAIL', 'EMAIL_FROM', 'FROM_EMAIL'])
+    || 'LuxeRoutes <login@luxeroutes.eu>',
+});
+
 const sendOtpEmail = async (env, email, otp) => {
-  if (!env.RESEND_API_KEY || !env.OTP_EMAIL_FROM) {
-    throw new Error('Missing RESEND_API_KEY or OTP_EMAIL_FROM for OTP email delivery.');
+  const { apiKey, from } = getOtpEmailConfig(env);
+
+  if (!apiKey) {
+    throw new Error('Missing RESEND_API_KEY for OTP email delivery. Add it to the Cloudflare Pages production runtime environment variables.');
   }
 
   const response = await fetch(RESEND_ENDPOINT, {
     method: 'POST',
     headers: {
-      Authorization: `Bearer ${env.RESEND_API_KEY}`,
+      Authorization: `Bearer ${apiKey}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      from: env.OTP_EMAIL_FROM,
+      from,
       to: email,
       subject: 'Your LuxeRoutes OTP code',
       text: `Your LuxeRoutes OTP code is ${otp}. It is valid for ${OTP_TTL_MINUTES} minutes. If you did not request this login, you can ignore this email.`,
@@ -117,6 +135,8 @@ const verifyOtp = async ({ request, env }) => {
   const email = normalizeEmail(body.email);
   const otp = String(body.otp || '').trim();
   if (!email || !/^\d{6}$/.test(otp)) return errorJson('Valid email and 6-digit OTP are required.', 400);
+
+  await ensureOtpSchema(db);
 
   const challenge = await db.prepare(`
     SELECT id, email, otp_hash AS otpHash, attempts, status, expires_at AS expiresAt
