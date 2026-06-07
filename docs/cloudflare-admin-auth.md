@@ -108,6 +108,10 @@ Configure `RESEND_API_KEY` and `AUTH_SESSION_SECRET` as Cloudflare Pages product
 
 For local previews, copy `.dev.vars.example` to `.dev.vars`, set the same secret names there, and keep `.dev.vars` uncommitted.
 
+If `/login.html` reports `Missing RESEND_API_KEY for OTP email delivery`, the code is deployed correctly but the Cloudflare Pages production runtime is missing the Resend secret. Add `RESEND_API_KEY` in **Workers & Pages → LuxeRoutes Pages project → Settings → Environment variables → Production** as a secret, redeploy, and test again. The OTP function also accepts `RESEND_API_TOKEN` or `RESEND_TOKEN` aliases, but use `RESEND_API_KEY` for consistency with the production checklist.
+
+For local previews, copy `.dev.vars.example` to `.dev.vars`, set the same secret names there, and keep `.dev.vars` uncommitted.
+
 Keep the custom LuxeRoutes entry page public:
 
 - `/login.html`

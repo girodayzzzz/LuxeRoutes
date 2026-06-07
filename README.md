@@ -54,6 +54,15 @@ If `/login.html` shows `Missing RESEND_API_KEY for OTP email delivery`, the depl
 
 For local Pages preview, copy `.dev.vars.example` to `.dev.vars` and fill in real secret values; `.dev.vars` is ignored by Git.
 
+If login shows `Missing RESEND_API_KEY for OTP email delivery`, the deployed Pages Function does not have the Resend secret yet. Fix it in **Cloudflare Dashboard → Workers & Pages → LuxeRoutes Pages project → Settings → Environment variables → Production**:
+
+- Add a **secret** named `RESEND_API_KEY` with the Resend API key value. `RESEND_API_TOKEN` or `RESEND_TOKEN` also work, but `RESEND_API_KEY` is the canonical name.
+- Add a separate **secret** named `AUTH_SESSION_SECRET` with a long random value so verified OTP sessions can be signed independently of the email provider key.
+- Confirm `OTP_EMAIL_FROM` matches a verified Resend sender/domain, for example `LuxeRoutes <login@luxeroutes.eu>`.
+- Redeploy the Pages project after saving production runtime variables, then test `/login.html` again.
+
+For local Pages preview, copy `.dev.vars.example` to `.dev.vars` and fill in real secret values; `.dev.vars` is ignored by Git.
+
 Use Cloudflare Access only for the admin surface:
 
 - Keep `/login.html`, `/login`, `/account.html`, `/account`, `/register.html`, `/register`, `/api/account`, and `/api/auth/otp` public at the Cloudflare Access layer so the in-site OTP flow can load without redirect loops. The account API still requires a verified signed session cookie or Access identity before returning private data.
