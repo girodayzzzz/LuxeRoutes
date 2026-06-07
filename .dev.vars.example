@@ -1,0 +1,5 @@
+# Copy this file to .dev.vars for local Cloudflare Pages/Workers preview.
+# Never commit real secrets; .dev.vars is ignored by Git.
+RESEND_API_KEY="re_your_resend_api_key"
+AUTH_SESSION_SECRET="replace-with-a-long-random-secret"
+OTP_EMAIL_FROM="LuxeRoutes <login@luxeroutes.eu>"

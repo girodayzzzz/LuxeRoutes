@@ -64,7 +64,49 @@ For Cloudflare Pages production, add the D1 database binding in **Workers & Page
 
 ## Phase 2 — Public login, register, and account dashboard for customers
 
-The production site currently uses the branded LuxeRoutes Resend OTP login on `/login.html`. Emails should come from the verified Resend sender configured as `OTP_EMAIL_FROM` (default: `LuxeRoutes <login@luxeroutes.eu>`). Configure `RESEND_API_KEY` and `AUTH_SESSION_SECRET` as Cloudflare Pages production runtime secrets.
+Recommended production decision: **do not use Cloudflare Access for every login**. Use Cloudflare Access only for staff/admin routes, and use the LuxeRoutes OTP flow for public account routes.
+
+| User type | Where they log in | Login provider | What you configure |
+| --- | --- | --- | --- |
+| Admin/staff | `/admin/index.html` | Cloudflare Access | Cloudflare Access app + D1 `admin` grant |
+| Customer | `/login.html` → `/account.html` | LuxeRoutes OTP email | One site-wide Resend API key |
+| Owner | `/login.html` → `/owner-panel.html` after approval | LuxeRoutes OTP email | Same one site-wide Resend API key + admin approval |
+| Manager | `/login.html` → `/manager-panel.html` after approval | LuxeRoutes OTP email | Same one site-wide Resend API key + admin approval |
+
+Customers, owners, and managers do not need Resend accounts or Resend profiles. Create one Resend account/API key for LuxeRoutes only; the Pages Function uses that single key to send OTP codes from the verified sender configured as `OTP_EMAIL_FROM` (default: `LuxeRoutes <login@luxeroutes.eu>`).
+
+The Resend **Free** package is acceptable for launch/testing when LuxeRoutes sends at most 100 OTP emails per day from one verified domain. Upgrade later only if real usage exceeds the daily/monthly free limits, you need more sending domains, or you need paid-plan features/support.
+
+### Resend domain DNS checklist
+
+Verify the domain as `luxeroutes.eu`, not `luxeroues.eu`; the missing `t` typo will not verify `login@luxeroutes.eu`. If Resend auto-configured the Cloudflare DNS records, do not add duplicate records manually. Instead, open **Cloudflare → luxeroutes.eu → DNS → Records**, confirm the records below already exist, then click **Verify DNS Records** in Resend.
+
+If auto-configuration did not create every record, add the missing Resend-generated records in Cloudflare DNS for `luxeroutes.eu`:
+
+| Purpose | Type | Cloudflare name | Content / mail server | Priority | TTL |
+| --- | --- | --- | --- | --- | --- |
+| DKIM | `TXT` | `resend._domainkey` | Resend's full `p=...` value | — | `Auto` |
+| SPF bounce/feedback | `MX` | `send` | `feedback-smtp.us-east-1.amazonses.com` | `10` | `Auto` |
+| SPF sender policy | `TXT` | `send` | `v=spf1 include:amazonses.com ~all` | — | `Auto` |
+| DMARC optional starter policy | `TXT` | `_dmarc` | `v=DMARC1; p=none;` | — | `Auto` |
+
+After saving or confirming the DNS records, click **Verify DNS Records** in Resend. Keep **Enable Receiving** off unless LuxeRoutes intentionally wants Resend to receive inbound email; OTP login only needs sending.
+
+### Resend API key checklist
+
+Create the production API key in Resend with these values:
+
+| Resend field | Value |
+| --- | --- |
+| Name | `LuxeRoutes production OTP` |
+| Permission | `Sending access` |
+| Domain | `luxeroutes.eu` |
+
+Use `Sending access`, not `Full access`, because the LuxeRoutes OTP function only sends emails. Full access can create, update, or delete other Resend resources, so it is broader than this site needs. Use Full access only as a temporary fallback if Resend will not let you choose `luxeroutes.eu` before verification; after the domain verifies, create a new `Sending access` key, replace the Cloudflare secret, and delete the temporary Full access key.
+
+Configure `RESEND_API_KEY` and `AUTH_SESSION_SECRET` as Cloudflare Pages production runtime secrets so the public `/login.html` OTP flow can send emails and sign account sessions. If Cloudflare already lists `CLOUDFLARE_ACCESS_AUD`, `CLOUDFLARE_ACCESS_TEAM_DOMAIN`, `OTP_EMAIL_FROM`, and encrypted `RESEND_API_KEY`, the remaining required item is one **Secret** named `AUTH_SESSION_SECRET`. Generate its value with `openssl rand -base64 32`, paste that random output as the secret value, and do not reuse the Resend API key. If `/login.html` reports `Missing RESEND_API_KEY for OTP email delivery`, the code is deployed correctly but the Cloudflare Pages production runtime is missing that one site-wide Resend key. Add `RESEND_API_KEY` in **Workers & Pages → LuxeRoutes Pages project → Settings → Environment variables → Production** as a secret, redeploy, and test again. The OTP function also accepts `RESEND_API_TOKEN` or `RESEND_TOKEN` aliases, but use `RESEND_API_KEY` for consistency with the production checklist.
+
+For local previews, copy `.dev.vars.example` to `.dev.vars`, set the same secret names there, and keep `.dev.vars` uncommitted.
 
 Keep the custom LuxeRoutes entry page public:
 
@@ -75,15 +117,29 @@ Do not put the public customer login, account, registration, or account API path
 
 - `/account.html`
 - `/account`
+- `/owner-panel.html`
+- `/manager-panel.html`
 - `/register.html`
 - `/register`
 - `/api/account`
 
-The public login page sends the Resend OTP code, verifies it through `/api/auth/otp?action=verify`, and then opens `/account.html` or `/register.html` with the signed account session cookie.
+The public login page sends the Resend OTP code, verifies it through `/api/auth/otp?action=verify`, and then opens the role home for that verified email: `/account.html` for customers, `/owner-panel.html` for approved owners, `/manager-panel.html` for approved managers, or `/admin/index.html` for admins. `/register.html` still uses the same signed account session cookie when a new user creates a profile.
 
 Keep `/api/auth/otp` public as part of the customer OTP flow. Protect only the admin application with Cloudflare Access so it does not compete with the branded login.
 
 After a visitor enters the Resend OTP code, `/api/auth/otp?action=verify` sets a signed `luxeroutes_account_session` cookie. `/api/account` accepts that signed cookie or an admin Access identity to load and save the visitor profile. A `customer` registration is active immediately. Owner and manager requests retain customer access while waiting for admin review.
+
+## Phase 2b — Offer ownership and manager assignments
+
+Apply `migrations/0006_offer_assignments.sql` after the base offer migration. It adds `owner_email`, `manager_email`, `partner_status`, `owner_notes`, and `manager_notes` to `stay_offers`. Then apply `migrations/0007_offer_availability_and_inquiry_assignments.sql`; it adds owner-editable `available_from`, `available_to`, `discount_label`, and `availability_notes` fields on `stay_offers`, plus inquiry assignment columns so stay requests can be routed to the assigned owner and manager. Admins set owner/manager assignment fields when publishing a stay from the admin console.
+
+The role panels use those assignments:
+
+- `/api/owner/offers` requires an active `owner` grant, then returns rows where `owner_email` matches the signed-in email. Owners can patch only their assigned rows to update availability dates, price labels, discount labels, and availability notes. Admins can read all owner rows for troubleshooting.
+- `/api/manager/offers` requires an active `manager` grant, then returns rows where `manager_email` matches the signed-in email. Admins can read all manager rows for troubleshooting.
+- `/api/owner/inquiries` and `/api/manager/inquiries` require the matching active role and return customer stay requests where the inquiry assignment email matches the signed-in account.
+- Public stay requests submitted with an offer/accommodation interest are matched to `stay_offers.title` and copied into `inquiries.offer_id`, `inquiries.owner_email`, and `inquiries.manager_email` for the role panels.
+- `/owner-panel.html` and `/manager-panel.html` render assigned offers and customer requests through the signed LuxeRoutes OTP session; keep both pages outside Cloudflare Access just like `/account.html`.
 
 ## Phase 3 — Admin panel gate
 
@@ -141,8 +197,8 @@ Role meanings:
 ## Phase 5 — Test the real login/register flow
 
 1. Open public `/login.html` in a private browser window and confirm the branded page opens without an Access challenge.
-2. Click **Continue to account**, confirm Cloudflare Access requests your email, then enter the code sent by Cloudflare and verify `/account.html` opens instead of redirecting back to login.
-3. Confirm `/api/account` returns HTTP 200 in the browser network panel. Return to public `/login.html`, then click **Create an account** and complete Access verification for a new email.
+2. Click **Continue to account**, enter the OTP code sent by Resend from `OTP_EMAIL_FROM`, and verify `/account.html` opens instead of redirecting back to login.
+3. Confirm `/api/account` returns HTTP 200 in the browser network panel. Return to public `/login.html`, then click **Create an account** and complete the same Resend OTP verification for a new email.
 4. Confirm `/register.html` prefills a read-only verified email, then submit the profile form.
 5. Confirm D1 received the profile:
 
@@ -172,7 +228,7 @@ You still need to complete these steps outside the repository in Cloudflare:
 4. Bind that D1 database to the Pages project with binding name `DB`.
 5. Keep `/login.html` and `/login` public; do not add them to an Access application.
 6. Keep `/account.html`, `/account`, `/register.html`, `/register`, `/api/account`, and `/api/auth/otp` public so the customer OTP flow can set and read the signed account session.
-7. Configure `RESEND_API_KEY` plus `AUTH_SESSION_SECRET` in the Pages production runtime environment; `OTP_EMAIL_FROM` has a production default in `wrangler.toml`.
+7. Configure `RESEND_API_KEY` plus `AUTH_SESSION_SECRET` as Pages production runtime secrets; `OTP_EMAIL_FROM` has a production default in `wrangler.toml` and must remain a verified Resend sender.
 8. Create a separate Cloudflare Access application for `/admin/index.html`, `/admin/*`, and `/api/admin/*` that only allows your trusted admin email addresses.
 9. Seed your first admin email into `access_grants` with the command in Phase 4.
 10. Complete the Phase 5 private-window test, then test with three different emails: one customer, one owner request, and one manager request.
@@ -252,7 +308,7 @@ All admin API responses are marked `Cache-Control: no-store`, and every admin da
 5. `/offers.html` loads `/api/offers`, adds published D1 offers to the stay finder, and applies the same country, region, type, option, and search filters as static curated offers.
 6. **Unpublish** removes the offer from the public API response without deleting its admin record.
 
-Apply `migrations/0005_stay_offers.sql` before using the workflow in production. Admin publishing will fail safely until that migration exists.
+Apply `migrations/0005_stay_offers.sql`, `migrations/0006_offer_assignments.sql`, and `migrations/0007_offer_availability_and_inquiry_assignments.sql` before using the workflow in production. Admin publishing or role-panel request routing will fail safely until those migrations exist.
 
 ## OTP table maintenance
 

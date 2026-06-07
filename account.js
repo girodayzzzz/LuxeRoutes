@@ -13,6 +13,10 @@ const loginBoxHead = document.querySelector('.login-box-head');
 const loginSecurityList = document.querySelector('.login-security-list');
 const accountSwitchLink = document.querySelector('.account-switch-link');
 const accountLogoutButtons = document.querySelectorAll('[data-account-logout]');
+const ownerOffersTarget = document.querySelector('[data-owner-offers]');
+const managerOffersTarget = document.querySelector('[data-manager-offers]');
+const ownerRequestsTarget = document.querySelector('[data-owner-requests]');
+const managerRequestsTarget = document.querySelector('[data-manager-requests]');
 const loginOtpForm = document.querySelector('[data-login-otp-form]');
 const loginEmailStep = document.querySelector('[data-login-email-step]');
 const loginCodeStep = document.querySelector('[data-login-code-step]');
@@ -34,6 +38,13 @@ const accountStorageKey = 'luxeroutes-account-profile-v1';
 const accountSessionKey = 'luxeroutes-account-session-v1';
 const accountSessionTtlMs = 4 * 60 * 60 * 1000;
 const accountDashboardRoles = ['customer', 'owner', 'manager', 'admin', 'partner'];
+const accountRoleHomePaths = {
+  customer: 'account.html',
+  owner: 'owner-panel.html',
+  manager: 'manager-panel.html',
+  admin: 'admin/index.html',
+  partner: 'account.html',
+};
 let accountIdentity = null;
 let accountApiEnabled = false;
 
@@ -49,6 +60,24 @@ const isAccountLocalPreview = () => ['localhost', '127.0.0.1', ''].includes(wind
 const isSessionFresh = (session) => Boolean(session?.expiresAt && Date.now() < session.expiresAt);
 
 const normalizeAccountRole = (role) => (accountDashboardRoles.includes(role) ? role : 'customer');
+
+const getRoleHomePath = (role) => accountRoleHomePaths[normalizeAccountRole(role)] || accountRoleHomePaths.customer;
+
+const getRequiredAccountRole = () => document.body.dataset.requiredAccountRole || '';
+
+const isRoleAllowedOnPage = (role) => {
+  const requiredRole = getRequiredAccountRole();
+  if (!requiredRole) return true;
+  const normalizedRole = normalizeAccountRole(role);
+  return normalizedRole === requiredRole || normalizedRole === 'admin';
+};
+
+const redirectToRoleHomeIfNeeded = (role) => {
+  if (!isProtectedAccountPage() || isRegisterPage()) return false;
+  if (isRoleAllowedOnPage(role)) return false;
+  window.location.replace(getRoleHomePath(role));
+  return true;
+};
 
 const hasVerifiedAccountSession = (session) => Boolean(isSessionFresh(session) && (session?.identity?.email || session?.profile?.email));
 
@@ -255,9 +284,9 @@ const logoutRemoteAccountSession = async () => {
   }
 };
 
-const getLoginRedirectTarget = () => {
+const getLoginRedirectTarget = (account = {}) => {
   const redirect = new URLSearchParams(window.location.search).get('redirect');
-  if (!redirect) return 'account.html';
+  if (!redirect) return getRoleHomePath(getAccountRole(account));
 
   try {
     const url = new URL(redirect, window.location.origin);
@@ -301,6 +330,7 @@ const logoutAccount = async () => {
 };
 
 const updateAccountNav = ({ email = '', role = '', active = false } = {}) => {
+  const accountHref = getRoleHomePath(role);
   document.querySelectorAll('[data-nav-login]').forEach((link) => {
     link.hidden = active;
     link.textContent = 'Login';
@@ -311,7 +341,7 @@ const updateAccountNav = ({ email = '', role = '', active = false } = {}) => {
   document.querySelectorAll('[data-nav-account]').forEach((link) => {
     link.hidden = !active;
     link.textContent = 'Account';
-    link.href = 'account.html';
+    link.href = accountHref;
     link.setAttribute('aria-label', active
       ? `Open LuxeRoutes account for ${email || role || 'signed-in user'}`
       : 'Open LuxeRoutes account dashboard');
@@ -325,6 +355,132 @@ const setLoginAccountState = (active = false) => {
     if (element) element.hidden = active;
   });
   if (loginAccountState) loginAccountState.hidden = !active;
+};
+
+
+const offerStatusLabel = (offer = {}) => accountEscapeHtml(offer.partnerStatus || offer.status || 'pending_review').replaceAll('_', ' ');
+
+const dateRangeLabel = (offer = {}) => {
+  const from = offer.availableFrom || '';
+  const to = offer.availableTo || '';
+  if (from && to) return `Available ${from} to ${to}`;
+  if (from) return `Available from ${from}`;
+  if (to) return `Available until ${to}`;
+  return 'Availability not set yet';
+};
+
+const parseInquiryPayload = (inquiry = {}) => {
+  try {
+    return JSON.parse(inquiry.payloadJson || '{}') || {};
+  } catch (error) {
+    return {};
+  }
+};
+
+const getInquiryContact = (inquiry = {}, payload = {}) => inquiry.email || inquiry.phone || payload.email || payload.phone || payload.whatsapp || 'No contact provided';
+
+const renderRoleRequests = (target, inquiries = [], emptyMessage = 'No customer requests yet.') => {
+  if (!target) return;
+  if (!inquiries.length) {
+    target.innerHTML = `<p class="empty-state">${accountEscapeHtml(emptyMessage)}</p>`;
+    return;
+  }
+
+  target.innerHTML = inquiries.map((inquiry) => {
+    const payload = parseInquiryPayload(inquiry);
+    const dates = [payload.start_date || payload.check_in || payload.from, payload.end_date || payload.check_out || payload.to]
+      .filter(Boolean)
+      .join(' → ');
+    return `
+      <div class="stack-item">
+        <div>
+          <strong>${accountEscapeHtml(inquiry.offerTitle || payload.offer || payload.property_name || 'Property request')}</strong>
+          <span>${accountEscapeHtml(inquiry.name || payload.name || 'Unnamed customer')} · ${accountEscapeHtml(getInquiryContact(inquiry, payload))}</span>
+          ${dates ? `<span>Dates: ${accountEscapeHtml(dates)}</span>` : ''}
+          ${payload.guests ? `<span>Guests: ${accountEscapeHtml(payload.guests)}</span>` : ''}
+          ${payload.message || payload.notes ? `<span>Request: ${accountEscapeHtml(payload.message || payload.notes)}</span>` : ''}
+        </div>
+        <span class="status-pill ${inquiry.status === 'resolved' || inquiry.status === 'closed' ? 'status-approved' : 'status-pending'}">${accountEscapeHtml((inquiry.status || 'new').replaceAll('_', ' '))}</span>
+      </div>
+    `;
+  }).join('');
+};
+
+const renderOwnerOfferForm = (offer = {}) => `
+  <form class="account-inline-form" data-owner-offer-form data-offer-id="${accountEscapeHtml(offer.id || '')}">
+    <label>Available from <input type="date" name="availableFrom" value="${accountEscapeHtml(offer.availableFrom || '')}" /></label>
+    <label>Available to <input type="date" name="availableTo" value="${accountEscapeHtml(offer.availableTo || '')}" /></label>
+    <label>Price label <input type="text" name="priceLabel" value="${accountEscapeHtml(offer.priceLabel || '')}" placeholder="From €650/night" /></label>
+    <label>Discount <input type="text" name="discountLabel" value="${accountEscapeHtml(offer.discountLabel || '')}" placeholder="10% for 7+ nights" /></label>
+    <label>Availability notes <textarea name="availabilityNotes" rows="3" placeholder="Peak dates, blocked dates, seasonal notes">${accountEscapeHtml(offer.availabilityNotes || '')}</textarea></label>
+    <button class="btn btn-secondary" type="submit">Save availability, price, and discount</button>
+  </form>
+`;
+
+const renderRoleOffers = (target, offers = [], emptyMessage = 'No assigned offers yet.', role = '') => {
+  if (!target) return;
+  if (!offers.length) {
+    target.innerHTML = `<p class="empty-state">${accountEscapeHtml(emptyMessage)}</p>`;
+    return;
+  }
+
+  target.innerHTML = offers.map((offer) => `
+    <div class="stack-item stack-item-vertical">
+      <div>
+        <strong>${accountEscapeHtml(offer.title || 'Untitled offer')}</strong>
+        <span>${accountEscapeHtml(offer.locationLabel || [offer.country, offer.region].filter(Boolean).join(' · '))} · ${accountEscapeHtml(offerStatusLabel(offer))}</span>
+        <span>${accountEscapeHtml(dateRangeLabel(offer))}</span>
+        ${offer.priceLabel ? `<span>Price: ${accountEscapeHtml(offer.priceLabel)}</span>` : ''}
+        ${offer.discountLabel ? `<span>Discount: ${accountEscapeHtml(offer.discountLabel)}</span>` : ''}
+        ${offer.availabilityNotes ? `<span>Availability note: ${accountEscapeHtml(offer.availabilityNotes)}</span>` : ''}
+        ${offer.ownerEmail ? `<span>Owner: ${accountEscapeHtml(offer.ownerEmail)}</span>` : ''}
+        ${offer.managerEmail ? `<span>Manager: ${accountEscapeHtml(offer.managerEmail)}</span>` : ''}
+        ${offer.ownerNotes ? `<span>Owner note: ${accountEscapeHtml(offer.ownerNotes)}</span>` : ''}
+        ${offer.managerNotes ? `<span>Manager note: ${accountEscapeHtml(offer.managerNotes)}</span>` : ''}
+      </div>
+      <span class="status-pill ${offer.status === 'published' ? 'status-approved' : 'status-pending'}">${accountEscapeHtml(offer.status || 'draft')}</span>
+      ${role === 'owner' ? renderOwnerOfferForm(offer) : ''}
+    </div>
+  `).join('');
+};
+
+const fetchRoleCollection = async (endpoint, key) => {
+  const response = await fetch(endpoint, { headers: { Accept: 'application/json' }, credentials: 'same-origin' });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data.error || `Unable to load ${key}.`);
+  return Array.isArray(data[key]) ? data[key] : [];
+};
+
+const loadRolePanelRequests = async (role) => {
+  const endpoint = role === 'owner' ? '/api/owner/inquiries' : role === 'manager' ? '/api/manager/inquiries' : '';
+  const target = role === 'owner' ? ownerRequestsTarget : role === 'manager' ? managerRequestsTarget : null;
+  if (!endpoint || !target) return;
+
+  try {
+    const inquiries = await fetchRoleCollection(endpoint, 'inquiries');
+    renderRoleRequests(target, inquiries, role === 'owner'
+      ? 'No customer stay requests are connected to your properties yet.'
+      : 'No customer stay requests are connected to your assigned properties yet.');
+  } catch (error) {
+    renderRoleRequests(target, [], error.message || 'Unable to load customer requests.');
+  }
+};
+
+const loadRolePanelOffers = async (role) => {
+  const endpoint = role === 'owner' ? '/api/owner/offers' : role === 'manager' ? '/api/manager/offers' : '';
+  const target = role === 'owner' ? ownerOffersTarget : role === 'manager' ? managerOffersTarget : null;
+  if (!endpoint || !target) return;
+
+  try {
+    const offers = await fetchRoleCollection(endpoint, 'offers');
+    renderRoleOffers(target, offers, role === 'owner'
+      ? 'No offers are assigned to your owner email yet.'
+      : 'No offers are assigned to your manager email yet.', role);
+  } catch (error) {
+    renderRoleOffers(target, [], error.message || 'Unable to load assigned offers.', role);
+  }
+
+  await loadRolePanelRequests(role);
 };
 
 const renderAccountProfile = (profile, grant = null) => {
@@ -369,11 +525,13 @@ const restoreCachedAccountSession = (cachedSession, status = 'Your verified brow
   });
   renderAccountProfile(cachedSession.profile || loadAccountProfile(), cachedSession.grant);
   setLoginAccountState(true);
+  if (redirectToRoleHomeIfNeeded(getAccountRole(cachedSession))) return true;
   return true;
 };
 
 const setAccountStatus = ({ heading, status, email, role, approved }) => {
   const canPrefillEmailInput = email && email.includes('@');
+  const accountHref = getRoleHomePath(role);
 
   if (accountHeading) accountHeading.textContent = heading;
   if (accountStatus) accountStatus.textContent = status;
@@ -391,6 +549,7 @@ const setAccountStatus = ({ heading, status, email, role, approved }) => {
   updateAccountNav({ email, role, active: Boolean(email && approved) });
   updateAccountAccessCards(String(role || '').toLowerCase());
   updateAccountLogout(Boolean(email && approved));
+  if (email && approved) loadRolePanelOffers(getRequiredAccountRole() || normalizeAccountRole(role));
   if (isDashboardPage()) {
     if (email && approved) unlockDashboard();
     else lockDashboard();
@@ -402,7 +561,7 @@ const setAccountStatus = ({ heading, status, email, role, approved }) => {
       accountLoginLink.href = '#account-workspace';
     } else if (email && approved) {
       accountLoginLink.textContent = isDashboardPage() ? 'Refresh Account' : 'Open Account';
-      accountLoginLink.href = isDashboardPage() ? '#account-workspace' : 'account.html';
+      accountLoginLink.href = isDashboardPage() ? '#account-workspace' : accountHref;
     } else {
       accountLoginLink.textContent = 'Login with Email';
       accountLoginLink.href = 'login.html';
@@ -438,6 +597,7 @@ const initialiseAccount = async () => {
     });
     renderAccountProfile(profile, remoteAccount?.grant);
     setLoginAccountState(true);
+    if (redirectToRoleHomeIfNeeded(remoteAccount?.role || remoteAccount?.grant?.role || profile?.defaultRole)) return;
     return;
   }
 
@@ -460,6 +620,7 @@ const initialiseAccount = async () => {
       });
       renderAccountProfile(profile, remoteAccount.grant);
       setLoginAccountState(true);
+      if (redirectToRoleHomeIfNeeded(remoteAccount.role || remoteAccount.grant?.role || profile?.defaultRole)) return;
       return;
     }
   }
@@ -546,6 +707,33 @@ accountForm?.addEventListener('submit', async (event) => {
 });
 
 
+
+document.addEventListener('submit', async (event) => {
+  const form = event.target.closest?.('[data-owner-offer-form]');
+  if (!form) return;
+  event.preventDefault();
+  const button = form.querySelector('button[type="submit"]');
+  if (button) button.disabled = true;
+  try {
+    const formData = new FormData(form);
+    const payload = Object.fromEntries(formData.entries());
+    payload.id = form.dataset.offerId || '';
+    const response = await fetch('/api/owner/offers', {
+      method: 'PATCH',
+      headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify(payload),
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || 'Unable to save this offer.');
+    await loadRolePanelOffers('owner');
+  } catch (error) {
+    window.alert(error.message || 'Unable to save this offer.');
+  } finally {
+    if (button) button.disabled = false;
+  }
+});
+
 loginOtpBack?.addEventListener('click', () => {
   showLoginEmailStep();
   setLoginOtpMessage('Enter your email and we will send a fresh 6-digit login code.');
@@ -583,7 +771,7 @@ loginOtpForm?.addEventListener('submit', async (event) => {
     accountIdentity = identity;
     saveAccountSession({ identity, profile, grant: account.grant, role: account.role, remember: Boolean(loginRememberInput?.checked) });
     setLoginOtpMessage('Signed in successfully. Opening your account…', 'success');
-    window.location.href = getLoginRedirectTarget();
+    window.location.href = getLoginRedirectTarget(account);
   } catch (error) {
     setLoginOtpMessage(error.message || 'Unable to complete login right now.', 'error');
   }

@@ -8,6 +8,8 @@ const adminPanelSource = readFileSync('admin-panel.js', 'utf8');
 
 const accountSource = readFileSync('account.js', 'utf8');
 const loginSource = readFileSync('login.html', 'utf8');
+const ownerPanelSource = readFileSync('owner-panel.html', 'utf8');
+const managerPanelSource = readFileSync('manager-panel.html', 'utf8');
 const siteScriptSource = readFileSync('script.js', 'utf8');
 assert.match(loginSource, /data-login-otp-form/, 'Public login should render the branded email one-time-code form.');
 assert.match(loginSource, /name="otp"/, 'Public login should include the one-time-code input.');
@@ -37,6 +39,23 @@ assert.doesNotMatch(
   siteScriptSource,
   /'account\.html': accountRoles/,
   'Shared navigation code must not redirect account.html before account.js checks Cloudflare Access identity.',
+);
+assert.match(
+  accountSource,
+  /owner: 'owner-panel\.html',[\s\S]*manager: 'manager-panel\.html'/,
+  'Account routing should send approved owners and managers to separate role panels.',
+);
+assert.match(
+  accountSource,
+  /getLoginRedirectTarget = \(account = \{\}\)[\s\S]*getRoleHomePath\(getAccountRole\(account\)\)/,
+  'Successful OTP login should default to the signed-in role home when no explicit redirect is present.',
+);
+assert.match(ownerPanelSource, /data-required-account-role="owner"/, 'Owner panel should declare its required owner role.');
+assert.match(managerPanelSource, /data-required-account-role="manager"/, 'Manager panel should declare its required manager role.');
+assert.doesNotMatch(
+  siteScriptSource,
+  /'owner\.html': \['owner'|manager\.html': \['manager'/,
+  'Shared navigation code must not redirect role panels before account.js checks the signed account cookie.',
 );
 assert.doesNotMatch(
   adminPanelSource,

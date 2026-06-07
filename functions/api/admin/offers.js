@@ -5,8 +5,10 @@ const REGIONS = ['alps', 'adriatic', 'lakes', 'wine-country', 'city', 'countrysi
 const STAY_TYPES = ['villa', 'chalet', 'boutique-hotel', 'apartment', 'cabin', 'retreat'];
 const OPTIONS = ['pool', 'spa', 'sea-view', 'family', 'pet-friendly', 'private-chef'];
 const STATUSES = ['draft', 'published', 'unpublished'];
+const PARTNER_STATUSES = ['draft', 'pending_review', 'changes_requested', 'approved', 'published', 'archived'];
 
 const cleanString = (value, maxLength = 2000) => String(value || '').trim().slice(0, maxLength);
+const cleanEmail = (value) => cleanString(value, 320).toLowerCase();
 const slugify = (value) => cleanString(value, 160).toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 120);
 const safeImageUrl = (value) => {
   const input = cleanString(value, 1500);
@@ -26,9 +28,11 @@ const normalizeOptions = (value) => {
 const offerSelect = `
   SELECT id, source_inquiry_id AS sourceInquiryId, title, slug, country, region,
     stay_type AS stayType, options, location_label AS locationLabel, guest_label AS guestLabel,
-    price_label AS priceLabel, description, image_url AS imageUrl, image_alt AS imageAlt,
+    price_label AS priceLabel, available_from AS availableFrom, available_to AS availableTo,
+    discount_label AS discountLabel, availability_notes AS availabilityNotes, description, image_url AS imageUrl, image_alt AS imageAlt,
     status, published_at AS publishedAt, created_by_email AS createdByEmail,
-    created_at AS createdAt, updated_at AS updatedAt
+    owner_email AS ownerEmail, manager_email AS managerEmail, partner_status AS partnerStatus,
+    owner_notes AS ownerNotes, manager_notes AS managerNotes, created_at AS createdAt, updated_at AS updatedAt
   FROM stay_offers
 `;
 
@@ -47,6 +51,11 @@ const normalizeOffer = (body) => ({
   imageUrl: safeImageUrl(body.imageUrl),
   imageAlt: cleanString(body.imageAlt, 240),
   status: cleanString(body.status, 30).toLowerCase() || 'published',
+  ownerEmail: cleanEmail(body.ownerEmail),
+  managerEmail: cleanEmail(body.managerEmail),
+  partnerStatus: cleanString(body.partnerStatus, 40).toLowerCase() || (cleanString(body.status, 30).toLowerCase() === 'published' ? 'published' : 'pending_review'),
+  ownerNotes: cleanString(body.ownerNotes, 2000),
+  managerNotes: cleanString(body.managerNotes, 2000),
 });
 
 const validateOffer = (offer) => {
@@ -55,6 +64,9 @@ const validateOffer = (offer) => {
   if (!REGIONS.includes(offer.region)) return 'Invalid region.';
   if (!STAY_TYPES.includes(offer.stayType)) return 'Invalid stay type.';
   if (!STATUSES.includes(offer.status)) return 'Invalid offer status.';
+  if (!PARTNER_STATUSES.includes(offer.partnerStatus)) return 'Invalid partner status.';
+  if (offer.ownerEmail && !offer.ownerEmail.includes('@')) return 'Owner email must be a valid email address.';
+  if (offer.managerEmail && !offer.managerEmail.includes('@')) return 'Manager email must be a valid email address.';
   return '';
 };
 
@@ -85,11 +97,13 @@ export const onRequestPost = async ({ request, env }) => {
       INSERT INTO stay_offers (
         id, source_inquiry_id, title, slug, country, region, stay_type, options,
         location_label, guest_label, price_label, description, image_url, image_alt,
-        status, published_at, created_by_email, created_at, updated_at
-      ) VALUES (?, NULLIF(?, ''), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        status, published_at, created_by_email, owner_email, manager_email, partner_status,
+        owner_notes, manager_notes, created_at, updated_at
+      ) VALUES (?, NULLIF(?, ''), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULLIF(?, ''), NULLIF(?, ''), ?, ?, ?, ?, ?)
     `).bind(id, offer.sourceInquiryId, offer.title, offer.slug, offer.country, offer.region, offer.stayType,
       offer.options, offer.locationLabel, offer.guestLabel, offer.priceLabel, offer.description, offer.imageUrl,
-      offer.imageAlt || offer.title, offer.status, publishedAt, auth.email, timestamp, timestamp).run();
+      offer.imageAlt || offer.title, offer.status, publishedAt, auth.email, offer.ownerEmail, offer.managerEmail,
+      offer.partnerStatus, offer.ownerNotes, offer.managerNotes, timestamp, timestamp).run();
 
     if (offer.sourceInquiryId && offer.status === 'published') {
       await auth.db.prepare("UPDATE inquiries SET status = 'resolved', updated_at = ? WHERE id = ?")
@@ -110,11 +124,32 @@ export const onRequestPatch = async ({ request, env }) => {
     const body = await request.json().catch(() => ({}));
     const id = cleanString(body.id, 160);
     const status = cleanString(body.status, 30).toLowerCase();
+    const ownerEmail = cleanEmail(body.ownerEmail);
+    const managerEmail = cleanEmail(body.managerEmail);
+    const partnerStatus = cleanString(body.partnerStatus, 40).toLowerCase();
+    const ownerNotes = cleanString(body.ownerNotes, 2000);
+    const managerNotes = cleanString(body.managerNotes, 2000);
     if (!id) return privateErrorJson('Offer ID is required.', 400);
-    if (!STATUSES.includes(status)) return privateErrorJson('Invalid offer status.', 400);
+    if (status && !STATUSES.includes(status)) return privateErrorJson('Invalid offer status.', 400);
+    if (partnerStatus && !PARTNER_STATUSES.includes(partnerStatus)) return privateErrorJson('Invalid partner status.', 400);
+    if (ownerEmail && !ownerEmail.includes('@')) return privateErrorJson('Owner email must be a valid email address.', 400);
+    if (managerEmail && !managerEmail.includes('@')) return privateErrorJson('Manager email must be a valid email address.', 400);
     const timestamp = nowIso();
-    await auth.db.prepare(`UPDATE stay_offers SET status = ?, published_at = CASE WHEN ? = 'published' THEN COALESCE(published_at, ?) ELSE published_at END, updated_at = ? WHERE id = ?`)
-      .bind(status, status, timestamp, timestamp, id).run();
+    await auth.db.prepare(`
+      UPDATE stay_offers
+      SET status = COALESCE(NULLIF(?, ''), status),
+        published_at = CASE WHEN ? = 'published' THEN COALESCE(published_at, ?) ELSE published_at END,
+        owner_email = CASE WHEN ? IS NULL THEN owner_email ELSE NULLIF(?, '') END,
+        manager_email = CASE WHEN ? IS NULL THEN manager_email ELSE NULLIF(?, '') END,
+        partner_status = COALESCE(NULLIF(?, ''), partner_status),
+        owner_notes = CASE WHEN ? IS NULL THEN owner_notes ELSE ? END,
+        manager_notes = CASE WHEN ? IS NULL THEN manager_notes ELSE ? END,
+        updated_at = ?
+      WHERE id = ?
+    `).bind(status, status, timestamp, body.ownerEmail === undefined ? null : ownerEmail, ownerEmail,
+      body.managerEmail === undefined ? null : managerEmail, managerEmail, partnerStatus,
+      body.ownerNotes === undefined ? null : ownerNotes, ownerNotes, body.managerNotes === undefined ? null : managerNotes,
+      managerNotes, timestamp, id).run();
     const offer = await auth.db.prepare(`${offerSelect} WHERE id = ? LIMIT 1`).bind(id).first();
     if (!offer) return privateErrorJson('Offer not found.', 404);
     return privateJson({ offer });

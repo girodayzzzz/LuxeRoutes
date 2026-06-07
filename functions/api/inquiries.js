@@ -1,8 +1,23 @@
-import { errorJson, json, makeId, nowIso, requireDb } from './_utils.js';
+import { errorJson, json, makeId, normalizeEmail, nowIso, requireDb } from './_utils.js';
 
 const CONTACT_FIELDS = ['email', 'phone', 'whatsapp'];
 
 const cleanString = (value, maxLength = 2000) => String(value || '').trim().slice(0, maxLength);
+
+const getSubmittedOfferTitle = (body) => cleanString(
+  body.offer || body.offer_title || body.offerName || body.accommodation_interest || body.stay_offer || body.stayOffer || body.property_name,
+  220,
+);
+
+const findSubmittedOffer = async (db, offerTitle) => {
+  if (!offerTitle) return null;
+  return db.prepare(`
+    SELECT id, title, owner_email AS ownerEmail, manager_email AS managerEmail
+    FROM stay_offers
+    WHERE lower(trim(title)) = lower(trim(?))
+    LIMIT 1
+  `).bind(offerTitle).first();
+};
 
 const getContactValue = (body) => CONTACT_FIELDS
   .map((field) => cleanString(body[field], 320))
@@ -64,6 +79,8 @@ export const onRequestPost = async ({ request, env }) => {
       return errorJson('Email or phone is required.', 400);
     }
 
+    const submittedOfferTitle = getSubmittedOfferTitle(body);
+    const submittedOffer = await findSubmittedOffer(db, submittedOfferTitle);
     const id = makeId('inquiry');
     const timestamp = nowIso();
 
@@ -77,11 +94,15 @@ export const onRequestPost = async ({ request, env }) => {
         source_page,
         submitted_from,
         payload_json,
+        offer_id,
+        offer_title,
+        owner_email,
+        manager_email,
         status,
         created_at,
         updated_at
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'new', ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'new', ?, ?)
     `).bind(
       id,
       inquiry.inquiryType,
@@ -91,6 +112,10 @@ export const onRequestPost = async ({ request, env }) => {
       inquiry.sourcePage,
       inquiry.submittedFrom,
       payloadJson,
+      submittedOffer?.id || null,
+      submittedOffer?.title || submittedOfferTitle || null,
+      normalizeEmail(submittedOffer?.ownerEmail) || null,
+      normalizeEmail(submittedOffer?.managerEmail) || null,
       timestamp,
       timestamp,
     ).run();
