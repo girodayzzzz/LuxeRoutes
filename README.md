@@ -32,11 +32,31 @@ A successful check returns JSON from `/api/offers`. A GitHub Pages `404 File not
 
 ## Account and admin access
 
-The production site uses the branded LuxeRoutes email one-time-code login for public account access plus admin-approved role grants by email. The login page calls `/api/auth/otp`, sends the code through Resend, and stores a signed `luxeroutes_account_session` cookie after verification. Configure `RESEND_API_KEY` and `AUTH_SESSION_SECRET` as Cloudflare Pages production runtime secrets. `OTP_EMAIL_FROM` defaults to `LuxeRoutes <login@luxeroutes.eu>` in `wrangler.toml`; override it only if Resend uses a different verified sender.
+Use this setup for everything to work properly:
+
+- **Cloudflare Access is only for staff/admin protection**: `/admin/index.html`, `/admin/*`, `/admin-panel.html`, and `/api/admin/*`. If `/admin/index.html` already recognizes you, Cloudflare Access is working and you do not need Resend for the admin panel.
+- **The LuxeRoutes public login is for customers, owners, and managers**: `/login.html`, `/account.html`, `/owner.html`, `/manager.html`, `/register.html`, `/api/account`, and `/api/auth/otp` must stay public in Cloudflare Access. These users enter their email on the LuxeRoutes form and receive a code from the site. After login, customers stay on `/account.html`, approved owners go to `/owner.html`, approved managers go to `/manager.html`, and admins can open `/admin/index.html`.
+- **Create one Resend account/API key for the LuxeRoutes site, not one Resend profile per user**. Customers, owners, and managers do not need Resend accounts. Resend is only the email sender that delivers your LuxeRoutes one-time login codes.
+
+Do not try to use Cloudflare Access for every customer/owner/manager login unless you want to manually manage every user inside Cloudflare Zero Trust. For this codebase, the recommended production setup is Cloudflare Access for admins plus Resend OTP for public account users.
+
+Configure `RESEND_API_KEY` and `AUTH_SESSION_SECRET` as Cloudflare Pages production runtime secrets so the public `/login.html` OTP flow can send emails and sign account sessions. `OTP_EMAIL_FROM` defaults to `LuxeRoutes <login@luxeroutes.eu>` in `wrangler.toml`; override it only if Resend uses a different verified sender.
+
+If `/login.html` shows `Missing RESEND_API_KEY for OTP email delivery`, the deployed Pages Function does not have the one site-wide Resend sending key for the public OTP form yet. Fix it in **Cloudflare Dashboard → Workers & Pages → LuxeRoutes Pages project → Settings → Environment variables → Production**:
+
+- In Resend, create the production API key with **Name** `LuxeRoutes production OTP`, **Permission** `Sending access`, and **Domain** `luxeroutes.eu`. Use **Full access** only if Resend will not let you select the domain yet; after domain verification, replace it with a `Sending access` key.
+- Add a **secret** named `RESEND_API_KEY` with the Resend API key value. `RESEND_API_TOKEN` or `RESEND_TOKEN` also work, but `RESEND_API_KEY` is the canonical name.
+- The Resend **Free** package is enough for launch/testing if LuxeRoutes sends no more than 100 OTP emails per day and uses one sending domain. Upgrade later only if the site needs more daily OTP emails, more domains, or paid support/features.
+- Verify the exact domain `luxeroutes.eu` in Resend before creating the API key. If Resend shows `luxeroues.eu`, delete/fix it because that typo will not verify the `login@luxeroutes.eu` sender. If Resend auto-configured the Cloudflare DNS records, do not add duplicate DKIM/SPF/MX records manually; confirm the records exist in Cloudflare DNS, then click **Verify DNS Records** in Resend. If auto-configuration did not create them, add Resend's generated DNS records in Cloudflare DNS: `TXT resend._domainkey`, `MX send` to `feedback-smtp.us-east-1.amazonses.com` with priority `10`, `TXT send` with `v=spf1 include:amazonses.com ~all`, and optional `TXT _dmarc` with `v=DMARC1; p=none;`.
+- Add one more **secret** named `AUTH_SESSION_SECRET`; this is the only missing item if Cloudflare already shows `CLOUDFLARE_ACCESS_AUD`, `CLOUDFLARE_ACCESS_TEAM_DOMAIN`, `OTP_EMAIL_FROM`, and encrypted `RESEND_API_KEY`. Its value must be your own random string, generated with `openssl rand -base64 32`; do not reuse the Resend API key.
+- Confirm `OTP_EMAIL_FROM` matches a verified Resend sender/domain, for example `LuxeRoutes <login@luxeroutes.eu>`.
+- Redeploy the Pages project after saving production runtime variables, then test `/login.html` again.
+
+For local Pages preview, copy `.dev.vars.example` to `.dev.vars` and fill in real secret values; `.dev.vars` is ignored by Git.
 
 Use Cloudflare Access only for the admin surface:
 
-- Keep `/login.html`, `/login`, `/account.html`, `/account`, `/register.html`, `/register`, `/api/account`, and `/api/auth/otp` public at the Cloudflare Access layer so the in-site OTP flow can load without redirect loops. The account API still requires a verified signed session cookie or Access identity before returning private data.
+- Keep `/login.html`, `/login`, `/account.html`, `/account`, `/owner.html`, `/manager.html`, `/register.html`, `/register`, `/api/account`, and `/api/auth/otp` public at the Cloudflare Access layer so the in-site OTP flow can load without redirect loops. The account API still requires a verified signed session cookie or Access identity before returning private data.
 - Admin app: protect `/admin/*`, `/admin-panel.html`, and `/api/admin/*` with a separate application restricted to approved internal admin emails.
 
 If `/login.html` itself is added to a Cloudflare Access app, visitors can see browser `ERR_TOO_MANY_REDIRECTS` errors before the branded login page loads.
