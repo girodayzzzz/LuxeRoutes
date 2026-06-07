@@ -5,6 +5,7 @@ pages_build_output_dir = "."
 [vars]
 CLOUDFLARE_ACCESS_TEAM_DOMAIN = "cool-heart-b7e3.cloudflareaccess.com"
 CLOUDFLARE_ACCESS_AUD = "9bd120625647058847770d9cd6a125d745203300af1c9f47db87fcdbbf12a0c7"
+OTP_EMAIL_FROM = "LuxeRoutes <login@luxeroutes.eu>"
 
 # Cloudflare Pages Functions use this D1 binding at runtime. Keep database_id
 # set to the real Cloudflare D1 UUID; do not replace it with a placeholder.

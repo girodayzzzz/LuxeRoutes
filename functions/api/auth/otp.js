@@ -47,19 +47,31 @@ const getProfile = async (db, email) => db.prepare(`
   LIMIT 1
 `).bind(email).first();
 
+const getEnvValue = (env = {}, keys = []) => keys
+  .map((key) => String(env[key] || '').trim())
+  .find(Boolean) || '';
+
+const getOtpEmailConfig = (env = {}) => ({
+  apiKey: getEnvValue(env, ['RESEND_API_KEY', 'RESEND_API_TOKEN', 'RESEND_TOKEN']),
+  from: getEnvValue(env, ['OTP_EMAIL_FROM', 'RESEND_EMAIL_FROM', 'RESEND_FROM_EMAIL', 'EMAIL_FROM', 'FROM_EMAIL'])
+    || 'LuxeRoutes <login@luxeroutes.eu>',
+});
+
 const sendOtpEmail = async (env, email, otp) => {
-  if (!env.RESEND_API_KEY || !env.OTP_EMAIL_FROM) {
-    throw new Error('Missing RESEND_API_KEY or OTP_EMAIL_FROM for OTP email delivery.');
+  const { apiKey, from } = getOtpEmailConfig(env);
+
+  if (!apiKey) {
+    throw new Error('Missing RESEND_API_KEY for OTP email delivery. Add it to the Cloudflare Pages production runtime environment variables.');
   }
 
   const response = await fetch(RESEND_ENDPOINT, {
     method: 'POST',
     headers: {
-      Authorization: `Bearer ${env.RESEND_API_KEY}`,
+      Authorization: `Bearer ${apiKey}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      from: env.OTP_EMAIL_FROM,
+      from,
       to: email,
       subject: 'Your LuxeRoutes OTP code',
       text: `Your LuxeRoutes OTP code is ${otp}. It is valid for ${OTP_TTL_MINUTES} minutes. If you did not request this login, you can ignore this email.`,

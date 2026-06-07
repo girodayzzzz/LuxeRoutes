@@ -32,7 +32,7 @@ A successful check returns JSON from `/api/offers`. A GitHub Pages `404 File not
 
 ## Account and admin access
 
-The production site uses the branded LuxeRoutes email one-time-code login for public account access plus admin-approved role grants by email. The login page calls `/api/auth/otp`, sends the code through Resend, and stores a signed `luxeroutes_account_session` cookie after verification. Configure `RESEND_API_KEY`, `OTP_EMAIL_FROM`, and `AUTH_SESSION_SECRET` for production.
+The production site uses the branded LuxeRoutes email one-time-code login for public account access plus admin-approved role grants by email. The login page calls `/api/auth/otp`, sends the code through Resend, and stores a signed `luxeroutes_account_session` cookie after verification. Configure `RESEND_API_KEY` and `AUTH_SESSION_SECRET` as Cloudflare Pages production runtime secrets. `OTP_EMAIL_FROM` defaults to `LuxeRoutes <login@luxeroutes.eu>` in `wrangler.toml`; override it only if Resend uses a different verified sender.
 
 Use Cloudflare Access only for the admin surface:
 
