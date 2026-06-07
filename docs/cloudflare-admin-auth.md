@@ -66,6 +66,10 @@ For Cloudflare Pages production, add the D1 database binding in **Workers & Page
 
 The production site currently uses the branded LuxeRoutes Resend OTP login on `/login.html`. Emails should come from the verified Resend sender configured as `OTP_EMAIL_FROM` (default: `LuxeRoutes <login@luxeroutes.eu>`). Configure `RESEND_API_KEY` and `AUTH_SESSION_SECRET` as Cloudflare Pages production runtime secrets.
 
+If `/login.html` reports `Missing RESEND_API_KEY for OTP email delivery`, the code is deployed correctly but the Cloudflare Pages production runtime is missing the Resend secret. Add `RESEND_API_KEY` in **Workers & Pages → LuxeRoutes Pages project → Settings → Environment variables → Production** as a secret, redeploy, and test again. The OTP function also accepts `RESEND_API_TOKEN` or `RESEND_TOKEN` aliases, but use `RESEND_API_KEY` for consistency with the production checklist.
+
+For local previews, copy `.dev.vars.example` to `.dev.vars`, set the same secret names there, and keep `.dev.vars` uncommitted.
+
 Keep the custom LuxeRoutes entry page public:
 
 - `/login.html`
@@ -172,7 +176,7 @@ You still need to complete these steps outside the repository in Cloudflare:
 4. Bind that D1 database to the Pages project with binding name `DB`.
 5. Keep `/login.html` and `/login` public; do not add them to an Access application.
 6. Keep `/account.html`, `/account`, `/register.html`, `/register`, `/api/account`, and `/api/auth/otp` public so the customer OTP flow can set and read the signed account session.
-7. Configure `RESEND_API_KEY` plus `AUTH_SESSION_SECRET` in the Pages production runtime environment; `OTP_EMAIL_FROM` has a production default in `wrangler.toml`.
+7. Configure `RESEND_API_KEY` plus `AUTH_SESSION_SECRET` as Pages production runtime secrets; `OTP_EMAIL_FROM` has a production default in `wrangler.toml` and must remain a verified Resend sender.
 8. Create a separate Cloudflare Access application for `/admin/index.html`, `/admin/*`, and `/api/admin/*` that only allows your trusted admin email addresses.
 9. Seed your first admin email into `access_grants` with the command in Phase 4.
 10. Complete the Phase 5 private-window test, then test with three different emails: one customer, one owner request, and one manager request.

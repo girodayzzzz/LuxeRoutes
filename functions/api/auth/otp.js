@@ -3,6 +3,7 @@ import { createAccountSessionCookie, errorJson, getActiveGrant, json, makeId, no
 const OTP_TTL_MINUTES = 10;
 const OTP_LENGTH = 6;
 const RESEND_ENDPOINT = 'https://api.resend.com/emails';
+const MISSING_RESEND_API_KEY_MESSAGE = 'Missing RESEND_API_KEY for OTP email delivery. Add RESEND_API_KEY as a Cloudflare Pages production runtime secret (Workers & Pages → LuxeRoutes → Settings → Environment variables). RESEND_API_TOKEN or RESEND_TOKEN are also accepted aliases.';
 
 const generateOtp = () => {
   const random = new Uint32Array(1);
@@ -61,7 +62,7 @@ const sendOtpEmail = async (env, email, otp) => {
   const { apiKey, from } = getOtpEmailConfig(env);
 
   if (!apiKey) {
-    throw new Error('Missing RESEND_API_KEY for OTP email delivery. Add it to the Cloudflare Pages production runtime environment variables.');
+    throw new Error(MISSING_RESEND_API_KEY_MESSAGE);
   }
 
   const response = await fetch(RESEND_ENDPOINT, {
