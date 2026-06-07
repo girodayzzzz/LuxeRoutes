@@ -13,7 +13,7 @@ Static LuxeRoutes website prepared for GitHub source control and Cloudflare Page
    - **Build output directory:** `.`
 5. Add the production custom domain in Cloudflare Pages after the first deploy.
 
-Cloudflare Pages will publish the static files from the repository root. The `_headers`, `_redirects`, and `_routes.json` files are included for security headers, clean admin routing, and limiting Pages Functions invocation to `/api/*`.
+Cloudflare Pages will publish the static files from the repository root. The `_headers`, `_redirects`, and `_routes.json` files are included for security headers, clean admin routing, and limiting Pages Functions invocation to `/api/*`. Do not add `_redirects` rewrites from extensionless public account URLs such as `/account`, `/login`, or `/register` back to their `.html` files; Cloudflare Pages already serves those clean URLs, and explicit rewrites can loop against Pages' built-in pretty-URL handling.
 
 The admin APIs accept Cloudflare Access identity from either the verified email header or a validated `Cf-Access-Jwt-Assertion` token. Keep these non-secret Access values configured for the Pages production environment; they are also present in `wrangler.toml` for source-controlled deployments:
 
