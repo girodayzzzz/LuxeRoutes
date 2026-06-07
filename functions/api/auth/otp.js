@@ -3,7 +3,7 @@ import { createAccountSessionCookie, errorJson, getActiveGrant, json, makeId, no
 const OTP_TTL_MINUTES = 10;
 const OTP_LENGTH = 6;
 const RESEND_ENDPOINT = 'https://api.resend.com/emails';
-const MISSING_RESEND_API_KEY_MESSAGE = 'Missing RESEND_API_KEY for OTP email delivery. Add RESEND_API_KEY as a Cloudflare Pages production runtime secret (Workers & Pages → LuxeRoutes → Settings → Environment variables). RESEND_API_TOKEN or RESEND_TOKEN are also accepted aliases.';
+const MISSING_RESEND_API_KEY_MESSAGE = 'Missing RESEND_API_KEY for OTP email delivery. Recommended setup: Cloudflare Access protects only /admin, while customers, owners, and managers use the public /login.html OTP form. Create one Resend account/API key for the LuxeRoutes site (not one profile per user) and add it as RESEND_API_KEY in Cloudflare Pages production runtime secrets (Workers & Pages → LuxeRoutes → Settings → Environment variables). RESEND_API_TOKEN or RESEND_TOKEN are also accepted aliases.';
 
 const generateOtp = () => {
   const random = new Uint32Array(1);
