@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Owner Panel | LuxeRoutes</title>
+  <meta name="description" content="Approved LuxeRoutes owner workspace for property submissions, listing status, and partner profile details." />
+  <meta name="robots" content="noindex, nofollow" />
+  <meta property="og:title" content="Owner Panel | LuxeRoutes" />
+  <meta property="og:description" content="Open the approved owner workspace after LuxeRoutes OTP login." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://luxeroutes.eu/owner-panel.html" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@600;700;800&display=swap" rel="stylesheet" />
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <link rel="manifest" href="site.webmanifest" />
+  <link rel="stylesheet" href="styles.css" />
+  <style>body[data-account-locked="true"] main, body[data-account-locked="true"] footer { display: none !important; }</style>
+</head>
+<body class="admin-page account-page account-dashboard-page" data-account-locked="true" data-required-account-role="owner">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+  <header class="site-header" data-header>
+    <div class="header-top" aria-label="LuxeRoutes owner highlights">
+      <div class="container header-top-inner">
+        <span>Owner Panel</span>
+        <a href="mailto:info@luxeroutes.eu">info@luxeroutes.eu</a>
+        <span>Properties · Listing status · Partner profile</span>
+      </div>
+    </div>
+    <div class="container nav-shell">
+      <a class="brand" href="index.html" aria-label="LuxeRoutes home"><img src="logo.svg" alt="LuxeRoutes wordmark" width="620" height="160" loading="eager" decoding="async" /></a>
+      <button class="menu-toggle" type="button" aria-label="Open navigation" aria-controls="primary-navigation" aria-expanded="false"><span></span><span></span><span></span></button>
+      <nav class="primary-nav" id="primary-navigation" aria-label="Primary navigation">
+        <a href="index.html" class="nav-link">Home</a>
+        <a href="offers.html" class="nav-link">Private Offers</a>
+        <a href="account.html" class="nav-link" data-nav-account hidden>Account</a>
+        <a href="login.html" class="nav-link" data-nav-login>Login</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main-content">
+    <section class="admin-hero">
+      <div class="container admin-hero-grid">
+        <div>
+          <p class="eyebrow">LuxeRoutes owner workspace</p>
+          <h1>Your property owner panel.</h1>
+          <p class="admin-lead">Review your approved owner status, prepare property details, and follow listing progress after the LuxeRoutes team connects your offers.</p>
+          <div class="button-row">
+            <a class="btn btn-primary" href="#owner-properties">View property status</a>
+            <a class="btn btn-secondary" href="#owner-profile">Owner profile</a>
+            <button class="btn btn-secondary" type="button" data-account-logout hidden>Logout</button>
+          </div>
+        </div>
+        <aside class="admin-login-card" aria-label="Owner account status">
+          <p class="eyebrow">Owner access</p>
+          <h2 data-account-heading>Checking session</h2>
+          <p data-account-status>Checking whether your email has approved owner access.</p>
+          <div class="admin-auth-meta">
+            <span class="status-pill status-pending" data-account-role>Verifying</span>
+            <span data-account-email>Email pending</span>
+          </div>
+          <p class="admin-helper account-switch-link">Owners use the normal LuxeRoutes email login. <a href="login.html">Login</a> or <a href="account.html">open account</a>.</p>
+        </aside>
+      </div>
+    </section>
+
+    <section class="section admin-workspace" id="owner-workspace">
+      <div class="container">
+        <div class="admin-toolbar">
+          <div>
+            <p class="eyebrow">Owner dashboard</p>
+            <h2>Property submissions and listing readiness</h2>
+            <p>This panel is shown when an approved owner clicks Account. Detailed property ownership tools can be connected next.</p>
+          </div>
+          <a class="btn btn-secondary" href="account.html">Account settings</a>
+        </div>
+
+        <div class="admin-grid two">
+          <article class="admin-card" id="owner-properties">
+            <div class="card-head"><p class="eyebrow">Properties</p><span class="status-pill status-pending">Next build</span></div>
+            <h3>Your connected offers</h3>
+            <p class="admin-helper">Once offers are linked to owner emails, this area will show your draft, pending, published, and needs-changes listings.</p>
+            <a class="btn btn-primary" href="partners.html">Submit or update property details</a>
+          </article>
+          <article class="admin-card" id="owner-profile">
+            <div class="card-head"><p class="eyebrow">Profile</p><span class="status-pill status-approved">Owner</span></div>
+            <h3>Verified owner account</h3>
+            <div class="stack-list" data-account-profile></div>
+          </article>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-bottom">
+      <p>© <span data-current-year>2026</span> LuxeRoutes. All rights reserved.</p>
+      <p>Owner workspace.</p>
+    </div>
+  </footer>
+  <script src="script.js"></script>
+  <script src="account.js"></script>
+</body>
+</html>

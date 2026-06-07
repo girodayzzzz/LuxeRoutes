@@ -34,6 +34,13 @@ const accountStorageKey = 'luxeroutes-account-profile-v1';
 const accountSessionKey = 'luxeroutes-account-session-v1';
 const accountSessionTtlMs = 4 * 60 * 60 * 1000;
 const accountDashboardRoles = ['customer', 'owner', 'manager', 'admin', 'partner'];
+const accountRoleHomePaths = {
+  customer: 'account.html',
+  owner: 'owner-panel.html',
+  manager: 'manager-panel.html',
+  admin: 'admin/index.html',
+  partner: 'account.html',
+};
 let accountIdentity = null;
 let accountApiEnabled = false;
 
@@ -49,6 +56,24 @@ const isAccountLocalPreview = () => ['localhost', '127.0.0.1', ''].includes(wind
 const isSessionFresh = (session) => Boolean(session?.expiresAt && Date.now() < session.expiresAt);
 
 const normalizeAccountRole = (role) => (accountDashboardRoles.includes(role) ? role : 'customer');
+
+const getRoleHomePath = (role) => accountRoleHomePaths[normalizeAccountRole(role)] || accountRoleHomePaths.customer;
+
+const getRequiredAccountRole = () => document.body.dataset.requiredAccountRole || '';
+
+const isRoleAllowedOnPage = (role) => {
+  const requiredRole = getRequiredAccountRole();
+  if (!requiredRole) return true;
+  const normalizedRole = normalizeAccountRole(role);
+  return normalizedRole === requiredRole || normalizedRole === 'admin';
+};
+
+const redirectToRoleHomeIfNeeded = (role) => {
+  if (!isProtectedAccountPage() || isRegisterPage()) return false;
+  if (isRoleAllowedOnPage(role)) return false;
+  window.location.replace(getRoleHomePath(role));
+  return true;
+};
 
 const hasVerifiedAccountSession = (session) => Boolean(isSessionFresh(session) && (session?.identity?.email || session?.profile?.email));
 
@@ -255,9 +280,9 @@ const logoutRemoteAccountSession = async () => {
   }
 };
 
-const getLoginRedirectTarget = () => {
+const getLoginRedirectTarget = (account = {}) => {
   const redirect = new URLSearchParams(window.location.search).get('redirect');
-  if (!redirect) return 'account.html';
+  if (!redirect) return getRoleHomePath(getAccountRole(account));
 
   try {
     const url = new URL(redirect, window.location.origin);
@@ -301,6 +326,7 @@ const logoutAccount = async () => {
 };
 
 const updateAccountNav = ({ email = '', role = '', active = false } = {}) => {
+  const accountHref = getRoleHomePath(role);
   document.querySelectorAll('[data-nav-login]').forEach((link) => {
     link.hidden = active;
     link.textContent = 'Login';
@@ -311,7 +337,7 @@ const updateAccountNav = ({ email = '', role = '', active = false } = {}) => {
   document.querySelectorAll('[data-nav-account]').forEach((link) => {
     link.hidden = !active;
     link.textContent = 'Account';
-    link.href = 'account.html';
+    link.href = accountHref;
     link.setAttribute('aria-label', active
       ? `Open LuxeRoutes account for ${email || role || 'signed-in user'}`
       : 'Open LuxeRoutes account dashboard');
@@ -369,11 +395,13 @@ const restoreCachedAccountSession = (cachedSession, status = 'Your verified brow
   });
   renderAccountProfile(cachedSession.profile || loadAccountProfile(), cachedSession.grant);
   setLoginAccountState(true);
+  if (redirectToRoleHomeIfNeeded(getAccountRole(cachedSession))) return true;
   return true;
 };
 
 const setAccountStatus = ({ heading, status, email, role, approved }) => {
   const canPrefillEmailInput = email && email.includes('@');
+  const accountHref = getRoleHomePath(role);
 
   if (accountHeading) accountHeading.textContent = heading;
   if (accountStatus) accountStatus.textContent = status;
@@ -402,7 +430,7 @@ const setAccountStatus = ({ heading, status, email, role, approved }) => {
       accountLoginLink.href = '#account-workspace';
     } else if (email && approved) {
       accountLoginLink.textContent = isDashboardPage() ? 'Refresh Account' : 'Open Account';
-      accountLoginLink.href = isDashboardPage() ? '#account-workspace' : 'account.html';
+      accountLoginLink.href = isDashboardPage() ? '#account-workspace' : accountHref;
     } else {
       accountLoginLink.textContent = 'Login with Email';
       accountLoginLink.href = 'login.html';
@@ -438,6 +466,7 @@ const initialiseAccount = async () => {
     });
     renderAccountProfile(profile, remoteAccount?.grant);
     setLoginAccountState(true);
+    if (redirectToRoleHomeIfNeeded(remoteAccount?.role || remoteAccount?.grant?.role || profile?.defaultRole)) return;
     return;
   }
 
@@ -460,6 +489,7 @@ const initialiseAccount = async () => {
       });
       renderAccountProfile(profile, remoteAccount.grant);
       setLoginAccountState(true);
+      if (redirectToRoleHomeIfNeeded(remoteAccount.role || remoteAccount.grant?.role || profile?.defaultRole)) return;
       return;
     }
   }
@@ -583,7 +613,7 @@ loginOtpForm?.addEventListener('submit', async (event) => {
     accountIdentity = identity;
     saveAccountSession({ identity, profile, grant: account.grant, role: account.role, remember: Boolean(loginRememberInput?.checked) });
     setLoginOtpMessage('Signed in successfully. Opening your account…', 'success');
-    window.location.href = getLoginRedirectTarget();
+    window.location.href = getLoginRedirectTarget(account);
   } catch (error) {
     setLoginOtpMessage(error.message || 'Unable to complete login right now.', 'error');
   }

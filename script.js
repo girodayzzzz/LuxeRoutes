@@ -32,10 +32,23 @@ const readAccountSession = () => {
 const getPathPrefix = () => (window.location.pathname.includes('/admin/') ? '../' : '');
 
 const accountRoles = ['customer', 'owner', 'manager', 'admin', 'partner'];
+const accountRoleHomePaths = {
+  customer: 'account.html',
+  owner: 'owner-panel.html',
+  manager: 'manager-panel.html',
+  admin: 'admin/index.html',
+  partner: 'account.html',
+};
 
 const getSessionRole = (session) => session?.role || session?.grant?.role || session?.profile?.defaultRole || '';
 
 const normalizeSessionRole = (role) => (accountRoles.includes(role) ? role : 'customer');
+
+const getRoleAccountHref = (role, prefix = '') => {
+  const target = accountRoleHomePaths[normalizeSessionRole(role)] || accountRoleHomePaths.customer;
+  if (!target.startsWith('admin/')) return `${prefix}${target}`;
+  return prefix ? target.replace('admin/', '') : target;
+};
 
 const privateAccessRules = {
   'admin-panel.html': ['admin'],
@@ -83,7 +96,7 @@ const updateRoleBasedNavigation = () => {
   document.querySelectorAll('[data-nav-account]').forEach((link) => {
     link.hidden = !isLoggedIn;
     link.textContent = 'Account';
-    link.href = `${prefix}account.html`;
+    link.href = getRoleAccountHref(getSessionRole(session), prefix);
     link.setAttribute('aria-label', isLoggedIn
       ? `Open LuxeRoutes account for ${session?.identity?.email || session?.profile?.email || 'signed-in user'}`
       : 'Open LuxeRoutes account dashboard');

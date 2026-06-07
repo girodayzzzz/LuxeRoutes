@@ -69,9 +69,9 @@ Recommended production decision: **do not use Cloudflare Access for every login*
 | User type | Where they log in | Login provider | What you configure |
 | --- | --- | --- | --- |
 | Admin/staff | `/admin/index.html` | Cloudflare Access | Cloudflare Access app + D1 `admin` grant |
-| Customer | `/login.html` | LuxeRoutes OTP email | One site-wide Resend API key |
-| Owner | `/login.html` then `/register.html` | LuxeRoutes OTP email | Same one site-wide Resend API key + admin approval |
-| Manager | `/login.html` then `/register.html` | LuxeRoutes OTP email | Same one site-wide Resend API key + admin approval |
+| Customer | `/login.html` → `/account.html` | LuxeRoutes OTP email | One site-wide Resend API key |
+| Owner | `/login.html` → `/owner-panel.html` after approval | LuxeRoutes OTP email | Same one site-wide Resend API key + admin approval |
+| Manager | `/login.html` → `/manager-panel.html` after approval | LuxeRoutes OTP email | Same one site-wide Resend API key + admin approval |
 
 Customers, owners, and managers do not need Resend accounts or Resend profiles. Create one Resend account/API key for LuxeRoutes only; the Pages Function uses that single key to send OTP codes from the verified sender configured as `OTP_EMAIL_FROM` (default: `LuxeRoutes <login@luxeroutes.eu>`).
 
@@ -108,10 +108,6 @@ Configure `RESEND_API_KEY` and `AUTH_SESSION_SECRET` as Cloudflare Pages product
 
 For local previews, copy `.dev.vars.example` to `.dev.vars`, set the same secret names there, and keep `.dev.vars` uncommitted.
 
-If `/login.html` reports `Missing RESEND_API_KEY for OTP email delivery`, the code is deployed correctly but the Cloudflare Pages production runtime is missing the Resend secret. Add `RESEND_API_KEY` in **Workers & Pages → LuxeRoutes Pages project → Settings → Environment variables → Production** as a secret, redeploy, and test again. The OTP function also accepts `RESEND_API_TOKEN` or `RESEND_TOKEN` aliases, but use `RESEND_API_KEY` for consistency with the production checklist.
-
-For local previews, copy `.dev.vars.example` to `.dev.vars`, set the same secret names there, and keep `.dev.vars` uncommitted.
-
 Keep the custom LuxeRoutes entry page public:
 
 - `/login.html`
@@ -121,11 +117,13 @@ Do not put the public customer login, account, registration, or account API path
 
 - `/account.html`
 - `/account`
+- `/owner-panel.html`
+- `/manager-panel.html`
 - `/register.html`
 - `/register`
 - `/api/account`
 
-The public login page sends the Resend OTP code, verifies it through `/api/auth/otp?action=verify`, and then opens `/account.html` or `/register.html` with the signed account session cookie.
+The public login page sends the Resend OTP code, verifies it through `/api/auth/otp?action=verify`, and then opens the role home for that verified email: `/account.html` for customers, `/owner-panel.html` for approved owners, `/manager-panel.html` for approved managers, or `/admin/index.html` for admins. `/register.html` still uses the same signed account session cookie when a new user creates a profile.
 
 Keep `/api/auth/otp` public as part of the customer OTP flow. Protect only the admin application with Cloudflare Access so it does not compete with the branded login.
 
