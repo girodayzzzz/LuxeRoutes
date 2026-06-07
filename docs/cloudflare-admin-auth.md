@@ -70,8 +70,8 @@ Recommended production decision: **do not use Cloudflare Access for every login*
 | --- | --- | --- | --- |
 | Admin/staff | `/admin/index.html` | Cloudflare Access | Cloudflare Access app + D1 `admin` grant |
 | Customer | `/login.html` → `/account.html` | LuxeRoutes OTP email | One site-wide Resend API key |
-| Owner | `/login.html` → `/owner.html` after approval | LuxeRoutes OTP email | Same one site-wide Resend API key + admin approval |
-| Manager | `/login.html` → `/manager.html` after approval | LuxeRoutes OTP email | Same one site-wide Resend API key + admin approval |
+| Owner | `/login.html` → `/owner-panel.html` after approval | LuxeRoutes OTP email | Same one site-wide Resend API key + admin approval |
+| Manager | `/login.html` → `/manager-panel.html` after approval | LuxeRoutes OTP email | Same one site-wide Resend API key + admin approval |
 
 Customers, owners, and managers do not need Resend accounts or Resend profiles. Create one Resend account/API key for LuxeRoutes only; the Pages Function uses that single key to send OTP codes from the verified sender configured as `OTP_EMAIL_FROM` (default: `LuxeRoutes <login@luxeroutes.eu>`).
 
@@ -117,13 +117,13 @@ Do not put the public customer login, account, registration, or account API path
 
 - `/account.html`
 - `/account`
-- `/owner.html`
-- `/manager.html`
+- `/owner-panel.html`
+- `/manager-panel.html`
 - `/register.html`
 - `/register`
 - `/api/account`
 
-The public login page sends the Resend OTP code, verifies it through `/api/auth/otp?action=verify`, and then opens the role home for that verified email: `/account.html` for customers, `/owner.html` for approved owners, `/manager.html` for approved managers, or `/admin/index.html` for admins. `/register.html` still uses the same signed account session cookie when a new user creates a profile.
+The public login page sends the Resend OTP code, verifies it through `/api/auth/otp?action=verify`, and then opens the role home for that verified email: `/account.html` for customers, `/owner-panel.html` for approved owners, `/manager-panel.html` for approved managers, or `/admin/index.html` for admins. `/register.html` still uses the same signed account session cookie when a new user creates a profile.
 
 Keep `/api/auth/otp` public as part of the customer OTP flow. Protect only the admin application with Cloudflare Access so it does not compete with the branded login.
 

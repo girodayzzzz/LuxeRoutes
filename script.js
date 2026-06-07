@@ -34,8 +34,8 @@ const getPathPrefix = () => (window.location.pathname.includes('/admin/') ? '../
 const accountRoles = ['customer', 'owner', 'manager', 'admin', 'partner'];
 const accountRoleHomePaths = {
   customer: 'account.html',
-  owner: 'owner.html',
-  manager: 'manager.html',
+  owner: 'owner-panel.html',
+  manager: 'manager-panel.html',
   admin: 'admin/index.html',
   partner: 'account.html',
 };

@@ -8,8 +8,8 @@ const adminPanelSource = readFileSync('admin-panel.js', 'utf8');
 
 const accountSource = readFileSync('account.js', 'utf8');
 const loginSource = readFileSync('login.html', 'utf8');
-const ownerPanelSource = readFileSync('owner.html', 'utf8');
-const managerPanelSource = readFileSync('manager.html', 'utf8');
+const ownerPanelSource = readFileSync('owner-panel.html', 'utf8');
+const managerPanelSource = readFileSync('manager-panel.html', 'utf8');
 const siteScriptSource = readFileSync('script.js', 'utf8');
 assert.match(loginSource, /data-login-otp-form/, 'Public login should render the branded email one-time-code form.');
 assert.match(loginSource, /name="otp"/, 'Public login should include the one-time-code input.');
@@ -42,7 +42,7 @@ assert.doesNotMatch(
 );
 assert.match(
   accountSource,
-  /owner: 'owner\.html',[\s\S]*manager: 'manager\.html'/,
+  /owner: 'owner-panel\.html',[\s\S]*manager: 'manager-panel\.html'/,
   'Account routing should send approved owners and managers to separate role panels.',
 );
 assert.match(

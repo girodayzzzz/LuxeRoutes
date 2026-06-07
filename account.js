@@ -36,8 +36,8 @@ const accountSessionTtlMs = 4 * 60 * 60 * 1000;
 const accountDashboardRoles = ['customer', 'owner', 'manager', 'admin', 'partner'];
 const accountRoleHomePaths = {
   customer: 'account.html',
-  owner: 'owner.html',
-  manager: 'manager.html',
+  owner: 'owner-panel.html',
+  manager: 'manager-panel.html',
   admin: 'admin/index.html',
   partner: 'account.html',
 };
