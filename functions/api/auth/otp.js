@@ -17,8 +17,8 @@ const hashOtp = async (otp) => {
 
 const minutesFromNow = (minutes) => new Date(Date.now() + (minutes * 60 * 1000)).toISOString();
 
-const ensureOtpSchema = (db) => db.exec(`
-  CREATE TABLE IF NOT EXISTS login_otps (
+const otpSchemaStatements = [
+  `CREATE TABLE IF NOT EXISTS login_otps (
     id TEXT PRIMARY KEY,
     email TEXT NOT NULL,
     otp_hash TEXT NOT NULL,
@@ -27,10 +27,16 @@ const ensureOtpSchema = (db) => db.exec(`
     expires_at TEXT NOT NULL,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
-  );
-  CREATE INDEX IF NOT EXISTS idx_login_otps_email_status ON login_otps(email, status);
-  CREATE INDEX IF NOT EXISTS idx_login_otps_expires_at ON login_otps(expires_at);
-`);
+  )`,
+  'CREATE INDEX IF NOT EXISTS idx_login_otps_email_status ON login_otps(email, status)',
+  'CREATE INDEX IF NOT EXISTS idx_login_otps_expires_at ON login_otps(expires_at)',
+];
+
+const ensureOtpSchema = async (db) => {
+  for (const statement of otpSchemaStatements) {
+    await db.prepare(statement).run();
+  }
+};
 
 const getProfile = async (db, email) => db.prepare(`
   SELECT id, email, full_name AS name, default_role AS defaultRole, requested_role AS requestedRole,
@@ -117,6 +123,8 @@ const verifyOtp = async ({ request, env }) => {
   const email = normalizeEmail(body.email);
   const otp = String(body.otp || '').trim();
   if (!email || !/^\d{6}$/.test(otp)) return errorJson('Valid email and 6-digit OTP are required.', 400);
+
+  await ensureOtpSchema(db);
 
   const challenge = await db.prepare(`
     SELECT id, email, otp_hash AS otpHash, attempts, status, expires_at AS expiresAt
