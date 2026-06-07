@@ -241,6 +241,21 @@ export const requireAdmin = async (request, env) => {
   return { db, email, grant };
 };
 
+export const requireAccountRole = async (request, env, roles = []) => {
+  const db = requireDb(env);
+  const email = await getAccountSessionEmail(request, env);
+  if (!email) return { error: privateErrorJson('Verified account session is required.', 401) };
+
+  const grant = await getActiveGrant(db, email);
+  const role = grant?.role || 'customer';
+  const allowedRoles = Array.isArray(roles) ? roles : [roles];
+  if (!allowedRoles.includes(role) && role !== 'admin') {
+    return { error: privateErrorJson(`${allowedRoles.join(' or ')} access grant is required for this API route.`, 403) };
+  }
+
+  return { db, email, grant, role };
+};
+
 // Cloudflare Pages treats every JavaScript file under /functions as a route.
 // This module is primarily shared code, but exporting a handler keeps Pages
 // deployment validation happy if it maps /api/_utils during function bundling.

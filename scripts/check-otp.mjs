@@ -111,6 +111,17 @@ const fallbackResponse = await otpModule.onRequestPost({ request: makeRequest('f
 assert.equal(fallbackResponse.status, 200, 'OTP request should accept supported Resend API key aliases.');
 assert.equal(sentEmails.at(-1).body.from, 'LuxeRoutes <login@luxeroutes.eu>', 'OTP email should default to the production sender when no sender env is provided.');
 
+
+const missingSecretDb = new FakeDb();
+const missingSecretResponse = await otpModule.onRequestPost({ request: makeRequest('missing-secret@example.com'), env: { DB: missingSecretDb } });
+const missingSecretBody = await missingSecretResponse.json();
+assert.equal(missingSecretResponse.status, 500, 'OTP request should fail clearly when Resend credentials are missing.');
+assert.match(missingSecretBody.error, /Missing RESEND_API_KEY/, 'Missing Resend secret errors should name the required Cloudflare Pages variable.');
+assert.match(missingSecretBody.error, /Cloudflare Access protects only \/admin/, 'Missing Resend secret errors should explain the recommended Cloudflare Access scope.');
+assert.match(missingSecretBody.error, /not one profile per user/, 'Missing Resend secret errors should clarify that Resend is site-wide, not per user.');
+assert.match(missingSecretBody.error, /RESEND_API_TOKEN|RESEND_TOKEN/, 'Missing Resend secret errors should document supported aliases.');
+assert.equal(missingSecretDb.otps.length, 0, 'Missing delivery credentials should not leave unusable OTP challenges.');
+
 globalThis.fetch = async () => new Response('provider unavailable', { status: 503 });
 const failedResponse = await otpModule.onRequestPost({ request: makeRequest('failed@example.com'), env });
 assert.equal(failedResponse.status, 500, 'OTP request should report email provider failures.');

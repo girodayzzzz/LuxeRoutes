@@ -91,7 +91,7 @@ const renderInquiries = () => {
 };
 const renderOffers = () => {
   if (!offersTarget) return;
-  offersTarget.innerHTML = offers.map((offer) => `<tr><td><strong>${escapeHtml(offer.title)}</strong><br><small>${escapeHtml(offer.locationLabel)}</small></td><td>${escapeHtml(roleLabel(offer.stayType))}<br><small>${escapeHtml(offer.country)} · ${escapeHtml(offer.region)}</small></td><td>${escapeHtml(statusLabel(offer.status))}</td><td>${escapeHtml(formatDate(offer.updatedAt))}</td><td>${offer.status === 'published' ? `<button class="mini-action" type="button" data-offer-status="unpublished" data-id="${escapeHtml(offer.id)}">Unpublish</button>` : `<button class="mini-action" type="button" data-offer-status="published" data-id="${escapeHtml(offer.id)}">Publish</button>`}</td></tr>`).join('') || '<tr><td colspan="5" class="empty-state">No database-backed stay offers yet.</td></tr>';
+  offersTarget.innerHTML = offers.map((offer) => `<tr><td><strong>${escapeHtml(offer.title)}</strong><br><small>${escapeHtml(offer.locationLabel)}</small></td><td>${escapeHtml(roleLabel(offer.stayType))}<br><small>${escapeHtml(offer.country)} · ${escapeHtml(offer.region)}</small></td><td>${escapeHtml(statusLabel(offer.status))}<br><small>${escapeHtml(statusLabel(offer.partnerStatus || 'pending_review'))}</small></td><td><small>Owner: ${escapeHtml(offer.ownerEmail || '—')}</small><br><small>Manager: ${escapeHtml(offer.managerEmail || '—')}</small></td><td>${escapeHtml(formatDate(offer.updatedAt))}</td><td>${offer.status === 'published' ? `<button class="mini-action" type="button" data-offer-status="unpublished" data-id="${escapeHtml(offer.id)}">Unpublish</button>` : `<button class="mini-action" type="button" data-offer-status="published" data-id="${escapeHtml(offer.id)}">Publish</button>`}</td></tr>`).join('') || '<tr><td colspan="6" class="empty-state">No database-backed stay offers yet.</td></tr>';
 };
 const renderAll = () => { renderStats(); renderApplications(); renderMembers(); renderInquiries(); renderOffers(); };
 const loadAdminData = async () => {
@@ -117,7 +117,7 @@ const openPublishDialog = (inquiry) => {
   publishForm.reset();
   const title = payload.property_name || payload.offer_name || payload.company_name || '';
   const location = payload.location || '';
-  const values = { sourceInquiryId: inquiry.id, title, description: payload.property_summary || payload.message || '', imageUrl: payload.image_url || '', guestLabel: payload.guest_capacity || '', priceLabel: payload.price_from || '' };
+  const values = { sourceInquiryId: inquiry.id, title, description: payload.property_summary || payload.message || '', imageUrl: payload.image_url || '', guestLabel: payload.guest_capacity || '', priceLabel: payload.price_from || '', ownerEmail: inquiry.email || payload.email || '', ownerNotes: payload.property_summary || '', partnerStatus: 'published' };
   Object.entries(values).forEach(([name, value]) => { const field = publishForm.elements.namedItem(name); if (field) field.value = value; });
   const typeMap = { Villa: 'villa', Apartment: 'apartment', Chalet: 'chalet', 'Boutique hotel': 'boutique-hotel', Cabin: 'cabin', 'Wellness retreat': 'retreat' };
   if (typeMap[payload.property_type]) publishForm.elements.stayType.value = typeMap[payload.property_type];

@@ -92,7 +92,7 @@
           </div>
           <div class="table-wrap">
             <table class="admin-table">
-              <thead><tr><th>Stay</th><th>Placement</th><th>Status</th><th>Updated</th><th>Manage</th></tr></thead>
+              <thead><tr><th>Stay</th><th>Placement</th><th>Status</th><th>Assignments</th><th>Updated</th><th>Manage</th></tr></thead>
               <tbody data-admin-offers></tbody>
             </table>
           </div>
@@ -135,9 +135,14 @@
       <label>Stay type<select name="stayType" required><option value="villa">Private villa</option><option value="chalet">Chalet</option><option value="boutique-hotel">Boutique hotel</option><option value="apartment">Apartment</option><option value="cabin">Cabin</option><option value="retreat">Wellness retreat</option></select></label>
       <label>Guest label<input name="guestLabel" maxlength="120" placeholder="2–8 guests" /></label>
       <label>Price label<input name="priceLabel" maxlength="180" placeholder="From €450/night" /></label>
+      <label>Owner email<input name="ownerEmail" type="email" maxlength="320" placeholder="owner@example.com" /></label>
+      <label>Manager email<input name="managerEmail" type="email" maxlength="320" placeholder="manager@example.com" /></label>
+      <label>Partner status<select name="partnerStatus"><option value="published">Published</option><option value="approved">Approved</option><option value="pending_review">Pending review</option><option value="changes_requested">Changes requested</option><option value="draft">Draft</option><option value="archived">Archived</option></select></label>
       <label>Image URL<input name="imageUrl" type="url" maxlength="1500" placeholder="https://…" /></label>
       <fieldset><legend>Options</legend><div class="admin-option-grid"><label><input type="checkbox" name="options" value="pool" /> Pool</label><label><input type="checkbox" name="options" value="spa" /> Spa</label><label><input type="checkbox" name="options" value="sea-view" /> Sea view</label><label><input type="checkbox" name="options" value="family" /> Family ready</label><label><input type="checkbox" name="options" value="pet-friendly" /> Pet friendly</label><label><input type="checkbox" name="options" value="private-chef" /> Private chef</label></div></fieldset>
       <label class="full">Public description<textarea name="description" rows="5" required maxlength="1200"></textarea></label>
+      <label class="full">Owner notes<textarea name="ownerNotes" rows="3" maxlength="2000" placeholder="Private owner-facing notes."></textarea></label>
+      <label class="full">Manager notes<textarea name="managerNotes" rows="3" maxlength="2000" placeholder="Private manager-facing notes."></textarea></label>
       <button class="btn btn-primary full" type="submit">Approve and publish stay</button>
     </form>
   </dialog>
