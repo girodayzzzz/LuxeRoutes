@@ -71,19 +71,25 @@
         <div class="admin-toolbar">
           <div>
             <p class="eyebrow">Manager dashboard</p>
-            <h2>Assigned owners, properties, and inquiries</h2>
-            <p>This panel is shown when an approved manager clicks Account. Assignment APIs can be connected next.</p>
+            <h2>Assigned owner properties and customer requests</h2>
+            <p>Review owner properties assigned to your manager email and monitor customer stay requests connected to those places.</p>
           </div>
           <a class="btn btn-secondary" href="account.html">Account settings</a>
         </div>
 
         <div class="admin-grid two">
           <article class="admin-card" id="manager-assignments">
-            <div class="card-head"><p class="eyebrow">Assignments</p><span class="status-pill status-pending">Next build</span></div>
+            <div class="card-head"><p class="eyebrow">Assignments</p><span class="status-pill status-approved">Live</span></div>
             <h3>Your regional queue</h3>
-            <p class="admin-helper">Assigned properties for your verified manager email appear here after an admin connects them.</p>
+            <p class="admin-helper">Assigned owner properties for your verified manager email appear here after an admin connects them.</p>
             <div class="stack-list" data-manager-offers><p class="empty-state">Loading manager assignments…</p></div>
             <a class="btn btn-primary" href="managers.html">Review manager program</a>
+          </article>
+          <article class="admin-card" id="manager-requests">
+            <div class="card-head"><p class="eyebrow">Requests</p><span class="status-pill status-approved">Live</span></div>
+            <h3>Customer stay requests</h3>
+            <p class="admin-helper">Stay requests for your assigned owner properties appear here for follow-up.</p>
+            <div class="stack-list" data-manager-requests><p class="empty-state">Loading manager requests…</p></div>
           </article>
           <article class="admin-card" id="manager-profile">
             <div class="card-head"><p class="eyebrow">Profile</p><span class="status-pill status-approved">Manager</span></div>

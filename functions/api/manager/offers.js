@@ -3,6 +3,8 @@ import { privateErrorJson, privateJson, requireAccountRole } from '../_utils.js'
 const managerOfferSelect = `
   SELECT id, title, slug, country, region, stay_type AS stayType, options,
     location_label AS locationLabel, guest_label AS guestLabel, price_label AS priceLabel,
+    available_from AS availableFrom, available_to AS availableTo,
+    discount_label AS discountLabel, availability_notes AS availabilityNotes,
     description, image_url AS imageUrl, image_alt AS imageAlt, status, published_at AS publishedAt,
     owner_email AS ownerEmail, manager_email AS managerEmail, partner_status AS partnerStatus,
     owner_notes AS ownerNotes, manager_notes AS managerNotes, updated_at AS updatedAt

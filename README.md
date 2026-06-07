@@ -61,7 +61,7 @@ Use Cloudflare Access only for the admin surface:
 
 If `/login.html` itself is added to a Cloudflare Access app, visitors can see browser `ERR_TOO_MANY_REDIRECTS` errors before the branded login page loads.
 
-Admins can then grant `customer`, `owner`, `manager`, or `admin` access by verified email after D1 is created, the `DB` binding is connected, and the first admin row is seeded. Offers can also be assigned to `owner_email` and `manager_email` in D1 so `/owner-panel.html` and `/manager-panel.html` show only the signed-in role's connected listings. See [`docs/cloudflare-admin-auth.md`](docs/cloudflare-admin-auth.md) for the full Cloudflare + D1 plan.
+Admins can then grant `customer`, `owner`, `manager`, or `admin` access by verified email after D1 is created, the `DB` binding is connected, and the first admin row is seeded. Offers can also be assigned to `owner_email` and `manager_email` in D1 so `/owner-panel.html` and `/manager-panel.html` show only the signed-in role's connected listings, connected stay requests, and owner-managed availability/pricing fields. See [`docs/cloudflare-admin-auth.md`](docs/cloudflare-admin-auth.md) for the full Cloudflare + D1 plan.
 
 ## Content workflow
 
@@ -81,4 +81,4 @@ The static Markdown offers remain the curated baseline collection. New owner-sub
 4. Published offers are returned by `/api/offers` and automatically appear in the filtered collection on `offers.html`.
 5. Admins can unpublish a stay without deleting its record.
 
-Apply all D1 migrations, including `migrations/0005_stay_offers.sql`, before using this workflow. See `docs/cloudflare-admin-auth.md` for deployment and security details.
+Apply all D1 migrations, including `migrations/0006_offer_assignments.sql` and `migrations/0007_offer_availability_and_inquiry_assignments.sql`, before using this workflow. Migration `0007` adds owner-editable availability, pricing/discount notes, and inquiry assignment fields so customer requests can appear in owner and manager panels. See `docs/cloudflare-admin-auth.md` for deployment and security details.

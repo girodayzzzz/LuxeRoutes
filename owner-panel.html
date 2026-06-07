@@ -71,19 +71,25 @@
         <div class="admin-toolbar">
           <div>
             <p class="eyebrow">Owner dashboard</p>
-            <h2>Property submissions and listing readiness</h2>
-            <p>This panel is shown when an approved owner clicks Account. Detailed property ownership tools can be connected next.</p>
+            <h2>Properties, availability, pricing, and customer requests</h2>
+            <p>Manage the offers assigned to your owner email, update availability and pricing notes, and review customer stay requests for your places.</p>
           </div>
           <a class="btn btn-secondary" href="account.html">Account settings</a>
         </div>
 
         <div class="admin-grid two">
           <article class="admin-card" id="owner-properties">
-            <div class="card-head"><p class="eyebrow">Properties</p><span class="status-pill status-pending">Next build</span></div>
+            <div class="card-head"><p class="eyebrow">Properties</p><span class="status-pill status-approved">Live</span></div>
             <h3>Your connected offers</h3>
-            <p class="admin-helper">Assigned offers for your verified owner email appear here after an admin connects them.</p>
+            <p class="admin-helper">Assigned offers for your verified owner email appear here. Use each offer form to update dates, price labels, discount labels, and availability notes.</p>
             <div class="stack-list" data-owner-offers><p class="empty-state">Loading owner offers…</p></div>
             <a class="btn btn-primary" href="partners.html">Submit or update property details</a>
+          </article>
+          <article class="admin-card" id="owner-requests">
+            <div class="card-head"><p class="eyebrow">Requests</p><span class="status-pill status-approved">Live</span></div>
+            <h3>Customer stay requests</h3>
+            <p class="admin-helper">Requests submitted for your assigned properties appear here so you can follow demand and availability.</p>
+            <div class="stack-list" data-owner-requests><p class="empty-state">Loading owner requests…</p></div>
           </article>
           <article class="admin-card" id="owner-profile">
             <div class="card-head"><p class="eyebrow">Profile</p><span class="status-pill status-approved">Owner</span></div>

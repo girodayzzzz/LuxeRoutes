@@ -131,13 +131,15 @@ After a visitor enters the Resend OTP code, `/api/auth/otp?action=verify` sets a
 
 ## Phase 2b — Offer ownership and manager assignments
 
-Apply `migrations/0006_offer_assignments.sql` after the base offer migration. It adds `owner_email`, `manager_email`, `partner_status`, `owner_notes`, and `manager_notes` to `stay_offers`. Admins can set those fields when publishing a stay from the admin console.
+Apply `migrations/0006_offer_assignments.sql` after the base offer migration. It adds `owner_email`, `manager_email`, `partner_status`, `owner_notes`, and `manager_notes` to `stay_offers`. Then apply `migrations/0007_offer_availability_and_inquiry_assignments.sql`; it adds owner-editable `available_from`, `available_to`, `discount_label`, and `availability_notes` fields on `stay_offers`, plus inquiry assignment columns so stay requests can be routed to the assigned owner and manager. Admins set owner/manager assignment fields when publishing a stay from the admin console.
 
 The role panels use those assignments:
 
-- `/api/owner/offers` requires an active `owner` grant, then returns rows where `owner_email` matches the signed-in email. Admins can read all owner rows for troubleshooting.
+- `/api/owner/offers` requires an active `owner` grant, then returns rows where `owner_email` matches the signed-in email. Owners can patch only their assigned rows to update availability dates, price labels, discount labels, and availability notes. Admins can read all owner rows for troubleshooting.
 - `/api/manager/offers` requires an active `manager` grant, then returns rows where `manager_email` matches the signed-in email. Admins can read all manager rows for troubleshooting.
-- `/owner-panel.html` and `/manager-panel.html` render the assigned offers through the signed LuxeRoutes OTP session; keep both pages outside Cloudflare Access just like `/account.html`.
+- `/api/owner/inquiries` and `/api/manager/inquiries` require the matching active role and return customer stay requests where the inquiry assignment email matches the signed-in account.
+- Public stay requests submitted with an offer/accommodation interest are matched to `stay_offers.title` and copied into `inquiries.offer_id`, `inquiries.owner_email`, and `inquiries.manager_email` for the role panels.
+- `/owner-panel.html` and `/manager-panel.html` render assigned offers and customer requests through the signed LuxeRoutes OTP session; keep both pages outside Cloudflare Access just like `/account.html`.
 
 ## Phase 3 — Admin panel gate
 
@@ -306,7 +308,7 @@ All admin API responses are marked `Cache-Control: no-store`, and every admin da
 5. `/offers.html` loads `/api/offers`, adds published D1 offers to the stay finder, and applies the same country, region, type, option, and search filters as static curated offers.
 6. **Unpublish** removes the offer from the public API response without deleting its admin record.
 
-Apply `migrations/0005_stay_offers.sql` before using the workflow in production. Admin publishing will fail safely until that migration exists.
+Apply `migrations/0005_stay_offers.sql`, `migrations/0006_offer_assignments.sql`, and `migrations/0007_offer_availability_and_inquiry_assignments.sql` before using the workflow in production. Admin publishing or role-panel request routing will fail safely until those migrations exist.
 
 ## OTP table maintenance
 

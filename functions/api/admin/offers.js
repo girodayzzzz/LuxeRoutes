@@ -28,7 +28,8 @@ const normalizeOptions = (value) => {
 const offerSelect = `
   SELECT id, source_inquiry_id AS sourceInquiryId, title, slug, country, region,
     stay_type AS stayType, options, location_label AS locationLabel, guest_label AS guestLabel,
-    price_label AS priceLabel, description, image_url AS imageUrl, image_alt AS imageAlt,
+    price_label AS priceLabel, available_from AS availableFrom, available_to AS availableTo,
+    discount_label AS discountLabel, availability_notes AS availabilityNotes, description, image_url AS imageUrl, image_alt AS imageAlt,
     status, published_at AS publishedAt, created_by_email AS createdByEmail,
     owner_email AS ownerEmail, manager_email AS managerEmail, partner_status AS partnerStatus,
     owner_notes AS ownerNotes, manager_notes AS managerNotes, created_at AS createdAt, updated_at AS updatedAt

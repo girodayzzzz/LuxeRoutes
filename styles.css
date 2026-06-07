@@ -2881,6 +2881,12 @@ body.home-page {
 
 .stack-item strong { display: block; color: var(--color-text); line-height: 1.25; }
 .stack-item span:not(.status-pill) { display: block; margin-top: .18rem; color: var(--color-muted); font-size: .88rem; }
+.stack-item-vertical { align-items: stretch; flex-direction: column; }
+.stack-item-vertical > .status-pill { align-self: flex-start; }
+.account-inline-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; margin-top: .35rem; }
+.account-inline-form label { display: grid; gap: .35rem; color: var(--color-muted-strong); font-size: .86rem; font-weight: 800; }
+.account-inline-form input, .account-inline-form textarea { width: 100%; border: 1px solid rgba(241, 215, 150, .18); border-radius: 14px; background: rgba(6, 8, 13, .7); color: var(--color-text); padding: .72rem .82rem; }
+.account-inline-form textarea, .account-inline-form button { grid-column: 1 / -1; }
 .access-request-list { margin-bottom: 1.2rem; }
 .access-request-actions { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: .45rem; }
 .empty-state { padding: 1rem; border: 1px dashed rgba(241, 215, 150, .24); border-radius: 20px; color: var(--color-muted-strong); }

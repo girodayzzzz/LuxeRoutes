@@ -4,8 +4,9 @@ const INQUIRY_STATUSES = ['new', 'in_progress', 'waiting', 'resolved', 'closed']
 
 const inquirySelect = `
   SELECT id, inquiry_type AS inquiryType, name, email, phone, source_page AS sourcePage,
-    submitted_from AS submittedFrom, payload_json AS payloadJson, status,
-    created_at AS createdAt, updated_at AS updatedAt
+    submitted_from AS submittedFrom, payload_json AS payloadJson,
+    offer_id AS offerId, offer_title AS offerTitle, owner_email AS ownerEmail, manager_email AS managerEmail,
+    status, created_at AS createdAt, updated_at AS updatedAt
   FROM inquiries
 `;
 

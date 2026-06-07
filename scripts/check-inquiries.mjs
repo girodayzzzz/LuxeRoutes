@@ -12,15 +12,24 @@ const inquiriesModule = await import(pathToFileURL(join(tempRoot, 'functions/api
 class FakeStatement {
   constructor(db, sql) { this.db = db; this.sql = sql; this.params = []; }
   bind(...params) { this.params = params; return this; }
+  first() {
+    if (this.sql.includes('FROM stay_offers')) {
+      return this.db.offers.find((offer) => offer.title.toLowerCase() === String(this.params[0] || '').trim().toLowerCase()) || null;
+    }
+    throw new Error(`Unhandled first SQL: ${this.sql}`);
+  }
   run() {
     if (!this.sql.includes('INSERT INTO inquiries')) throw new Error(`Unhandled SQL: ${this.sql}`);
-    const [id, inquiryType, name, email, phone, sourcePage, submittedFrom, payloadJson, createdAt, updatedAt] = this.params;
-    this.db.inquiries.push({ id, inquiryType, name, email, phone, sourcePage, submittedFrom, payloadJson, status: 'new', createdAt, updatedAt });
+    const [id, inquiryType, name, email, phone, sourcePage, submittedFrom, payloadJson, offerId, offerTitle, ownerEmail, managerEmail, createdAt, updatedAt] = this.params;
+    this.db.inquiries.push({ id, inquiryType, name, email, phone, sourcePage, submittedFrom, payloadJson, offerId, offerTitle, ownerEmail, managerEmail, status: 'new', createdAt, updatedAt });
     return { success: true };
   }
 }
 class FakeDb {
-  constructor() { this.inquiries = []; }
+  constructor() {
+    this.inquiries = [];
+    this.offers = [{ id: 'offer-1', title: 'Lake View Villa Bled', ownerEmail: 'owner@example.com', managerEmail: 'manager@example.com' }];
+  }
   prepare(sql) { return new FakeStatement(this, sql); }
 }
 
@@ -32,9 +41,12 @@ const request = (body) => new Request('https://luxeroutes.test/api/inquiries', {
 const db = new FakeDb();
 const env = { DB: db };
 
-const validResponse = await inquiriesModule.onRequestPost({ request: request({ inquiry_type: 'Trip request', submitted_from: 'https://luxeroutes.test/plan-trip.html', name: 'Traveler', email: 'TRAVELER@example.com' }), env });
+const validResponse = await inquiriesModule.onRequestPost({ request: request({ inquiry_type: 'Trip request', submitted_from: 'https://luxeroutes.test/plan-trip.html', name: 'Traveler', email: 'TRAVELER@example.com', accommodation_interest: 'Lake View Villa Bled' }), env });
 assert.equal(validResponse.status, 201, 'Valid public inquiries should be saved.');
 assert.equal(db.inquiries[0].email, 'traveler@example.com', 'Inquiry emails should be normalized.');
+assert.equal(db.inquiries[0].offerId, 'offer-1', 'Specific stay requests should connect to the matching offer.');
+assert.equal(db.inquiries[0].ownerEmail, 'owner@example.com', 'Specific stay requests should inherit owner assignment.');
+assert.equal(db.inquiries[0].managerEmail, 'manager@example.com', 'Specific stay requests should inherit manager assignment.');
 
 const oversizedResponse = await inquiriesModule.onRequestPost({ request: request({ inquiry_type: 'Trip request', submitted_from: 'https://luxeroutes.test/plan-trip.html', email: 'traveler@example.com', notes: 'x'.repeat(26000) }), env });
 assert.equal(oversizedResponse.status, 413, 'Oversized public inquiries should be rejected before D1 storage.');
