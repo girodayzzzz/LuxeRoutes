@@ -61,7 +61,7 @@ Use Cloudflare Access only for the admin surface:
 
 If `/login.html` itself is added to a Cloudflare Access app, visitors can see browser `ERR_TOO_MANY_REDIRECTS` errors before the branded login page loads.
 
-Admins can then grant `customer`, `owner`, `manager`, or `admin` access by verified email after D1 is created, the `DB` binding is connected, and the first admin row is seeded. See [`docs/cloudflare-admin-auth.md`](docs/cloudflare-admin-auth.md) for the full Cloudflare + D1 plan.
+Admins can then grant `customer`, `owner`, `manager`, or `admin` access by verified email after D1 is created, the `DB` binding is connected, and the first admin row is seeded. Offers can also be assigned to `owner_email` and `manager_email` in D1 so `/owner-panel.html` and `/manager-panel.html` show only the signed-in role's connected listings. See [`docs/cloudflare-admin-auth.md`](docs/cloudflare-admin-auth.md) for the full Cloudflare + D1 plan.
 
 ## Content workflow
 

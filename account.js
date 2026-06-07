@@ -13,6 +13,8 @@ const loginBoxHead = document.querySelector('.login-box-head');
 const loginSecurityList = document.querySelector('.login-security-list');
 const accountSwitchLink = document.querySelector('.account-switch-link');
 const accountLogoutButtons = document.querySelectorAll('[data-account-logout]');
+const ownerOffersTarget = document.querySelector('[data-owner-offers]');
+const managerOffersTarget = document.querySelector('[data-manager-offers]');
 const loginOtpForm = document.querySelector('[data-login-otp-form]');
 const loginEmailStep = document.querySelector('[data-login-email-step]');
 const loginCodeStep = document.querySelector('[data-login-code-step]');
@@ -353,6 +355,47 @@ const setLoginAccountState = (active = false) => {
   if (loginAccountState) loginAccountState.hidden = !active;
 };
 
+
+const offerStatusLabel = (offer = {}) => accountEscapeHtml(offer.partnerStatus || offer.status || 'pending_review').replaceAll('_', ' ');
+
+const renderRoleOffers = (target, offers = [], emptyMessage = 'No assigned offers yet.') => {
+  if (!target) return;
+  if (!offers.length) {
+    target.innerHTML = `<p class="empty-state">${accountEscapeHtml(emptyMessage)}</p>`;
+    return;
+  }
+
+  target.innerHTML = offers.map((offer) => `
+    <div class="stack-item">
+      <div>
+        <strong>${accountEscapeHtml(offer.title || 'Untitled offer')}</strong>
+        <span>${accountEscapeHtml(offer.locationLabel || [offer.country, offer.region].filter(Boolean).join(' · '))} · ${accountEscapeHtml(offerStatusLabel(offer))}</span>
+        ${offer.priceLabel ? `<span>${accountEscapeHtml(offer.priceLabel)}</span>` : ''}
+        ${offer.ownerNotes ? `<span>Owner note: ${accountEscapeHtml(offer.ownerNotes)}</span>` : ''}
+        ${offer.managerNotes ? `<span>Manager note: ${accountEscapeHtml(offer.managerNotes)}</span>` : ''}
+      </div>
+      <span class="status-pill ${offer.status === 'published' ? 'status-approved' : 'status-pending'}">${accountEscapeHtml(offer.status || 'draft')}</span>
+    </div>
+  `).join('');
+};
+
+const loadRolePanelOffers = async (role) => {
+  const endpoint = role === 'owner' ? '/api/owner/offers' : role === 'manager' ? '/api/manager/offers' : '';
+  const target = role === 'owner' ? ownerOffersTarget : role === 'manager' ? managerOffersTarget : null;
+  if (!endpoint || !target) return;
+
+  try {
+    const response = await fetch(endpoint, { headers: { Accept: 'application/json' }, credentials: 'same-origin' });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || 'Unable to load assigned offers.');
+    renderRoleOffers(target, Array.isArray(data.offers) ? data.offers : [], role === 'owner'
+      ? 'No offers are assigned to your owner email yet.'
+      : 'No offers are assigned to your manager email yet.');
+  } catch (error) {
+    renderRoleOffers(target, [], error.message || 'Unable to load assigned offers.');
+  }
+};
+
 const renderAccountProfile = (profile, grant = null) => {
   if (!accountProfile) return;
 
@@ -419,6 +462,7 @@ const setAccountStatus = ({ heading, status, email, role, approved }) => {
   updateAccountNav({ email, role, active: Boolean(email && approved) });
   updateAccountAccessCards(String(role || '').toLowerCase());
   updateAccountLogout(Boolean(email && approved));
+  if (email && approved) loadRolePanelOffers(getRequiredAccountRole() || normalizeAccountRole(role));
   if (isDashboardPage()) {
     if (email && approved) unlockDashboard();
     else lockDashboard();

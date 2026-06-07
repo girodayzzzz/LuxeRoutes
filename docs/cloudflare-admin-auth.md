@@ -129,6 +129,16 @@ Keep `/api/auth/otp` public as part of the customer OTP flow. Protect only the a
 
 After a visitor enters the Resend OTP code, `/api/auth/otp?action=verify` sets a signed `luxeroutes_account_session` cookie. `/api/account` accepts that signed cookie or an admin Access identity to load and save the visitor profile. A `customer` registration is active immediately. Owner and manager requests retain customer access while waiting for admin review.
 
+## Phase 2b — Offer ownership and manager assignments
+
+Apply `migrations/0006_offer_assignments.sql` after the base offer migration. It adds `owner_email`, `manager_email`, `partner_status`, `owner_notes`, and `manager_notes` to `stay_offers`. Admins can set those fields when publishing a stay from the admin console.
+
+The role panels use those assignments:
+
+- `/api/owner/offers` requires an active `owner` grant, then returns rows where `owner_email` matches the signed-in email. Admins can read all owner rows for troubleshooting.
+- `/api/manager/offers` requires an active `manager` grant, then returns rows where `manager_email` matches the signed-in email. Admins can read all manager rows for troubleshooting.
+- `/owner-panel.html` and `/manager-panel.html` render the assigned offers through the signed LuxeRoutes OTP session; keep both pages outside Cloudflare Access just like `/account.html`.
+
 ## Phase 3 — Admin panel gate
 
 Create a separate Cloudflare Zero Trust Access application for the operations panel.
