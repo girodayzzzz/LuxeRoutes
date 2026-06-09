@@ -7,6 +7,7 @@ const accountEmailInput = document.querySelector('[data-account-email-input]');
 const accountProfile = document.querySelector('[data-account-profile]');
 const accountLoginLink = document.querySelector('[data-account-login-link]');
 const loginAccountState = document.querySelector('[data-login-account-state]');
+const loginAccountLink = document.querySelector('[data-login-account-link]');
 const loginActions = document.querySelector('[data-login-actions]');
 const loginSessionStatus = document.querySelector('[data-login-session-status]');
 const loginBoxHead = document.querySelector('.login-box-head');
@@ -37,6 +38,8 @@ if (document.body.classList.contains('account-dashboard-page')) {
 const accountStorageKey = 'luxeroutes-account-profile-v1';
 const accountSessionKey = 'luxeroutes-account-session-v1';
 const accountSessionTtlMs = 4 * 60 * 60 * 1000;
+const rememberedAccountSessionTtlMs = 30 * 24 * 60 * 60 * 1000;
+const accountAuthFetchTimeoutMs = 8000;
 const accountDashboardRoles = ['customer', 'owner', 'manager', 'admin', 'partner'];
 const accountRoleHomePaths = {
   customer: 'account.html',
@@ -55,6 +58,20 @@ const accountEscapeHtml = (value) => String(value || '').replace(/[&<>"]/g, (cha
   '"': '&quot;',
 }[character]));
 
+const fetchAccountAuth = async (url, options = {}) => {
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), accountAuthFetchTimeoutMs);
+
+  try {
+    return await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+  } finally {
+    window.clearTimeout(timeout);
+  }
+};
+
 const isAccountLocalPreview = () => ['localhost', '127.0.0.1', ''].includes(window.location.hostname);
 
 const isSessionFresh = (session) => Boolean(session?.expiresAt && Date.now() < session.expiresAt);
@@ -64,6 +81,15 @@ const normalizeAccountRole = (role) => (accountDashboardRoles.includes(role) ? r
 const getRoleHomePath = (role) => accountRoleHomePaths[normalizeAccountRole(role)] || accountRoleHomePaths.customer;
 
 const getRequiredAccountRole = () => document.body.dataset.requiredAccountRole || '';
+
+const getDashboardWorkspaceHash = () => {
+  const requiredRole = getRequiredAccountRole();
+  return {
+    customer: '#account-workspace',
+    owner: '#owner-workspace',
+    manager: '#manager-workspace',
+  }[requiredRole] || '#account-workspace';
+};
 
 const isRoleAllowedOnPage = (role) => {
   const requiredRole = getRequiredAccountRole();
@@ -138,7 +164,7 @@ const saveAccountSession = ({ identity = accountIdentity, profile = null, grant 
     role: normalizeAccountRole(role || grant?.role || profile?.defaultRole || profile?.requestedRole),
     remembered: shouldRemember,
     savedAt: Date.now(),
-    expiresAt: Date.now() + accountSessionTtlMs,
+    expiresAt: Date.now() + (shouldRemember ? rememberedAccountSessionTtlMs : accountSessionTtlMs),
   });
 
   sessionStorage.setItem(accountSessionKey, serializedSession);
@@ -160,7 +186,7 @@ const accountStatusClass = (status) => {
 
 const getAccessIdentity = async () => {
   try {
-    const response = await fetch('/.cloudflare/access/get-identity', {
+    const response = await fetchAccountAuth('/.cloudflare/access/get-identity', {
       headers: { Accept: 'application/json' },
       credentials: 'same-origin',
       redirect: 'manual',
@@ -191,7 +217,7 @@ const saveAccountProfile = (profile) => {
 
 const loadRemoteAccountProfile = async () => {
   try {
-    const response = await fetch('/api/account', {
+    const response = await fetchAccountAuth('/api/account', {
       headers: { Accept: 'application/json' },
       credentials: 'same-origin',
     });
@@ -207,7 +233,7 @@ const loadRemoteAccountProfile = async () => {
 };
 
 const saveRemoteAccountProfile = async (profile) => {
-  const response = await fetch('/api/account', {
+  const response = await fetchAccountAuth('/api/account', {
     method: 'POST',
     headers: {
       Accept: 'application/json',
@@ -267,12 +293,12 @@ const requestLoginOtp = async (email) => {
   return data;
 };
 
-const verifyLoginOtp = async (email, otp) => {
+const verifyLoginOtp = async (email, otp, remember = false) => {
   const response = await fetch('/api/auth/otp?action=verify', {
     method: 'POST',
     headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
     credentials: 'same-origin',
-    body: JSON.stringify({ email, otp }),
+    body: JSON.stringify({ email, otp, remember }),
   });
   const data = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(data.error || 'Unable to verify the login code right now.');
@@ -292,15 +318,21 @@ const logoutRemoteAccountSession = async () => {
 };
 
 const getLoginRedirectTarget = (account = {}) => {
+  const roleHomePath = getRoleHomePath(getAccountRole(account));
   const redirect = new URLSearchParams(window.location.search).get('redirect');
-  if (!redirect) return getRoleHomePath(getAccountRole(account));
+  if (!redirect) return roleHomePath;
 
   try {
     const url = new URL(redirect, window.location.origin);
-    if (url.origin !== window.location.origin || isLoginRedirectTarget(url.pathname)) return 'account.html';
+    if (url.origin !== window.location.origin || isLoginRedirectTarget(url.pathname)) return roleHomePath;
+
+    const redirectPath = url.pathname.replace(/^\//, '') || 'account.html';
+    const roleHomePathname = new URL(roleHomePath, window.location.origin).pathname.replace(/^\//, '');
+    if (redirectPath === 'account.html' && roleHomePathname !== 'account.html') return roleHomePath;
+
     return `${url.pathname}${url.search}${url.hash}`;
   } catch (error) {
-    return 'account.html';
+    return roleHomePath;
   }
 };
 
@@ -562,13 +594,15 @@ const setAccountStatus = ({ heading, status, email, role, approved }) => {
     else lockDashboard();
   }
 
+  if (loginAccountLink) loginAccountLink.href = accountHref;
+
   if (accountLoginLink) {
     if (isRegisterPage()) {
       accountLoginLink.textContent = 'Continue Registration';
       accountLoginLink.href = '#account-workspace';
     } else if (email && approved) {
       accountLoginLink.textContent = isDashboardPage() ? 'Refresh Account' : 'Open Account';
-      accountLoginLink.href = isDashboardPage() ? '#account-workspace' : accountHref;
+      accountLoginLink.href = isDashboardPage() ? getDashboardWorkspaceHash() : accountHref;
     } else {
       accountLoginLink.textContent = 'Login with Email';
       accountLoginLink.href = 'login.html';
@@ -778,7 +812,8 @@ loginOtpForm?.addEventListener('submit', async (event) => {
     }
 
     setLoginOtpMessage('Verifying your code…');
-    const account = await verifyLoginOtp(email, otp);
+    const remember = Boolean(loginRememberInput?.checked);
+    const account = await verifyLoginOtp(email, otp, remember);
     const identity = account.identity || { email };
     const profile = account.profile || null;
     accountIdentity = identity;
