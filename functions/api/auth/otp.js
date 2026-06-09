@@ -281,17 +281,10 @@ const verifyOtp = async ({ request, env }) => {
     getActiveGrant(db, email),
   ]);
 
-  const sessionCookie = await createAccountSessionCookie(env, email, { remember });
-  const role = grant?.role || profile?.defaultRole || 'customer';
-  const redirect = {
-    customer: '/account.html',
-    owner: '/owner-panel.html',
-    manager: '/manager-panel.html',
-    admin: '/admin/index.html',
-  }[role] || '/account.html';
+  const sessionCookie = await createAccountSessionCookie(env, email);
 
   if (!wantsJsonResponse(request)) {
-    return redirectResponse(redirect, sessionCookie ? { headers: { 'Set-Cookie': sessionCookie } } : {});
+    return redirectResponse('/account.html', sessionCookie ? { headers: { 'Set-Cookie': sessionCookie } } : {});
   }
 
   return json({
@@ -299,8 +292,7 @@ const verifyOtp = async ({ request, env }) => {
     identity: { email },
     profile,
     grant,
-    role,
-    redirect,
+    role: grant?.role || profile?.defaultRole || 'customer',
   }, sessionCookie ? { headers: { 'Set-Cookie': sessionCookie } } : {});
 };
 

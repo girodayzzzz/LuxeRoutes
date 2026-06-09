@@ -159,8 +159,6 @@ assert.equal(sentEmails[0].body.from, 'LuxeRoutes <login@example.com>', 'OTP ema
 assert.equal(sentEmails[0].body.to, 'traveler@example.com', 'OTP email should be addressed to the login email.');
 assert.match(sentEmails[0].body.text, /\b\d{6}\b/, 'OTP email should contain a 6-digit login code.');
 
-
-
 const loginCode = sentEmails[0].body.text.match(/\b\d{6}\b/)[0];
 const verifyResponse = await otpModule.onRequestPost({
   request: new Request('https://luxeroutes.test/api/auth/otp?action=verify', {
@@ -175,10 +173,7 @@ assert.equal(verifyResponse.status, 200, 'OTP verification should accept the lat
 assert.equal(verifyPayload.ok, true, 'OTP verification should return an ok JSON response.');
 assert.equal(verifyPayload.identity.email, 'traveler@example.com', 'OTP verification should identify the verified account email.');
 assert.equal(verifyPayload.role, 'customer', 'OTP verification should default unprofiled users to customer access.');
-assert.equal(verifyPayload.redirect, '/account.html', 'OTP verification should return a concrete account redirect target.');
-const defaultSessionCookie = verifyResponse.headers.get('Set-Cookie') || '';
-assert.match(defaultSessionCookie, /luxeroutes_account_session=/, 'OTP verification should set the HttpOnly account session cookie.');
-assert.match(defaultSessionCookie, /Max-Age=14400/, 'OTP verification should use a 4-hour server session by default.');
+assert.match(verifyResponse.headers.get('Set-Cookie') || '', /luxeroutes_account_session=/, 'OTP verification should set the HttpOnly account session cookie.');
 assert.equal(db.otps[0].status, 'verified', 'OTP verification should mark the challenge verified.');
 
 const ownerDb = new FakeDb();
@@ -191,31 +186,14 @@ const ownerVerifyResponse = await otpModule.onRequestPost({
   request: new Request('https://luxeroutes.test/api/auth/otp?action=verify', {
     method: 'POST',
     headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email: 'owner@example.com', otp: ownerLoginCode, remember: true }),
+    body: JSON.stringify({ email: 'owner@example.com', otp: ownerLoginCode }),
   }),
   env: ownerEnv,
 });
 const ownerVerifyPayload = await ownerVerifyResponse.json();
-assert.equal(ownerVerifyPayload.role, 'owner', 'OTP verification should preserve owner grants.');
-assert.equal(ownerVerifyPayload.redirect, '/owner-panel.html', 'Owner logins should return the owner dashboard redirect.');
-assert.match(ownerVerifyResponse.headers.get('Set-Cookie') || '', /Max-Age=2592000/, 'Remembered OTP logins should set a 30-day server session cookie.');
+assert.equal(ownerVerifyPayload.role, 'owner', 'OTP verification should preserve owner grants for role-aware account routing.');
+assert.match(ownerVerifyResponse.headers.get('Set-Cookie') || '', /luxeroutes_account_session=/, 'Owner OTP verification should set the account session cookie.');
 
-const managerDb = new FakeDb();
-managerDb.grants.push({ id: 'grant-manager', email: 'manager@example.com', role: 'manager', status: 'active' });
-const managerEnv = { DB: managerDb, RESEND_API_KEY: 'resend-manager-key' };
-const managerOtpResponse = await otpModule.onRequestPost({ request: makeRequest('manager@example.com'), env: managerEnv });
-assert.equal(managerOtpResponse.status, 200, 'Manager OTP request should send a login code.');
-const managerLoginCode = sentEmails.at(-1).body.text.match(/\b\d{6}\b/)[0];
-const managerVerifyResponse = await otpModule.onRequestPost({
-  request: new Request('https://luxeroutes.test/api/auth/otp?action=verify', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email: 'manager@example.com', otp: managerLoginCode }),
-  }),
-  env: managerEnv,
-});
-assert.equal(managerVerifyResponse.status, 303, 'Non-JavaScript manager OTP verification should redirect after login.');
-assert.equal(managerVerifyResponse.headers.get('Location'), '/manager-panel.html', 'Manager form fallback should redirect to the manager dashboard.');
 
 const fallbackDb = new FakeDb();
 const fallbackEnv = { DB: fallbackDb, RESEND_API_TOKEN: 'resend-alias-key' };
