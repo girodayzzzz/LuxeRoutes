@@ -91,7 +91,7 @@
             </div>
           </div>
 
-          <form class="auth-form login-otp-form" data-login-otp-form data-login-actions>
+          <form class="auth-form login-otp-form" action="/api/auth/otp" method="post" data-login-otp-form data-login-actions>
             <div class="login-step" data-login-email-step>
               <label>Email
                 <input name="email" type="email" placeholder="you@example.com" autocomplete="email" required data-login-email-input>
@@ -113,6 +113,12 @@
             </div>
             <p class="login-access-note otp-helper" data-login-otp-message>Enter your email and we will send a fresh 6-digit login code. LuxeRoutes never stores a password for this sign-in.</p>
           </form>
+
+          <div class="auth-status-card admin-access-card" aria-label="Admin access">
+            <h3>Admin access</h3>
+            <p>Admins do not use the public Resend code form. Open the protected admin console and Cloudflare Access will send the admin verification check.</p>
+            <a class="btn btn-secondary" href="admin/index.html" data-admin-access-link>Continue with Cloudflare Access</a>
+          </div>
 
           <ul class="login-security-list" aria-label="Security notes">
             <li>LuxeRoutes sends and verifies a short-lived one-time code.</li>

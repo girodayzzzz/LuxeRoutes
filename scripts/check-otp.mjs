@@ -22,7 +22,7 @@ class FakeStatement {
   }
 
   run() {
-    if (this.sql.includes('CREATE TABLE IF NOT EXISTS login_otps') || this.sql.includes('CREATE INDEX IF NOT EXISTS')) {
+    if (/^\s*(CREATE|ALTER)\b/i.test(this.sql)) {
       return { success: true };
     }
 
@@ -52,11 +52,45 @@ class FakeStatement {
 
     throw new Error(`Unhandled run SQL: ${this.sql}`);
   }
+
+  first() {
+    const [email] = this.params;
+
+    if (this.sql.includes('FROM access_grants')) {
+      return this.db.grants.find((grant) => grant.email.trim().toLowerCase() === email && grant.status === 'active') || null;
+    }
+
+    throw new Error(`Unhandled first SQL: ${this.sql}`);
+  }
+
+  all() {
+    if (this.sql.includes('PRAGMA table_info(profiles)')) {
+      return {
+        results: [
+          { name: 'id' },
+          { name: 'email' },
+          { name: 'full_name' },
+          { name: 'default_role' },
+          { name: 'requested_role' },
+          { name: 'notes' },
+          { name: 'status' },
+          { name: 'company_name' },
+          { name: 'company_website' },
+          { name: 'business_context' },
+          { name: 'created_at' },
+          { name: 'updated_at' },
+        ],
+      };
+    }
+
+    throw new Error(`Unhandled all SQL: ${this.sql}`);
+  }
 }
 
 class FakeDb {
   constructor() {
     this.otps = [];
+    this.grants = [];
     this.schemaExecutions = [];
   }
 
@@ -110,6 +144,28 @@ globalThis.fetch = async (url, init) => {
 const fallbackResponse = await otpModule.onRequestPost({ request: makeRequest('fallback@example.com'), env: fallbackEnv });
 assert.equal(fallbackResponse.status, 200, 'OTP request should accept supported Resend API key aliases.');
 assert.equal(sentEmails.at(-1).body.from, 'LuxeRoutes <login@luxeroutes.eu>', 'OTP email should default to the production sender when no sender env is provided.');
+
+
+const formDb = new FakeDb();
+const formResponse = await otpModule.onRequestPost({
+  request: new Request('https://luxeroutes.test/api/auth/otp', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ email: 'form@example.com' }),
+  }),
+  env: { DB: formDb, RESEND_API_KEY: 'resend-form-key' },
+});
+assert.equal(formResponse.status, 200, 'OTP request should accept standard form submissions as a no-JavaScript fallback.');
+assert.equal(sentEmails.at(-1).body.to, 'form@example.com', 'Form fallback should still send the login code through Resend.');
+
+const adminDb = new FakeDb();
+adminDb.grants.push({ id: 'grant-admin', email: 'admin@example.com', role: 'admin', status: 'active' });
+const adminResponse = await otpModule.onRequestPost({ request: makeRequest('admin@example.com'), env: { DB: adminDb, RESEND_API_KEY: 'resend-admin-key' } });
+const adminPayload = await adminResponse.json();
+assert.equal(adminResponse.status, 200, 'Admin email checks should return a Cloudflare Access redirect response.');
+assert.equal(adminPayload.adminAccess, true, 'Admin email checks should identify that Cloudflare Access handles verification.');
+assert.equal(adminPayload.redirect, '/admin/index.html', 'Admin email checks should send admins to the protected admin console.');
+assert.equal(sentEmails.some((email) => email.body.to === 'admin@example.com'), false, 'Admin email checks should not send a Resend OTP code.');
 
 
 const missingSecretDb = new FakeDb();

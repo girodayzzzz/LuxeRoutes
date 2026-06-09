@@ -248,6 +248,13 @@ const showLoginEmailStep = () => {
   loginEmailInput?.focus();
 };
 
+const setLoginOtpBusy = (busy = false) => {
+  loginOtpForm?.querySelectorAll('button').forEach((button) => {
+    button.disabled = busy;
+  });
+  if (loginOtpForm) loginOtpForm.setAttribute('aria-busy', busy ? 'true' : 'false');
+};
+
 const requestLoginOtp = async (email) => {
   const response = await fetch('/api/auth/otp', {
     method: 'POST',
@@ -751,9 +758,15 @@ loginOtpForm?.addEventListener('submit', async (event) => {
   }
 
   try {
+    setLoginOtpBusy(true);
     if (!isCodeStep) {
       setLoginOtpMessage('Sending your secure login code…');
-      await requestLoginOtp(email);
+      const response = await requestLoginOtp(email);
+      if (response?.adminAccess && response?.redirect) {
+        setLoginOtpMessage('Opening Cloudflare Access for admin verification…', 'success');
+        window.location.href = response.redirect;
+        return;
+      }
       showLoginCodeStep(email);
       setLoginOtpMessage('Check your email for the 6-digit LuxeRoutes code.', 'success');
       return;
@@ -774,6 +787,8 @@ loginOtpForm?.addEventListener('submit', async (event) => {
     window.location.href = getLoginRedirectTarget(account);
   } catch (error) {
     setLoginOtpMessage(error.message || 'Unable to complete login right now.', 'error');
+  } finally {
+    setLoginOtpBusy(false);
   }
 });
 
