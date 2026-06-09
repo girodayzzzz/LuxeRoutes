@@ -5,6 +5,85 @@ const OTP_LENGTH = 6;
 const RESEND_ENDPOINT = 'https://api.resend.com/emails';
 const MISSING_RESEND_API_KEY_MESSAGE = 'Missing RESEND_API_KEY for OTP email delivery. Recommended setup: Cloudflare Access protects only /admin, while customers, owners, and managers use the public /login.html OTP form. Create one Resend account/API key for the LuxeRoutes site (not one profile per user) and add it as RESEND_API_KEY in Cloudflare Pages production runtime secrets (Workers & Pages → LuxeRoutes → Settings → Environment variables). RESEND_API_TOKEN or RESEND_TOKEN are also accepted aliases.';
 
+const htmlEscape = (value) => String(value || '').replace(/[&<>"']/g, (character) => ({
+  '&': '&amp;',
+  '<': '&lt;',
+  '>': '&gt;',
+  '"': '&quot;',
+  "'": '&#39;',
+}[character]));
+
+const wantsJsonResponse = (request) => {
+  const accept = request.headers.get('Accept') || '';
+  const requestedWith = request.headers.get('X-Requested-With') || '';
+  return accept.includes('application/json') || requestedWith.toLowerCase() === 'xmlhttprequest';
+};
+
+const htmlResponse = (body, init = {}) => new Response(body, {
+  ...init,
+  headers: {
+    'Content-Type': 'text/html; charset=utf-8',
+    'Cache-Control': 'no-store',
+    ...init.headers,
+  },
+});
+
+const otpHtmlPage = ({ email = '', message = '', isError = false } = {}) => {
+  const safeEmail = htmlEscape(email);
+  const safeMessage = htmlEscape(message || 'We emailed your 6-digit LuxeRoutes login code. Enter it below to open your account.');
+  const statusClass = isError ? 'otp-status otp-status-error' : 'otp-status otp-status-success';
+
+  return `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Enter login code | LuxeRoutes</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body class="admin-page account-page login-page auth-page">
+  <main id="main-content">
+    <section class="auth-section auth-login-section">
+      <div class="container auth-shell">
+        <aside class="auth-card login-box" aria-label="LuxeRoutes code verification">
+          <div class="login-card-kicker"><span class="login-secure-dot" aria-hidden="true"></span> Secure client portal</div>
+          <div class="auth-card-head login-box-head">
+            <p class="eyebrow">Sign in</p>
+            <h1>Enter your login code</h1>
+            <p class="${statusClass}">${safeMessage}</p>
+          </div>
+          <form class="auth-form login-otp-form" action="/api/auth/otp?action=verify" method="post">
+            <div class="otp-summary">
+              <span>Code sent to</span>
+              <strong>${safeEmail}</strong>
+            </div>
+            <input name="email" type="hidden" value="${safeEmail}" />
+            <label>6-digit code
+              <input name="otp" type="text" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" placeholder="123456" required autofocus />
+            </label>
+            <button class="btn btn-primary" type="submit">Verify and open account</button>
+            <a class="btn btn-secondary" href="/login.html">Use a different email</a>
+          </form>
+        </aside>
+      </div>
+    </section>
+  </main>
+</body>
+</html>`;
+};
+
+const redirectResponse = (location, init = {}) => new Response(null, {
+  status: 303,
+  ...init,
+  headers: {
+    Location: location,
+    'Cache-Control': 'no-store',
+    ...init.headers,
+  },
+});
+
 const generateOtp = () => {
   const random = new Uint32Array(1);
   crypto.getRandomValues(random);
@@ -95,17 +174,24 @@ const parseRequestBody = async (request) => {
   return request.json().catch(() => ({}));
 };
 
+
+const otpErrorResponse = (request, message, status = 400, email = '') => (wantsJsonResponse(request)
+  ? errorJson(message, status)
+  : htmlResponse(otpHtmlPage({ email, message, isError: true }), { status }));
+
 const requestOtp = async ({ request, env }) => {
   const db = requireDb(env);
   const body = await parseRequestBody(request);
   const email = normalizeEmail(body.email);
-  if (!email || !email.includes('@')) return errorJson('Valid email is required.', 400);
+  if (!email || !email.includes('@')) return otpErrorResponse(request, 'Valid email is required.', 400, email);
 
   await ensureOtpSchema(db);
   await ensureAuthSchema(db);
 
   const grant = await getActiveGrant(db, email);
   if (grant?.role === 'admin') {
+    if (!wantsJsonResponse(request)) return redirectResponse('/admin/index.html');
+
     return json({
       ok: true,
       adminAccess: true,
@@ -142,6 +228,8 @@ const requestOtp = async ({ request, env }) => {
     throw error;
   }
 
+  if (!wantsJsonResponse(request)) return htmlResponse(otpHtmlPage({ email }));
+
   return json({ ok: true, email, expiresAt });
 };
 
@@ -156,7 +244,7 @@ const verifyOtp = async ({ request, env }) => {
   const body = await parseRequestBody(request);
   const email = normalizeEmail(body.email);
   const otp = String(body.otp || '').trim();
-  if (!email || !/^\d{6}$/.test(otp)) return errorJson('Valid email and 6-digit OTP are required.', 400);
+  if (!email || !/^\d{6}$/.test(otp)) return otpErrorResponse(request, 'Valid email and 6-digit OTP are required.', 400, email);
 
   await ensureOtpSchema(db);
   await ensureAuthSchema(db);
@@ -169,20 +257,20 @@ const verifyOtp = async ({ request, env }) => {
     LIMIT 1
   `).bind(email).first();
 
-  if (!challenge) return errorJson('OTP challenge was not found. Request a new code.', 404);
+  if (!challenge) return otpErrorResponse(request, 'OTP challenge was not found. Request a new code.', 404, email);
   if (new Date(challenge.expiresAt).getTime() < Date.now()) {
     await db.prepare("UPDATE login_otps SET status = 'expired', updated_at = ? WHERE id = ?").bind(nowIso(), challenge.id).run();
-    return errorJson('OTP code has expired. Request a new code.', 410);
+    return otpErrorResponse(request, 'OTP code has expired. Request a new code.', 410, email);
   }
   if (challenge.attempts >= 5) {
     await db.prepare("UPDATE login_otps SET status = 'locked', updated_at = ? WHERE id = ?").bind(nowIso(), challenge.id).run();
-    return errorJson('Too many OTP attempts. Request a new code.', 429);
+    return otpErrorResponse(request, 'Too many OTP attempts. Request a new code.', 429, email);
   }
 
   const otpHash = await hashOtp(otp);
   if (otpHash !== challenge.otpHash) {
     await db.prepare('UPDATE login_otps SET attempts = attempts + 1, updated_at = ? WHERE id = ?').bind(nowIso(), challenge.id).run();
-    return errorJson('OTP code is not correct.', 401);
+    return otpErrorResponse(request, 'OTP code is not correct.', 401, email);
   }
 
   await db.prepare("UPDATE login_otps SET status = 'verified', updated_at = ? WHERE id = ?").bind(nowIso(), challenge.id).run();
@@ -193,6 +281,10 @@ const verifyOtp = async ({ request, env }) => {
   ]);
 
   const sessionCookie = await createAccountSessionCookie(env, email);
+
+  if (!wantsJsonResponse(request)) {
+    return redirectResponse('/account.html', sessionCookie ? { headers: { 'Set-Cookie': sessionCookie } } : {});
+  }
 
   return json({
     ok: true,
@@ -210,6 +302,9 @@ export const onRequestPost = async (context) => {
     if (action === 'logout') return clearAccountSession();
     return await requestOtp(context);
   } catch (error) {
-    return errorJson(error.message || 'Unable to process OTP request.', 500);
+    const message = error.message || 'Unable to process OTP request.';
+    return wantsJsonResponse(context.request)
+      ? errorJson(message, 500)
+      : htmlResponse(otpHtmlPage({ message, isError: true }), { status: 500 });
   }
 };
