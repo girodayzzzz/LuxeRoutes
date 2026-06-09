@@ -38,6 +38,24 @@ assert.match(
   /owner: 'owner-panel\.html',[\s\S]*manager: 'manager-panel\.html'/,
   'Account routing should send approved owners and managers to separate role panels.',
 );
+assert.match(
+  accountSource,
+  /getLoginRedirectTarget = \(account = \{\}\)[\s\S]*account\.redirect \|\| getRoleHomePath\(role\)/,
+  'Successful OTP login should default to the server-returned signed-in role home when no explicit redirect is present.',
+);
+assert.match(
+  accountSource,
+  /if \(redirectRole === 'customer' && normalizedRole !== 'customer'\) return roleHome;/,
+  'Login redirects to the generic customer account page must be replaced with the signed-in owner/manager/admin role home.',
+);
+assert.match(
+  accountSource,
+  /const isProtectedAccountPage = \(\) => isDashboardPage\(\);/,
+  'Registration must stay public; only account dashboards should force a verified session redirect.',
+);
+const accountHtmlSource = readFileSync('account.html', 'utf8');
+assert.match(accountHtmlSource, /data-required-account-role="customer"/, 'Customer account page should declare its required customer role.');
+assert.match(accountSource, /return normalizedRole === requiredRole \|\| normalizedRole === 'admin';/, 'Role dashboards should route users to their exact role home while allowing admins to access every dashboard.');
 assert.match(ownerPanelSource, /data-required-account-role="owner"/, 'Owner panel should declare its required owner role.');
 assert.match(managerPanelSource, /data-required-account-role="manager"/, 'Manager panel should declare its required manager role.');
 assert.doesNotMatch(accountHtmlSource, /body\[data-account-locked="true"\] main/, 'Locked account pages should keep the access status visible instead of rendering a blank page.');
@@ -414,6 +432,11 @@ const registrationPayload = await registrationResponse.json();
 assert.equal(registrationPayload.profile.status, 'pending_admin_grant', 'Owner registration should wait for admin approval.');
 assert.equal(registrationPayload.role, 'customer', 'Owner registration should keep customer access until approval.');
 
+const sessionCookie = await utilsModule.createAccountSessionCookie({ AUTH_SESSION_SECRET: 'test-secret' }, 'OWNER@example.com');
+assert.match(sessionCookie, /luxeroutes_account_session=.*Max-Age=14400; HttpOnly; Secure; SameSite=Lax/, 'OTP login should create a secure four-hour account session cookie by default.');
+const rememberedSessionCookie = await utilsModule.createAccountSessionCookie({ AUTH_SESSION_SECRET: 'test-secret' }, 'OWNER@example.com', { remember: true });
+assert.match(rememberedSessionCookie, /Max-Age=2592000; HttpOnly; Secure; SameSite=Lax/, 'Remembered OTP login should create a 30-day account session cookie.');
+const sessionCookieHeader = sessionCookie.split(';')[0];
 const cookieEmail = await utilsModule.getAccountSessionEmail(new Request('https://luxeroutes.test/api/account', {
   headers: { Cookie: 'luxeroutes_account_session=legacy' },
 }), { AUTH_SESSION_SECRET: 'test-secret' });

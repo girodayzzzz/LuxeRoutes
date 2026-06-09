@@ -109,6 +109,9 @@ export const getAccessIdentityEmail = async (request, env = {}) => {
   return normalizeEmail(payload?.email);
 };
 
+const ACCOUNT_SESSION_COOKIE = 'luxeroutes_account_session';
+const ACCOUNT_SESSION_TTL_SECONDS = 4 * 60 * 60;
+const ACCOUNT_SESSION_REMEMBERED_TTL_SECONDS = 30 * 24 * 60 * 60;
 const textEncoder = new TextEncoder();
 
 const base64UrlEncode = (value) => btoa(value).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
@@ -141,9 +144,42 @@ export const parseCookies = (request) => Object.fromEntries(
     }),
 );
 
-export const getAccountSessionEmail = async (request, env) => getAccessIdentityEmail(request, env);
+export const createAccountSessionCookie = async (env, email, { remember = false } = {}) => {
+  const normalizedEmail = normalizeEmail(email);
+  const secret = getAccountSessionSecret(env);
+  if (!secret || !normalizedEmail) return null;
 
-const normalizeRole = (role) => (isValidRole(role) ? role : 'customer');
+  const maxAge = remember ? ACCOUNT_SESSION_REMEMBERED_TTL_SECONDS : ACCOUNT_SESSION_TTL_SECONDS;
+  const expiresAt = Date.now() + (maxAge * 1000);
+  const payload = base64UrlEncode(JSON.stringify({ email: normalizedEmail, expiresAt }));
+  const signature = await signAccountSessionPayload(payload, secret);
+  const token = `${payload}.${signature}`;
+
+  return `${ACCOUNT_SESSION_COOKIE}=${token}; Path=/; Max-Age=${maxAge}; HttpOnly; Secure; SameSite=Lax`;
+};
+
+export const getAccountSessionEmail = async (request, env) => {
+  const accessEmail = getIdentityEmail(request);
+  if (accessEmail) return accessEmail;
+
+  const secret = getAccountSessionSecret(env);
+  const token = parseCookies(request)[ACCOUNT_SESSION_COOKIE];
+  if (!secret || !token) return '';
+
+  const [payload, signature] = token.split('.');
+  if (!payload || !signature) return '';
+
+  const expectedSignature = await signAccountSessionPayload(payload, secret);
+  if (!timingSafeEqual(signature, expectedSignature)) return '';
+
+  try {
+    const session = JSON.parse(base64UrlDecode(payload));
+    if (!session?.expiresAt || Date.now() >= session.expiresAt) return '';
+    return normalizeEmail(session.email);
+  } catch (error) {
+    return '';
+  }
+};
 
 
 const authSchemaStatements = [

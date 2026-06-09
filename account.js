@@ -29,7 +29,8 @@ if (document.body.classList.contains('account-dashboard-page')) {
 const accountStorageKey = 'luxeroutes-account-profile-v1';
 const accountSessionKey = 'luxeroutes-account-session-v1';
 const accountSessionTtlMs = 4 * 60 * 60 * 1000;
-const accountDashboardRoles = ['customer', 'owner', 'manager', 'admin'];
+const accountRememberedSessionTtlMs = 30 * 24 * 60 * 60 * 1000;
+const accountDashboardRoles = ['customer', 'owner', 'manager', 'admin', 'partner'];
 const accountRoleHomePaths = {
   customer: 'account.html',
   owner: 'owner-panel.html',
@@ -106,6 +107,18 @@ const unlockDashboard = () => {
 const getCurrentAccountTarget = () => `${window.location.pathname}${window.location.search}${window.location.hash}`;
 
 
+const getDashboardRoleForPath = (path) => {
+  const normalizedPath = String(path || '').replace(/\/$/, '') || '/account.html';
+  const fileName = normalizedPath.split('/').filter(Boolean).pop() || 'account.html';
+  if (fileName === 'owner-panel.html') return 'owner';
+  if (fileName === 'manager-panel.html') return 'manager';
+  if (normalizedPath === '/admin' || normalizedPath === '/admin/index.html' || fileName === 'admin-panel.html') return 'admin';
+  if (fileName === 'account.html' || normalizedPath === '/account') return 'customer';
+  return '';
+};
+
+const normalizeRedirectPath = (path) => String(path || '').replace(/^\/+/, '') || 'account.html';
+
 const redirectToLogin = () => {
   if (!isProtectedAccountPage()) return;
   lockDashboard();
@@ -153,7 +166,7 @@ const saveAccountSession = ({ identity = accountIdentity, profile = null, grant 
     role: normalizeAccountRole(role || grant?.role || profile?.defaultRole || profile?.requestedRole),
     remembered: shouldRemember,
     savedAt: Date.now(),
-    expiresAt: Date.now() + (shouldRemember ? rememberedAccountSessionTtlMs : accountSessionTtlMs),
+    expiresAt: Date.now() + (shouldRemember ? accountRememberedSessionTtlMs : accountSessionTtlMs),
   });
 
   sessionStorage.setItem(accountSessionKey, serializedSession);
@@ -241,6 +254,100 @@ const saveRemoteAccountProfile = async (profile) => {
   return response.json();
 };
 
+
+const setLoginOtpMessage = (message = '', tone = 'pending') => {
+  if (!loginOtpMessage) return;
+  loginOtpMessage.textContent = message;
+  loginOtpMessage.classList.toggle('status-approved', tone === 'success');
+  loginOtpMessage.classList.toggle('status-warning', tone === 'error');
+  loginOtpMessage.classList.toggle('status-pending', tone !== 'success' && tone !== 'error');
+};
+
+const showLoginCodeStep = (email) => {
+  if (loginOtpForm) loginOtpForm.action = '/api/auth/otp?action=verify';
+  if (loginEmailStep) loginEmailStep.hidden = true;
+  if (loginCodeStep) loginCodeStep.hidden = false;
+  if (loginOtpEmail) loginOtpEmail.textContent = email;
+  if (loginCodeInput) loginCodeInput.required = true;
+  loginCodeInput?.focus();
+};
+
+const showLoginEmailStep = () => {
+  if (loginOtpForm) loginOtpForm.action = '/api/auth/otp';
+  if (loginEmailStep) loginEmailStep.hidden = false;
+  if (loginCodeStep) loginCodeStep.hidden = true;
+  if (loginCodeInput) {
+    loginCodeInput.required = false;
+    loginCodeInput.value = '';
+  }
+  loginEmailInput?.focus();
+};
+
+const setLoginOtpBusy = (busy = false) => {
+  loginOtpForm?.querySelectorAll('button').forEach((button) => {
+    button.disabled = busy;
+  });
+  if (loginOtpForm) loginOtpForm.setAttribute('aria-busy', busy ? 'true' : 'false');
+};
+
+const requestLoginOtp = async (email) => {
+  const response = await fetch('/api/auth/otp', {
+    method: 'POST',
+    headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+    credentials: 'same-origin',
+    body: JSON.stringify({ email }),
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data.error || 'Unable to send the login code right now.');
+  return data;
+};
+
+const verifyLoginOtp = async (email, otp, remember = false) => {
+  const response = await fetch('/api/auth/otp?action=verify', {
+    method: 'POST',
+    headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+    credentials: 'same-origin',
+    body: JSON.stringify({ email, otp, remember }),
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data.error || 'Unable to verify the login code right now.');
+  return data;
+};
+
+const logoutRemoteAccountSession = async () => {
+  try {
+    await fetch('/api/auth/otp?action=logout', {
+      method: 'POST',
+      headers: { Accept: 'application/json' },
+      credentials: 'same-origin',
+    });
+  } catch (error) {
+    // Local browser state is still cleared even if the remote cookie already expired.
+  }
+};
+
+const getLoginRedirectTarget = (account = {}) => {
+  const role = getAccountRole(account);
+  const roleHome = normalizeRedirectPath(account.redirect || getRoleHomePath(role));
+  const redirect = new URLSearchParams(window.location.search).get('redirect');
+  if (!redirect) return roleHome;
+
+  try {
+    const url = new URL(redirect, window.location.origin);
+    if (url.origin !== window.location.origin || isLoginRedirectTarget(url.pathname)) return roleHome;
+
+    const redirectRole = getDashboardRoleForPath(url.pathname);
+    if (redirectRole) {
+      const normalizedRole = normalizeAccountRole(role);
+      if (redirectRole === 'customer' && normalizedRole !== 'customer') return roleHome;
+      if (normalizedRole !== 'admin' && redirectRole !== normalizedRole) return roleHome;
+    }
+
+    return normalizeRedirectPath(`${url.pathname}${url.search}${url.hash}`);
+  } catch (error) {
+    return roleHome;
+  }
+};
 
 const getAccountRole = (sessionOrAccount = {}) => normalizeAccountRole(sessionOrAccount?.role
   || sessionOrAccount?.grant?.role
@@ -674,6 +781,51 @@ document.addEventListener('submit', async (event) => {
 });
 
 
+  if (!email || !email.includes('@')) {
+    setLoginOtpMessage('Enter a valid email address.', 'error');
+    return;
+  }
+
+  try {
+    setLoginOtpBusy(true);
+    if (!isCodeStep) {
+      setLoginOtpMessage('Sending your secure login code…');
+      const response = await requestLoginOtp(email);
+      if (response?.adminAccess && response?.redirect) {
+        setLoginOtpMessage('Opening Cloudflare Access for admin verification…', 'success');
+        window.location.href = response.redirect;
+        return;
+      }
+      showLoginCodeStep(email);
+      setLoginOtpMessage('Check your email for the 6-digit LuxeRoutes code.', 'success');
+      return;
+    }
+
+    if (!/^\d{6}$/.test(otp)) {
+      setLoginOtpMessage('Enter the 6-digit code from your email.', 'error');
+      return;
+    }
+
+    setLoginOtpMessage('Verifying your code…');
+    const remember = Boolean(loginRememberInput?.checked);
+    const account = await verifyLoginOtp(email, otp, remember);
+    const identity = account.identity || { email };
+    const profile = account.profile || null;
+    accountIdentity = identity;
+    try {
+      saveAccountSession({ identity, profile, grant: account.grant, role: account.role, remember });
+    } catch (storageError) {
+      // The server has already set the HttpOnly account cookie, so continue even
+      // when a browser blocks sessionStorage/localStorage for this page.
+    }
+    setLoginOtpMessage('Signed in successfully. Opening your account…', 'success');
+    window.location.assign(getLoginRedirectTarget(account));
+  } catch (error) {
+    setLoginOtpMessage(error.message || 'Unable to complete login right now.', 'error');
+  } finally {
+    setLoginOtpBusy(false);
+  }
+});
 
 accountLogoutButtons.forEach((button) => button.addEventListener('click', logoutAccount));
 
