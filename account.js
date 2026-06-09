@@ -245,15 +245,22 @@ const setLoginOtpMessage = (message = '', tone = 'pending') => {
 };
 
 const showLoginCodeStep = (email) => {
+  if (loginOtpForm) loginOtpForm.action = '/api/auth/otp?action=verify';
   if (loginEmailStep) loginEmailStep.hidden = true;
   if (loginCodeStep) loginCodeStep.hidden = false;
   if (loginOtpEmail) loginOtpEmail.textContent = email;
+  if (loginCodeInput) loginCodeInput.required = true;
   loginCodeInput?.focus();
 };
 
 const showLoginEmailStep = () => {
+  if (loginOtpForm) loginOtpForm.action = '/api/auth/otp';
   if (loginEmailStep) loginEmailStep.hidden = false;
   if (loginCodeStep) loginCodeStep.hidden = true;
+  if (loginCodeInput) {
+    loginCodeInput.required = false;
+    loginCodeInput.value = '';
+  }
   loginEmailInput?.focus();
 };
 
@@ -780,9 +787,14 @@ loginOtpForm?.addEventListener('submit', async (event) => {
     const identity = account.identity || { email };
     const profile = account.profile || null;
     accountIdentity = identity;
-    saveAccountSession({ identity, profile, grant: account.grant, role: account.role, remember: Boolean(loginRememberInput?.checked) });
+    try {
+      saveAccountSession({ identity, profile, grant: account.grant, role: account.role, remember: Boolean(loginRememberInput?.checked) });
+    } catch (storageError) {
+      // The server has already set the HttpOnly account cookie, so continue even
+      // when a browser blocks sessionStorage/localStorage for this page.
+    }
     setLoginOtpMessage('Signed in successfully. Opening your account…', 'success');
-    window.location.href = getLoginRedirectTarget(account);
+    window.location.assign(getLoginRedirectTarget(account));
   } catch (error) {
     setLoginOtpMessage(error.message || 'Unable to complete login right now.', 'error');
   } finally {

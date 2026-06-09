@@ -44,6 +44,20 @@ class FakeStatement {
       return { success: true };
     }
 
+    if (this.sql.includes("UPDATE login_otps SET status = 'verified'")) {
+      const [updatedAt, id] = this.params;
+      const otp = this.db.otps.find((entry) => entry.id === id);
+      if (otp) Object.assign(otp, { status: 'verified', updatedAt });
+      return { success: true };
+    }
+
+    if (this.sql.includes('UPDATE login_otps SET attempts = attempts + 1')) {
+      const [updatedAt, id] = this.params;
+      const otp = this.db.otps.find((entry) => entry.id === id);
+      if (otp) Object.assign(otp, { attempts: otp.attempts + 1, updatedAt });
+      return { success: true };
+    }
+
     if (this.sql.includes('DELETE FROM login_otps')) {
       const [id] = this.params;
       this.db.otps = this.db.otps.filter((otp) => otp.id !== id);
@@ -58,6 +72,16 @@ class FakeStatement {
 
     if (this.sql.includes('FROM access_grants')) {
       return this.db.grants.find((grant) => grant.email.trim().toLowerCase() === email && grant.status === 'active') || null;
+    }
+
+    if (this.sql.includes('FROM profiles')) {
+      return this.db.profiles.find((profile) => profile.email.trim().toLowerCase() === email) || null;
+    }
+
+    if (this.sql.includes('FROM login_otps')) {
+      return this.db.otps
+        .filter((otp) => otp.email === email && otp.status === 'pending')
+        .sort((left, right) => String(right.createdAt).localeCompare(String(left.createdAt)))[0] || null;
     }
 
     throw new Error(`Unhandled first SQL: ${this.sql}`);
@@ -91,6 +115,7 @@ class FakeDb {
   constructor() {
     this.otps = [];
     this.grants = [];
+    this.profiles = [];
     this.schemaExecutions = [];
   }
 
@@ -106,7 +131,7 @@ class FakeDb {
 
 const makeRequest = (email) => new Request('https://luxeroutes.test/api/auth/otp', {
   method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
+  headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
   body: JSON.stringify({ email }),
 });
 
@@ -134,6 +159,25 @@ assert.equal(sentEmails[0].body.from, 'LuxeRoutes <login@example.com>', 'OTP ema
 assert.equal(sentEmails[0].body.to, 'traveler@example.com', 'OTP email should be addressed to the login email.');
 assert.match(sentEmails[0].body.text, /\b\d{6}\b/, 'OTP email should contain a 6-digit login code.');
 
+
+
+const loginCode = sentEmails[0].body.text.match(/\b\d{6}\b/)[0];
+const verifyResponse = await otpModule.onRequestPost({
+  request: new Request('https://luxeroutes.test/api/auth/otp?action=verify', {
+    method: 'POST',
+    headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: 'traveler@example.com', otp: loginCode }),
+  }),
+  env,
+});
+const verifyPayload = await verifyResponse.json();
+assert.equal(verifyResponse.status, 200, 'OTP verification should accept the latest emailed code.');
+assert.equal(verifyPayload.ok, true, 'OTP verification should return an ok JSON response.');
+assert.equal(verifyPayload.identity.email, 'traveler@example.com', 'OTP verification should identify the verified account email.');
+assert.equal(verifyPayload.role, 'customer', 'OTP verification should default unprofiled users to customer access.');
+assert.equal(verifyPayload.redirect, '/account.html', 'OTP verification should return a concrete account redirect target.');
+assert.match(verifyResponse.headers.get('Set-Cookie') || '', /luxeroutes_account_session=/, 'OTP verification should set the HttpOnly account session cookie.');
+assert.equal(db.otps[0].status, 'verified', 'OTP verification should mark the challenge verified.');
 
 const fallbackDb = new FakeDb();
 const fallbackEnv = { DB: fallbackDb, RESEND_API_TOKEN: 'resend-alias-key' };
