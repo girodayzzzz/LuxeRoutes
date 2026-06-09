@@ -1,4 +1,4 @@
-import { createAccountSessionCookie, errorJson, getActiveGrant, json, makeId, normalizeEmail, nowIso, requireDb } from '../_utils.js';
+import { createAccountSessionCookie, ensureAuthSchema, errorJson, getActiveGrant, json, makeId, normalizeEmail, nowIso, requireDb } from '../_utils.js';
 
 const OTP_TTL_MINUTES = 10;
 const OTP_LENGTH = 6;
@@ -138,6 +138,7 @@ const verifyOtp = async ({ request, env }) => {
   if (!email || !/^\d{6}$/.test(otp)) return errorJson('Valid email and 6-digit OTP are required.', 400);
 
   await ensureOtpSchema(db);
+  await ensureAuthSchema(db);
 
   const challenge = await db.prepare(`
     SELECT id, email, otp_hash AS otpHash, attempts, status, expires_at AS expiresAt
