@@ -38,6 +38,7 @@ if (document.body.classList.contains('account-dashboard-page')) {
 const accountStorageKey = 'luxeroutes-account-profile-v1';
 const accountSessionKey = 'luxeroutes-account-session-v1';
 const accountSessionTtlMs = 4 * 60 * 60 * 1000;
+const rememberedAccountSessionTtlMs = 30 * 24 * 60 * 60 * 1000;
 const accountDashboardRoles = ['customer', 'owner', 'manager', 'admin', 'partner'];
 const accountRoleHomePaths = {
   customer: 'account.html',
@@ -157,7 +158,7 @@ const saveAccountSession = ({ identity = accountIdentity, profile = null, grant 
     role: normalizeAccountRole(role || grant?.role || profile?.defaultRole || profile?.requestedRole),
     remembered: shouldRemember,
     savedAt: Date.now(),
-    expiresAt: Date.now() + accountSessionTtlMs,
+    expiresAt: Date.now() + (shouldRemember ? rememberedAccountSessionTtlMs : accountSessionTtlMs),
   });
 
   sessionStorage.setItem(accountSessionKey, serializedSession);
@@ -293,12 +294,12 @@ const requestLoginOtp = async (email) => {
   return data;
 };
 
-const verifyLoginOtp = async (email, otp) => {
+const verifyLoginOtp = async (email, otp, remember = false) => {
   const response = await fetch('/api/auth/otp?action=verify', {
     method: 'POST',
     headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
     credentials: 'same-origin',
-    body: JSON.stringify({ email, otp }),
+    body: JSON.stringify({ email, otp, remember }),
   });
   const data = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(data.error || 'Unable to verify the login code right now.');
@@ -801,12 +802,13 @@ loginOtpForm?.addEventListener('submit', async (event) => {
     }
 
     setLoginOtpMessage('Verifying your code…');
-    const account = await verifyLoginOtp(email, otp);
+    const remember = Boolean(loginRememberInput?.checked);
+    const account = await verifyLoginOtp(email, otp, remember);
     const identity = account.identity || { email };
     const profile = account.profile || null;
     accountIdentity = identity;
     try {
-      saveAccountSession({ identity, profile, grant: account.grant, role: account.role, remember: Boolean(loginRememberInput?.checked) });
+      saveAccountSession({ identity, profile, grant: account.grant, role: account.role, remember });
     } catch (storageError) {
       // The server has already set the HttpOnly account cookie, so continue even
       // when a browser blocks sessionStorage/localStorage for this page.

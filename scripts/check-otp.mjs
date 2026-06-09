@@ -176,7 +176,9 @@ assert.equal(verifyPayload.ok, true, 'OTP verification should return an ok JSON 
 assert.equal(verifyPayload.identity.email, 'traveler@example.com', 'OTP verification should identify the verified account email.');
 assert.equal(verifyPayload.role, 'customer', 'OTP verification should default unprofiled users to customer access.');
 assert.equal(verifyPayload.redirect, '/account.html', 'OTP verification should return a concrete account redirect target.');
-assert.match(verifyResponse.headers.get('Set-Cookie') || '', /luxeroutes_account_session=/, 'OTP verification should set the HttpOnly account session cookie.');
+const defaultSessionCookie = verifyResponse.headers.get('Set-Cookie') || '';
+assert.match(defaultSessionCookie, /luxeroutes_account_session=/, 'OTP verification should set the HttpOnly account session cookie.');
+assert.match(defaultSessionCookie, /Max-Age=14400/, 'OTP verification should use a 4-hour server session by default.');
 assert.equal(db.otps[0].status, 'verified', 'OTP verification should mark the challenge verified.');
 
 const ownerDb = new FakeDb();
@@ -189,13 +191,14 @@ const ownerVerifyResponse = await otpModule.onRequestPost({
   request: new Request('https://luxeroutes.test/api/auth/otp?action=verify', {
     method: 'POST',
     headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email: 'owner@example.com', otp: ownerLoginCode }),
+    body: JSON.stringify({ email: 'owner@example.com', otp: ownerLoginCode, remember: true }),
   }),
   env: ownerEnv,
 });
 const ownerVerifyPayload = await ownerVerifyResponse.json();
 assert.equal(ownerVerifyPayload.role, 'owner', 'OTP verification should preserve owner grants.');
 assert.equal(ownerVerifyPayload.redirect, '/owner-panel.html', 'Owner logins should return the owner dashboard redirect.');
+assert.match(ownerVerifyResponse.headers.get('Set-Cookie') || '', /Max-Age=2592000/, 'Remembered OTP logins should set a 30-day server session cookie.');
 
 const managerDb = new FakeDb();
 managerDb.grants.push({ id: 'grant-manager', email: 'manager@example.com', role: 'manager', status: 'active' });
