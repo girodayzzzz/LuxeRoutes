@@ -3624,6 +3624,25 @@ body {
   overflow-wrap: anywhere;
 }
 
+.otp-status {
+  padding: .78rem .9rem;
+  border-radius: 16px;
+  font-size: .92rem;
+  line-height: 1.5;
+}
+
+.otp-status-success {
+  border: 1px solid rgba(92, 184, 92, .22);
+  background: rgba(92, 184, 92, .1);
+  color: var(--color-text);
+}
+
+.otp-status-error {
+  border: 1px solid rgba(255, 138, 128, .26);
+  background: rgba(255, 138, 128, .11);
+  color: #ffd3cf;
+}
+
 .login-back-button {
   min-height: 42px;
   padding: .65rem 1rem;
