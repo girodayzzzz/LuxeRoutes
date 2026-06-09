@@ -1,4 +1,4 @@
-import { ensureAuthSchema, getAccountSessionEmail, getActiveGrant, makeId, normalizeEmail, nowIso, privateErrorJson, privateJson, requireDb } from './_utils.js';
+import { ensureAuthSchema, getAccountSessionEmail, getActiveGrant, makeId, normalizeEmail, nowIso, privateErrorJson, privateJson, requireDb, resolveAccountRole } from './_utils.js';
 
 const profileSelect = `
   SELECT id, email, full_name AS name, default_role AS defaultRole, requested_role AS requestedRole,
@@ -8,6 +8,14 @@ const profileSelect = `
 `;
 
 const getProfile = async (db, email) => db.prepare(`${profileSelect} WHERE lower(trim(email)) = ? LIMIT 1`).bind(email).first();
+
+const getAccessStatus = (profile, grant) => {
+  if (!profile) return 'profile_required';
+  if (profile.requestedRole && profile.requestedRole !== 'customer' && !['admin', profile.requestedRole].includes(grant?.role)) {
+    return profile.status || 'pending_admin_grant';
+  }
+  return profile.status || 'active';
+};
 
 export const onRequestGet = async ({ request, env }) => {
   try {
@@ -26,7 +34,8 @@ export const onRequestGet = async ({ request, env }) => {
       identityEmail: email,
       profile,
       grant,
-      role: grant?.role || profile?.defaultRole || 'customer',
+      role: resolveAccountRole({ grant, profile }),
+      accessStatus: getAccessStatus(profile, grant),
     });
   } catch (error) {
     return privateErrorJson(error.message || 'Unable to load account profile.', 500);
@@ -74,18 +83,12 @@ export const onRequestPost = async ({ request, env }) => {
         updated_at = excluded.updated_at
     `).bind(makeId('profile'), email, name, requestedRole, companyName, companyWebsite, businessContext, notes, profileStatus, timestamp, timestamp).run();
 
-    await db.prepare(`
-      INSERT INTO access_grants (id, email, role, note, granted_by_email, status, created_at, updated_at)
-      VALUES (?, ?, 'customer', 'Default customer role from account registration', NULL, 'active', ?, ?)
-      ON CONFLICT(email) DO NOTHING
-    `).bind(makeId('grant'), email, timestamp, timestamp).run();
-
     const [profile, grant] = await Promise.all([
       getProfile(db, email),
       getActiveGrant(db, email),
     ]);
 
-    return privateJson({ profile, grant, role: grant?.role || 'customer' }, { status: 201 });
+    return privateJson({ profile, grant, role: resolveAccountRole({ grant, profile }), accessStatus: getAccessStatus(profile, grant) }, { status: 201 });
   } catch (error) {
     return privateErrorJson(error.message || 'Unable to save account profile.', 500);
   }
