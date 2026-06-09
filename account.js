@@ -39,6 +39,7 @@ const accountStorageKey = 'luxeroutes-account-profile-v1';
 const accountSessionKey = 'luxeroutes-account-session-v1';
 const accountSessionTtlMs = 4 * 60 * 60 * 1000;
 const rememberedAccountSessionTtlMs = 30 * 24 * 60 * 60 * 1000;
+const accountAuthFetchTimeoutMs = 8000;
 const accountDashboardRoles = ['customer', 'owner', 'manager', 'admin', 'partner'];
 const accountRoleHomePaths = {
   customer: 'account.html',
@@ -56,6 +57,20 @@ const accountEscapeHtml = (value) => String(value || '').replace(/[&<>"]/g, (cha
   '>': '&gt;',
   '"': '&quot;',
 }[character]));
+
+const fetchAccountAuth = async (url, options = {}) => {
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), accountAuthFetchTimeoutMs);
+
+  try {
+    return await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+  } finally {
+    window.clearTimeout(timeout);
+  }
+};
 
 const isAccountLocalPreview = () => ['localhost', '127.0.0.1', ''].includes(window.location.hostname);
 
@@ -180,7 +195,7 @@ const accountStatusClass = (status) => {
 
 const getAccessIdentity = async () => {
   try {
-    const response = await fetch('/.cloudflare/access/get-identity', {
+    const response = await fetchAccountAuth('/.cloudflare/access/get-identity', {
       headers: { Accept: 'application/json' },
       credentials: 'same-origin',
       redirect: 'manual',
@@ -211,7 +226,7 @@ const saveAccountProfile = (profile) => {
 
 const loadRemoteAccountProfile = async () => {
   try {
-    const response = await fetch('/api/account', {
+    const response = await fetchAccountAuth('/api/account', {
       headers: { Accept: 'application/json' },
       credentials: 'same-origin',
     });
@@ -227,7 +242,7 @@ const loadRemoteAccountProfile = async () => {
 };
 
 const saveRemoteAccountProfile = async (profile) => {
-  const response = await fetch('/api/account', {
+  const response = await fetchAccountAuth('/api/account', {
     method: 'POST',
     headers: {
       Accept: 'application/json',

@@ -16,7 +16,9 @@ assert.match(loginSource, /action="\/api\/auth\/otp" method="post"/, 'Public log
 assert.match(loginSource, /data-admin-access-link[\s\S]*Cloudflare Access|Cloudflare Access[\s\S]*data-admin-access-link/, 'Public login should offer admins a Cloudflare Access path instead of the Resend OTP form.');
 assert.match(loginSource, /name="otp"/, 'Public login should include the one-time-code input.');
 assert.match(loginSource, /href="register\.html"[^>]*>Create an account<\/a>/, 'Public login should link to the protected registration page.');
-assert.match(accountSource, /fetch\('\/.cloudflare\/access\/get-identity',[\s\S]*?redirect: 'manual'/, 'Cloudflare Access identity checks must not follow Access redirects into a browser redirect loop.');
+assert.match(accountSource, /fetchAccountAuth\('\/.cloudflare\/access\/get-identity',[\s\S]*?redirect: 'manual'/, 'Cloudflare Access identity checks must not follow Access redirects into a browser redirect loop.');
+assert.match(accountSource, /accountAuthFetchTimeoutMs = 8000/, 'Protected account checks should time out instead of leaving dashboards stuck on the checking state.');
+assert.match(accountSource, /AbortController[\s\S]*controller\.abort/, 'Protected account checks should abort stalled identity or account requests.');
 assert.match(accountSource, /fetch\('\/api\/auth\/otp'/, 'Primary customer client code must request email one-time codes from the OTP endpoint.');
 assert.match(accountSource, /adminAccess[\s\S]*response\?\.redirect[\s\S]*window\.location\.href = response\.redirect/, 'Admin grants detected by the OTP API should continue through Cloudflare Access instead of the Resend code step.');
 assert.match(accountSource, /fetch\('\/api\/auth\/otp\?action=verify'/, 'Primary customer client code must verify email one-time codes with the OTP endpoint.');
