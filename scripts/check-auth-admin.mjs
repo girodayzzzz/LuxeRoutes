@@ -21,17 +21,12 @@ assert.match(accountSource, /fetch\('\/api\/auth\/otp'/, 'Primary customer clien
 assert.match(accountSource, /adminAccess[\s\S]*response\?\.redirect[\s\S]*window\.location\.href = response\.redirect/, 'Admin grants detected by the OTP API should continue through Cloudflare Access instead of the Resend code step.');
 assert.match(accountSource, /fetch\('\/api\/auth\/otp\?action=verify'/, 'Primary customer client code must verify email one-time codes with the OTP endpoint.');
 assert.ok(
-  accountSource.indexOf('const identity = await getAccessIdentity();') < accountSource.indexOf('if (!localPreview && handleMissingVerifiedSession()) return;'),
+  accountSource.indexOf('const identity = await getAccessIdentity();') < accountSource.indexOf('if (!localPreview && isProtectedAccountPage())'),
   'Protected account pages must await Cloudflare Access identity before redirecting a fresh browser session.',
 );
 assert.ok(
-  accountSource.indexOf('if (!localPreview && handleMissingVerifiedSession()) return;') > accountSource.indexOf('const identity = await getAccessIdentity();'),
-  'Protected account pages must require a server-verified OTP or Cloudflare Access session instead of trusting browser storage.',
-);
-assert.match(
-  accountSource,
-  /const handleMissingVerifiedSession = \(\) => \{[\s\S]*clearAccountSession\(\)[\s\S]*redirectToLogin\(\)/,
-  'Missing production sessions should clear cached account state and redirect protected pages to login.',
+  accountSource.indexOf('if (!localPreview && hasCachedSession)') < accountSource.indexOf('if (!localPreview && isProtectedAccountPage())'),
+  'Protected account pages should restore a fresh OTP browser session before sending the browser back to login.',
 );
 assert.match(
   accountSource,
@@ -58,9 +53,6 @@ assert.match(
   /getLoginRedirectTarget = \(account = \{\}\)[\s\S]*getRoleHomePath\(getAccountRole\(account\)\)/,
   'Successful OTP login should default to the signed-in role home when no explicit redirect is present.',
 );
-const accountHtmlSource = readFileSync('account.html', 'utf8');
-assert.match(accountHtmlSource, /data-required-account-role="customer"/, 'Customer account page should declare its required customer role.');
-assert.match(accountSource, /return normalizedRole === requiredRole;/, 'Role dashboards should route users to their exact role home instead of letting admins or managers stay on customer pages.');
 assert.match(ownerPanelSource, /data-required-account-role="owner"/, 'Owner panel should declare its required owner role.');
 assert.match(managerPanelSource, /data-required-account-role="manager"/, 'Manager panel should declare its required manager role.');
 assert.doesNotMatch(

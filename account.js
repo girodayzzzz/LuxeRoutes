@@ -69,7 +69,7 @@ const isRoleAllowedOnPage = (role) => {
   const requiredRole = getRequiredAccountRole();
   if (!requiredRole) return true;
   const normalizedRole = normalizeAccountRole(role);
-  return normalizedRole === requiredRole;
+  return normalizedRole === requiredRole || normalizedRole === 'admin';
 };
 
 const redirectToRoleHomeIfNeeded = (role) => {
@@ -98,15 +98,6 @@ const redirectToLogin = () => {
   lockDashboard();
   const target = getCurrentAccountTarget();
   window.location.replace(`login.html?redirect=${encodeURIComponent(target)}`);
-};
-
-const handleMissingVerifiedSession = () => {
-  clearAccountSession();
-  if (isProtectedAccountPage()) {
-    redirectToLogin();
-    return true;
-  }
-  return false;
 };
 
 const clearAccountSession = () => {
@@ -245,22 +236,15 @@ const setLoginOtpMessage = (message = '', tone = 'pending') => {
 };
 
 const showLoginCodeStep = (email) => {
-  if (loginOtpForm) loginOtpForm.action = '/api/auth/otp?action=verify';
   if (loginEmailStep) loginEmailStep.hidden = true;
   if (loginCodeStep) loginCodeStep.hidden = false;
   if (loginOtpEmail) loginOtpEmail.textContent = email;
-  if (loginCodeInput) loginCodeInput.required = true;
   loginCodeInput?.focus();
 };
 
 const showLoginEmailStep = () => {
-  if (loginOtpForm) loginOtpForm.action = '/api/auth/otp';
   if (loginEmailStep) loginEmailStep.hidden = false;
   if (loginCodeStep) loginCodeStep.hidden = true;
-  if (loginCodeInput) {
-    loginCodeInput.required = false;
-    loginCodeInput.value = '';
-  }
   loginEmailInput?.focus();
 };
 
@@ -648,7 +632,18 @@ const initialiseAccount = async () => {
     }
   }
 
-  if (!localPreview && handleMissingVerifiedSession()) return;
+  if (!localPreview && hasCachedSession) {
+    const restored = restoreCachedAccountSession(
+      cachedSession,
+      'Your verified browser session is active while we reconnect to your account. Refresh if your latest profile details do not appear.',
+    );
+    if (restored) return;
+  }
+
+  if (!localPreview && isProtectedAccountPage()) {
+    redirectToLogin();
+    return;
+  }
 
   if (localPreview && hasCachedSession) {
     const restored = restoreCachedAccountSession(cachedSession, 'Your local preview session is active in this browser.');
@@ -787,14 +782,9 @@ loginOtpForm?.addEventListener('submit', async (event) => {
     const identity = account.identity || { email };
     const profile = account.profile || null;
     accountIdentity = identity;
-    try {
-      saveAccountSession({ identity, profile, grant: account.grant, role: account.role, remember: Boolean(loginRememberInput?.checked) });
-    } catch (storageError) {
-      // The server has already set the HttpOnly account cookie, so continue even
-      // when a browser blocks sessionStorage/localStorage for this page.
-    }
+    saveAccountSession({ identity, profile, grant: account.grant, role: account.role, remember: Boolean(loginRememberInput?.checked) });
     setLoginOtpMessage('Signed in successfully. Opening your account…', 'success');
-    window.location.assign(getLoginRedirectTarget(account));
+    window.location.href = getLoginRedirectTarget(account);
   } catch (error) {
     setLoginOtpMessage(error.message || 'Unable to complete login right now.', 'error');
   } finally {

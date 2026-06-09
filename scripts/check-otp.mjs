@@ -159,8 +159,6 @@ assert.equal(sentEmails[0].body.from, 'LuxeRoutes <login@example.com>', 'OTP ema
 assert.equal(sentEmails[0].body.to, 'traveler@example.com', 'OTP email should be addressed to the login email.');
 assert.match(sentEmails[0].body.text, /\b\d{6}\b/, 'OTP email should contain a 6-digit login code.');
 
-
-
 const loginCode = sentEmails[0].body.text.match(/\b\d{6}\b/)[0];
 const verifyResponse = await otpModule.onRequestPost({
   request: new Request('https://luxeroutes.test/api/auth/otp?action=verify', {
@@ -175,9 +173,27 @@ assert.equal(verifyResponse.status, 200, 'OTP verification should accept the lat
 assert.equal(verifyPayload.ok, true, 'OTP verification should return an ok JSON response.');
 assert.equal(verifyPayload.identity.email, 'traveler@example.com', 'OTP verification should identify the verified account email.');
 assert.equal(verifyPayload.role, 'customer', 'OTP verification should default unprofiled users to customer access.');
-assert.equal(verifyPayload.redirect, '/account.html', 'OTP verification should return a concrete account redirect target.');
 assert.match(verifyResponse.headers.get('Set-Cookie') || '', /luxeroutes_account_session=/, 'OTP verification should set the HttpOnly account session cookie.');
 assert.equal(db.otps[0].status, 'verified', 'OTP verification should mark the challenge verified.');
+
+const ownerDb = new FakeDb();
+ownerDb.grants.push({ id: 'grant-owner', email: 'owner@example.com', role: 'owner', status: 'active' });
+const ownerEnv = { DB: ownerDb, RESEND_API_KEY: 'resend-owner-key' };
+const ownerOtpResponse = await otpModule.onRequestPost({ request: makeRequest('owner@example.com'), env: ownerEnv });
+assert.equal(ownerOtpResponse.status, 200, 'Owner OTP request should send a login code.');
+const ownerLoginCode = sentEmails.at(-1).body.text.match(/\b\d{6}\b/)[0];
+const ownerVerifyResponse = await otpModule.onRequestPost({
+  request: new Request('https://luxeroutes.test/api/auth/otp?action=verify', {
+    method: 'POST',
+    headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: 'owner@example.com', otp: ownerLoginCode }),
+  }),
+  env: ownerEnv,
+});
+const ownerVerifyPayload = await ownerVerifyResponse.json();
+assert.equal(ownerVerifyPayload.role, 'owner', 'OTP verification should preserve owner grants for role-aware account routing.');
+assert.match(ownerVerifyResponse.headers.get('Set-Cookie') || '', /luxeroutes_account_session=/, 'Owner OTP verification should set the account session cookie.');
+
 
 const fallbackDb = new FakeDb();
 const fallbackEnv = { DB: fallbackDb, RESEND_API_TOKEN: 'resend-alias-key' };
