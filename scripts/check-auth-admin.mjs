@@ -16,7 +16,9 @@ assert.match(loginSource, /action="\/api\/auth\/otp" method="post"/, 'Public log
 assert.match(loginSource, /data-admin-access-link[\s\S]*Cloudflare Access|Cloudflare Access[\s\S]*data-admin-access-link/, 'Public login should offer admins a Cloudflare Access path instead of the Resend OTP form.');
 assert.match(loginSource, /name="otp"/, 'Public login should include the one-time-code input.');
 assert.match(loginSource, /href="register\.html"[^>]*>Create an account<\/a>/, 'Public login should link to the protected registration page.');
-assert.match(accountSource, /fetch\('\/.cloudflare\/access\/get-identity',[\s\S]*?redirect: 'manual'/, 'Cloudflare Access identity checks must not follow Access redirects into a browser redirect loop.');
+assert.match(accountSource, /fetchAccountAuth\('\/.cloudflare\/access\/get-identity',[\s\S]*?redirect: 'manual'/, 'Cloudflare Access identity checks must not follow Access redirects into a browser redirect loop.');
+assert.match(accountSource, /accountAuthFetchTimeoutMs = 8000/, 'Protected account checks should time out instead of leaving dashboards stuck on the checking state.');
+assert.match(accountSource, /AbortController[\s\S]*controller\.abort/, 'Protected account checks should abort stalled identity or account requests.');
 assert.match(accountSource, /fetch\('\/api\/auth\/otp'/, 'Primary customer client code must request email one-time codes from the OTP endpoint.');
 assert.match(accountSource, /adminAccess[\s\S]*response\?\.redirect[\s\S]*window\.location\.href = response\.redirect/, 'Admin grants detected by the OTP API should continue through Cloudflare Access instead of the Resend code step.');
 assert.match(accountSource, /fetch\('\/api\/auth\/otp\?action=verify'/, 'Primary customer client code must verify email one-time codes with the OTP endpoint.');
@@ -63,6 +65,10 @@ assert.match(accountHtmlSource, /data-required-account-role="customer"/, 'Custom
 assert.match(accountSource, /return normalizedRole === requiredRole;/, 'Role dashboards should route users to their exact role home instead of letting admins or managers stay on customer pages.');
 assert.match(ownerPanelSource, /data-required-account-role="owner"/, 'Owner panel should declare its required owner role.');
 assert.match(managerPanelSource, /data-required-account-role="manager"/, 'Manager panel should declare its required manager role.');
+assert.doesNotMatch(accountHtmlSource, /body\[data-account-locked="true"\] main/, 'Locked account pages should keep the access status visible instead of rendering a blank page.');
+assert.doesNotMatch(ownerPanelSource, /body\[data-account-locked="true"\] main/, 'Locked owner panels should keep the access status visible instead of rendering a blank page.');
+assert.doesNotMatch(managerPanelSource, /body\[data-account-locked="true"\] main/, 'Locked manager panels should keep the access status visible instead of rendering a blank page.');
+assert.match(accountSource, /getDashboardWorkspaceHash[\s\S]*owner: '#owner-workspace'[\s\S]*manager: '#manager-workspace'/, 'Dashboard refresh links should target the current role panel workspace.');
 assert.doesNotMatch(
   siteScriptSource,
   /'owner\.html': \['owner'|manager\.html': \['manager'/,

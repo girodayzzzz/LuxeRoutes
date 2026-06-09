@@ -244,6 +244,7 @@ const verifyOtp = async ({ request, env }) => {
   const body = await parseRequestBody(request);
   const email = normalizeEmail(body.email);
   const otp = String(body.otp || '').trim();
+  const remember = body.remember === true || body.remember === 'true' || body.remember === 'on' || body.remember === '1';
   if (!email || !/^\d{6}$/.test(otp)) return otpErrorResponse(request, 'Valid email and 6-digit OTP are required.', 400, email);
 
   await ensureOtpSchema(db);
@@ -280,12 +281,7 @@ const verifyOtp = async ({ request, env }) => {
     getActiveGrant(db, email),
   ]);
 
-  const sessionCookie = await createAccountSessionCookie(env, email);
-
-  if (!wantsJsonResponse(request)) {
-    return redirectResponse('/account.html', sessionCookie ? { headers: { 'Set-Cookie': sessionCookie } } : {});
-  }
-
+  const sessionCookie = await createAccountSessionCookie(env, email, { remember });
   const role = grant?.role || profile?.defaultRole || 'customer';
   const redirect = {
     customer: '/account.html',
@@ -293,6 +289,10 @@ const verifyOtp = async ({ request, env }) => {
     manager: '/manager-panel.html',
     admin: '/admin/index.html',
   }[role] || '/account.html';
+
+  if (!wantsJsonResponse(request)) {
+    return redirectResponse(redirect, sessionCookie ? { headers: { 'Set-Cookie': sessionCookie } } : {});
+  }
 
   return json({
     ok: true,
