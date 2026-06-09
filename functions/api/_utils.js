@@ -111,6 +111,7 @@ export const getAccessIdentityEmail = async (request, env = {}) => {
 
 const ACCOUNT_SESSION_COOKIE = 'luxeroutes_account_session';
 const ACCOUNT_SESSION_TTL_SECONDS = 4 * 60 * 60;
+const REMEMBERED_ACCOUNT_SESSION_TTL_SECONDS = 30 * 24 * 60 * 60;
 const textEncoder = new TextEncoder();
 
 const base64UrlEncode = (value) => btoa(value).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
@@ -163,17 +164,18 @@ export const parseCookies = (request) => Object.fromEntries(
     }),
 );
 
-export const createAccountSessionCookie = async (env, email) => {
+export const createAccountSessionCookie = async (env, email, { remember = false } = {}) => {
   const normalizedEmail = normalizeEmail(email);
   const secret = getAccountSessionSecret(env);
   if (!secret || !normalizedEmail) return null;
 
-  const expiresAt = Date.now() + (ACCOUNT_SESSION_TTL_SECONDS * 1000);
-  const payload = base64UrlEncode(JSON.stringify({ email: normalizedEmail, expiresAt }));
+  const maxAge = remember ? REMEMBERED_ACCOUNT_SESSION_TTL_SECONDS : ACCOUNT_SESSION_TTL_SECONDS;
+  const expiresAt = Date.now() + (maxAge * 1000);
+  const payload = base64UrlEncode(JSON.stringify({ email: normalizedEmail, expiresAt, remembered: Boolean(remember) }));
   const signature = await signAccountSessionPayload(payload, secret);
   const token = `${payload}.${signature}`;
 
-  return `${ACCOUNT_SESSION_COOKIE}=${token}; Path=/; Max-Age=${ACCOUNT_SESSION_TTL_SECONDS}; HttpOnly; Secure; SameSite=Lax`;
+  return `${ACCOUNT_SESSION_COOKIE}=${token}; Path=/; Max-Age=${maxAge}; HttpOnly; Secure; SameSite=Lax`;
 };
 
 export const getAccountSessionEmail = async (request, env) => {

@@ -63,6 +63,10 @@ assert.match(accountHtmlSource, /data-required-account-role="customer"/, 'Custom
 assert.match(accountSource, /return normalizedRole === requiredRole;/, 'Role dashboards should route users to their exact role home instead of letting admins or managers stay on customer pages.');
 assert.match(ownerPanelSource, /data-required-account-role="owner"/, 'Owner panel should declare its required owner role.');
 assert.match(managerPanelSource, /data-required-account-role="manager"/, 'Manager panel should declare its required manager role.');
+assert.doesNotMatch(accountHtmlSource, /body\[data-account-locked="true"\] main/, 'Locked account pages should keep the access status visible instead of rendering a blank page.');
+assert.doesNotMatch(ownerPanelSource, /body\[data-account-locked="true"\] main/, 'Locked owner panels should keep the access status visible instead of rendering a blank page.');
+assert.doesNotMatch(managerPanelSource, /body\[data-account-locked="true"\] main/, 'Locked manager panels should keep the access status visible instead of rendering a blank page.');
+assert.match(accountSource, /getDashboardWorkspaceHash[\s\S]*owner: '#owner-workspace'[\s\S]*manager: '#manager-workspace'/, 'Dashboard refresh links should target the current role panel workspace.');
 assert.doesNotMatch(
   siteScriptSource,
   /'owner\.html': \['owner'|manager\.html': \['manager'/,
