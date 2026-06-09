@@ -286,12 +286,21 @@ const verifyOtp = async ({ request, env }) => {
     return redirectResponse('/account.html', sessionCookie ? { headers: { 'Set-Cookie': sessionCookie } } : {});
   }
 
+  const role = grant?.role || profile?.defaultRole || 'customer';
+  const redirect = {
+    customer: '/account.html',
+    owner: '/owner-panel.html',
+    manager: '/manager-panel.html',
+    admin: '/admin/index.html',
+  }[role] || '/account.html';
+
   return json({
     ok: true,
     identity: { email },
     profile,
     grant,
-    role: grant?.role || profile?.defaultRole || 'customer',
+    role,
+    redirect,
   }, sessionCookie ? { headers: { 'Set-Cookie': sessionCookie } } : {});
 };
 
