@@ -85,13 +85,34 @@ const sendOtpEmail = async (env, email, otp) => {
   }
 };
 
+const parseRequestBody = async (request) => {
+  const contentType = request.headers.get('content-type') || '';
+  if (contentType.includes('application/json')) return request.json().catch(() => ({}));
+  if (contentType.includes('form')) {
+    const formData = await request.formData().catch(() => null);
+    return formData ? Object.fromEntries(formData.entries()) : {};
+  }
+  return request.json().catch(() => ({}));
+};
+
 const requestOtp = async ({ request, env }) => {
   const db = requireDb(env);
-  const body = await request.json().catch(() => ({}));
+  const body = await parseRequestBody(request);
   const email = normalizeEmail(body.email);
   if (!email || !email.includes('@')) return errorJson('Valid email is required.', 400);
 
   await ensureOtpSchema(db);
+  await ensureAuthSchema(db);
+
+  const grant = await getActiveGrant(db, email);
+  if (grant?.role === 'admin') {
+    return json({
+      ok: true,
+      adminAccess: true,
+      redirect: '/admin/index.html',
+      message: 'Admin access uses Cloudflare Access. Continue to the admin console to receive the Cloudflare verification check.',
+    });
+  }
 
   const timestamp = nowIso();
   await db.prepare(`
@@ -132,7 +153,7 @@ const clearAccountSession = () => json({ ok: true }, {
 
 const verifyOtp = async ({ request, env }) => {
   const db = requireDb(env);
-  const body = await request.json().catch(() => ({}));
+  const body = await parseRequestBody(request);
   const email = normalizeEmail(body.email);
   const otp = String(body.otp || '').trim();
   if (!email || !/^\d{6}$/.test(otp)) return errorJson('Valid email and 6-digit OTP are required.', 400);

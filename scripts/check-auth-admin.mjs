@@ -12,10 +12,13 @@ const ownerPanelSource = readFileSync('owner-panel.html', 'utf8');
 const managerPanelSource = readFileSync('manager-panel.html', 'utf8');
 const siteScriptSource = readFileSync('script.js', 'utf8');
 assert.match(loginSource, /data-login-otp-form/, 'Public login should render the branded email one-time-code form.');
+assert.match(loginSource, /action="\/api\/auth\/otp" method="post"/, 'Public login form should post directly to the OTP API as a no-JavaScript fallback.');
+assert.match(loginSource, /data-admin-access-link[\s\S]*Cloudflare Access|Cloudflare Access[\s\S]*data-admin-access-link/, 'Public login should offer admins a Cloudflare Access path instead of the Resend OTP form.');
 assert.match(loginSource, /name="otp"/, 'Public login should include the one-time-code input.');
 assert.match(loginSource, /href="register\.html"[^>]*>Create an account<\/a>/, 'Public login should link to the protected registration page.');
 assert.match(accountSource, /fetch\('\/.cloudflare\/access\/get-identity',[\s\S]*?redirect: 'manual'/, 'Cloudflare Access identity checks must not follow Access redirects into a browser redirect loop.');
 assert.match(accountSource, /fetch\('\/api\/auth\/otp'/, 'Primary customer client code must request email one-time codes from the OTP endpoint.');
+assert.match(accountSource, /adminAccess[\s\S]*response\?\.redirect[\s\S]*window\.location\.href = response\.redirect/, 'Admin grants detected by the OTP API should continue through Cloudflare Access instead of the Resend code step.');
 assert.match(accountSource, /fetch\('\/api\/auth\/otp\?action=verify'/, 'Primary customer client code must verify email one-time codes with the OTP endpoint.');
 assert.ok(
   accountSource.indexOf('const identity = await getAccessIdentity();') < accountSource.indexOf('if (!localPreview && isProtectedAccountPage())'),
@@ -91,6 +94,10 @@ const accountModule = await import(pathToFileURL(join(tempRoot, 'functions/api/a
 const grantsModule = await import(pathToFileURL(join(tempRoot, 'functions/api/admin/grants.js')));
 const adminSessionModule = await import(pathToFileURL(join(tempRoot, 'functions/api/admin/session.js')));
 const adminInquiriesModule = await import(pathToFileURL(join(tempRoot, 'functions/api/admin/inquiries.js')));
+const ownerInquiriesModule = await import(pathToFileURL(join(tempRoot, 'functions/api/owner/inquiries.js')));
+const ownerOffersModule = await import(pathToFileURL(join(tempRoot, 'functions/api/owner/offers.js')));
+const managerInquiriesModule = await import(pathToFileURL(join(tempRoot, 'functions/api/manager/inquiries.js')));
+const managerOffersModule = await import(pathToFileURL(join(tempRoot, 'functions/api/manager/offers.js')));
 const utilsModule = await import(pathToFileURL(join(tempRoot, 'functions/api/_utils.js')));
 
 class FakeStatement {
@@ -131,10 +138,29 @@ class FakeStatement {
   all() {
     const sql = this.sql;
 
+    if (sql.includes('PRAGMA table_info(profiles)')) {
+      return {
+        results: [
+          { name: 'id' },
+          { name: 'email' },
+          { name: 'full_name' },
+          { name: 'default_role' },
+          { name: 'requested_role' },
+          { name: 'notes' },
+          { name: 'status' },
+          { name: 'company_name' },
+          { name: 'company_website' },
+          { name: 'business_context' },
+          { name: 'created_at' },
+          { name: 'updated_at' },
+        ],
+      };
+    }
+
     if (sql.includes('FROM profiles p')) {
       return {
         results: this.db.profiles.map((profile) => {
-          const grant = this.db.grants.find((item) => item.email === profile.email) || {};
+          const grant = this.db.grants.find((item) => item.email.toLowerCase() === profile.email.toLowerCase()) || {};
           return {
             ...profile,
             grantedRole: grant.role,
@@ -150,7 +176,25 @@ class FakeStatement {
     }
 
     if (sql.includes('FROM inquiries')) {
+      const [email] = this.params;
+      if (this.params.length && sql.includes('WHERE lower(trim(owner_email))')) {
+        return { results: this.db.inquiries.filter((inquiry) => String(inquiry.ownerEmail || '').trim().toLowerCase() === email) };
+      }
+      if (this.params.length && sql.includes('WHERE lower(trim(manager_email))')) {
+        return { results: this.db.inquiries.filter((inquiry) => String(inquiry.managerEmail || '').trim().toLowerCase() === email) };
+      }
       return { results: [...this.db.inquiries] };
+    }
+
+    if (sql.includes('FROM stay_offers')) {
+      const [email] = this.params;
+      if (this.params.length && sql.includes('WHERE lower(trim(owner_email))')) {
+        return { results: this.db.offers.filter((offer) => String(offer.ownerEmail || '').trim().toLowerCase() === email) };
+      }
+      if (this.params.length && sql.includes('WHERE lower(trim(manager_email))')) {
+        return { results: this.db.offers.filter((offer) => String(offer.managerEmail || '').trim().toLowerCase() === email) };
+      }
+      return { results: [...this.db.offers] };
     }
 
     throw new Error(`Unhandled all SQL: ${sql}`);
@@ -158,6 +202,10 @@ class FakeStatement {
 
   run() {
     const sql = this.sql;
+
+    if (/^\s*(CREATE|ALTER)\b/i.test(sql)) {
+      return { success: true };
+    }
 
     if (sql.includes('UPDATE inquiries SET status')) {
       const [status, updatedAt, id] = this.params;
@@ -256,8 +304,12 @@ class FakeStatement {
 class FakeDb {
   constructor() {
     this.profiles = [];
-    this.inquiries = [{ id: 'inquiry-1', inquiryType: 'Owner property application', name: 'Owner Example', email: 'owner@example.com', phone: '', sourcePage: '/partners.html', submittedFrom: 'https://luxeroutes.test/partners.html', payloadJson: '{}', status: 'new', createdAt: '2026-06-03T00:00:00.000Z', updatedAt: '2026-06-03T00:00:00.000Z' }];
-    this.grants = [{ id: 'grant-admin', email: 'Admin@Example.com', role: 'admin', note: 'Seed admin', grantedByEmail: 'system', status: 'active', createdAt: '2026-06-03T00:00:00.000Z', updatedAt: '2026-06-03T00:00:00.000Z' }];
+    this.inquiries = [{ id: 'inquiry-1', inquiryType: 'Owner property application', name: 'Owner Example', email: 'owner@example.com', phone: '', sourcePage: '/partners.html', submittedFrom: 'https://luxeroutes.test/partners.html', payloadJson: '{}', offerId: 'offer-1', offerTitle: 'Owner Villa', ownerEmail: 'owner@example.com', managerEmail: 'manager@example.com', status: 'new', createdAt: '2026-06-03T00:00:00.000Z', updatedAt: '2026-06-03T00:00:00.000Z' }];
+    this.offers = [{ id: 'offer-1', title: 'Owner Villa', slug: 'owner-villa', country: 'Slovenia', region: 'Bled', stayType: 'villa', options: '', locationLabel: 'Bled, Slovenia', guestLabel: 'Up to 8 guests', priceLabel: 'From €900', availableFrom: null, availableTo: null, discountLabel: '', availabilityNotes: '', description: 'A D1-backed owner stay.', imageUrl: '', imageAlt: '', status: 'published', publishedAt: '2026-06-03T00:00:00.000Z', ownerEmail: 'owner@example.com', managerEmail: 'manager@example.com', partnerStatus: 'approved', ownerNotes: '', managerNotes: '', updatedAt: '2026-06-03T00:00:00.000Z' }];
+    this.grants = [
+      { id: 'grant-admin', email: 'Admin@Example.com', role: 'admin', note: 'Seed admin', grantedByEmail: 'system', status: 'active', createdAt: '2026-06-03T00:00:00.000Z', updatedAt: '2026-06-03T00:00:00.000Z' },
+      { id: 'grant-manager', email: 'manager@example.com', role: 'manager', note: 'Seed manager', grantedByEmail: 'system', status: 'active', createdAt: '2026-06-03T00:00:00.000Z', updatedAt: '2026-06-03T00:00:00.000Z' },
+    ];
   }
 
   prepare(sql) {
@@ -435,6 +487,37 @@ assert.equal(approveResponse.status, 201, 'Seeded admin should be able to approv
 const approvePayload = await approveResponse.json();
 assert.equal(approvePayload.grant.role, 'owner', 'Approval should promote grant role to owner.');
 assert.equal(approvePayload.profile.status, 'active', 'Approval should activate the profile.');
+
+
+const ownerOffersResponse = await ownerOffersModule.onRequestGet({ request: makeRequest('owner@example.com'), env });
+assert.equal(ownerOffersResponse.status, 200, 'Approved owners should load their assigned owner offers API.');
+assert.equal((await ownerOffersResponse.json()).offers.length, 1, 'Owner offers API should only return assigned owner offers.');
+
+const ownerInquiriesResponse = await ownerInquiriesModule.onRequestGet({ request: makeRequest('owner@example.com'), env });
+assert.equal(ownerInquiriesResponse.status, 200, 'Approved owners should load their assigned owner inquiries API.');
+assert.equal((await ownerInquiriesResponse.json()).inquiries.length, 1, 'Owner inquiries API should only return assigned owner inquiries.');
+
+const customerOwnerOffersResponse = await ownerOffersModule.onRequestGet({ request: makeRequest('traveler@example.com'), env });
+assert.equal(customerOwnerOffersResponse.status, 403, 'Customer role grants must not load owner APIs.');
+
+const managerOffersResponse = await managerOffersModule.onRequestGet({ request: makeRequest('manager@example.com'), env });
+assert.equal(managerOffersResponse.status, 200, 'Approved managers should load their assigned manager offers API.');
+assert.equal((await managerOffersResponse.json()).offers.length, 1, 'Manager offers API should only return assigned manager offers.');
+
+const managerInquiriesResponse = await managerInquiriesModule.onRequestGet({ request: makeRequest('manager@example.com'), env });
+assert.equal(managerInquiriesResponse.status, 200, 'Approved managers should load their assigned manager inquiries API.');
+assert.equal((await managerInquiriesResponse.json()).inquiries.length, 1, 'Manager inquiries API should only return assigned manager inquiries.');
+
+const ownerManagerOffersResponse = await managerOffersModule.onRequestGet({ request: makeRequest('owner@example.com'), env });
+assert.equal(ownerManagerOffersResponse.status, 403, 'Owner role grants must not load manager APIs.');
+
+const adminOwnerOffersResponse = await ownerOffersModule.onRequestGet({ request: makeRequest('admin@example.com'), env });
+assert.equal(adminOwnerOffersResponse.status, 200, 'Admin grants should be allowed to inspect owner-scoped APIs.');
+assert.equal((await adminOwnerOffersResponse.json()).offers.length, 1, 'Admin owner API checks should include all D1-backed offers.');
+
+const adminManagerOffersResponse = await managerOffersModule.onRequestGet({ request: makeRequest('admin@example.com'), env });
+assert.equal(adminManagerOffersResponse.status, 200, 'Admin grants should be allowed to inspect manager-scoped APIs.');
+assert.equal((await adminManagerOffersResponse.json()).offers.length, 1, 'Admin manager API checks should include all D1-backed offers.');
 
 const rejectResponse = await grantsModule.onRequestPost({
   request: makeRequest('admin@example.com', { email: 'owner@example.com', role: 'owner', note: 'Rejected in smoke test', action: 'reject' }),
