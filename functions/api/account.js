@@ -1,4 +1,4 @@
-import { getAccountSessionEmail, getActiveGrant, makeId, normalizeEmail, nowIso, privateErrorJson, privateJson, requireDb } from './_utils.js';
+import { ensureAuthSchema, getAccountSessionEmail, getActiveGrant, makeId, normalizeEmail, nowIso, privateErrorJson, privateJson, requireDb } from './_utils.js';
 
 const profileSelect = `
   SELECT id, email, full_name AS name, default_role AS defaultRole, requested_role AS requestedRole,
@@ -16,6 +16,7 @@ export const onRequestGet = async ({ request, env }) => {
     if (!email) return privateErrorJson('Verified email is required.', 401);
 
     const db = requireDb(env);
+    await ensureAuthSchema(db);
     const [profile, grant] = await Promise.all([
       getProfile(db, email),
       getActiveGrant(db, email),
@@ -54,6 +55,7 @@ export const onRequestPost = async ({ request, env }) => {
     if (!name) return privateErrorJson('Full name is required.', 400);
 
     const db = requireDb(env);
+    await ensureAuthSchema(db);
     await db.prepare(`
       INSERT INTO profiles (id, email, full_name, default_role, requested_role, company_name, company_website, business_context, notes, status, created_at, updated_at)
       VALUES (?, ?, ?, 'customer', ?, ?, ?, ?, ?, ?, ?, ?)

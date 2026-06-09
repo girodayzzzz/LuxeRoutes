@@ -199,6 +199,54 @@ export const getAccountSessionEmail = async (request, env) => {
   }
 };
 
+
+const authSchemaStatements = [
+  `CREATE TABLE IF NOT EXISTS profiles (
+    id TEXT PRIMARY KEY,
+    email TEXT NOT NULL UNIQUE,
+    full_name TEXT,
+    default_role TEXT NOT NULL DEFAULT 'customer' CHECK (default_role IN ('customer', 'owner', 'manager', 'admin')),
+    requested_role TEXT NOT NULL DEFAULT 'customer' CHECK (requested_role IN ('customer', 'owner', 'manager')),
+    notes TEXT,
+    status TEXT NOT NULL DEFAULT 'pending_admin_grant',
+    company_name TEXT,
+    company_website TEXT,
+    business_context TEXT,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  )`,
+  `CREATE TABLE IF NOT EXISTS access_grants (
+    id TEXT PRIMARY KEY,
+    email TEXT NOT NULL UNIQUE,
+    role TEXT NOT NULL CHECK (role IN ('customer', 'owner', 'manager', 'admin')),
+    note TEXT,
+    granted_by_email TEXT,
+    status TEXT NOT NULL DEFAULT 'active',
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  )`,
+  'CREATE INDEX IF NOT EXISTS idx_profiles_email ON profiles(email)',
+  'CREATE INDEX IF NOT EXISTS idx_access_grants_email ON access_grants(email)',
+  'CREATE INDEX IF NOT EXISTS idx_access_grants_role ON access_grants(role)',
+];
+
+const ensureOptionalColumn = async (db, table, column, definition) => {
+  const columns = await db.prepare(`PRAGMA table_info(${table})`).all();
+  const hasColumn = Array.isArray(columns?.results)
+    && columns.results.some((entry) => entry.name === column);
+  if (!hasColumn) await db.prepare(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`).run();
+};
+
+export const ensureAuthSchema = async (db) => {
+  for (const statement of authSchemaStatements) {
+    await db.prepare(statement).run();
+  }
+
+  await ensureOptionalColumn(db, 'profiles', 'company_name', 'TEXT');
+  await ensureOptionalColumn(db, 'profiles', 'company_website', 'TEXT');
+  await ensureOptionalColumn(db, 'profiles', 'business_context', 'TEXT');
+};
+
 export const makeId = (prefix) => `${prefix}-${crypto.randomUUID()}`;
 
 export const nowIso = () => new Date().toISOString();
