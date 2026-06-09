@@ -28,7 +28,7 @@ const loginOtpMessage = document.querySelector('[data-login-otp-message]');
 const loginOtpBack = document.querySelector('[data-login-otp-back]');
 const isRegisterPage = () => document.body.classList.contains('account-page') && Boolean(accountForm);
 const isDashboardPage = () => document.body.classList.contains('account-dashboard-page');
-const isProtectedAccountPage = () => isDashboardPage() || isRegisterPage();
+const isProtectedAccountPage = () => isDashboardPage();
 const isLoginPage = () => document.body.classList.contains('login-page');
 
 if (document.body.classList.contains('account-dashboard-page')) {
@@ -37,6 +37,7 @@ if (document.body.classList.contains('account-dashboard-page')) {
 const accountStorageKey = 'luxeroutes-account-profile-v1';
 const accountSessionKey = 'luxeroutes-account-session-v1';
 const accountSessionTtlMs = 4 * 60 * 60 * 1000;
+const accountRememberedSessionTtlMs = 30 * 24 * 60 * 60 * 1000;
 const accountDashboardRoles = ['customer', 'owner', 'manager', 'admin', 'partner'];
 const accountRoleHomePaths = {
   customer: 'account.html',
@@ -69,7 +70,7 @@ const isRoleAllowedOnPage = (role) => {
   const requiredRole = getRequiredAccountRole();
   if (!requiredRole) return true;
   const normalizedRole = normalizeAccountRole(role);
-  return normalizedRole === requiredRole;
+  return normalizedRole === requiredRole || normalizedRole === 'admin';
 };
 
 const redirectToRoleHomeIfNeeded = (role) => {
@@ -92,6 +93,18 @@ const unlockDashboard = () => {
 const getCurrentAccountTarget = () => `${window.location.pathname}${window.location.search}${window.location.hash}`;
 
 const isLoginRedirectTarget = (path) => ['/login', '/login.html'].includes(path.replace(/\/$/, ''));
+
+const getDashboardRoleForPath = (path) => {
+  const normalizedPath = String(path || '').replace(/\/$/, '') || '/account.html';
+  const fileName = normalizedPath.split('/').filter(Boolean).pop() || 'account.html';
+  if (fileName === 'owner-panel.html') return 'owner';
+  if (fileName === 'manager-panel.html') return 'manager';
+  if (normalizedPath === '/admin' || normalizedPath === '/admin/index.html' || fileName === 'admin-panel.html') return 'admin';
+  if (fileName === 'account.html' || normalizedPath === '/account') return 'customer';
+  return '';
+};
+
+const normalizeRedirectPath = (path) => String(path || '').replace(/^\/+/, '') || 'account.html';
 
 const redirectToLogin = () => {
   if (!isProtectedAccountPage()) return;
@@ -147,7 +160,7 @@ const saveAccountSession = ({ identity = accountIdentity, profile = null, grant 
     role: normalizeAccountRole(role || grant?.role || profile?.defaultRole || profile?.requestedRole),
     remembered: shouldRemember,
     savedAt: Date.now(),
-    expiresAt: Date.now() + accountSessionTtlMs,
+    expiresAt: Date.now() + (shouldRemember ? accountRememberedSessionTtlMs : accountSessionTtlMs),
   });
 
   sessionStorage.setItem(accountSessionKey, serializedSession);
@@ -283,12 +296,12 @@ const requestLoginOtp = async (email) => {
   return data;
 };
 
-const verifyLoginOtp = async (email, otp) => {
+const verifyLoginOtp = async (email, otp, remember = false) => {
   const response = await fetch('/api/auth/otp?action=verify', {
     method: 'POST',
     headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
     credentials: 'same-origin',
-    body: JSON.stringify({ email, otp }),
+    body: JSON.stringify({ email, otp, remember }),
   });
   const data = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(data.error || 'Unable to verify the login code right now.');
@@ -308,15 +321,25 @@ const logoutRemoteAccountSession = async () => {
 };
 
 const getLoginRedirectTarget = (account = {}) => {
+  const role = getAccountRole(account);
+  const roleHome = normalizeRedirectPath(account.redirect || getRoleHomePath(role));
   const redirect = new URLSearchParams(window.location.search).get('redirect');
-  if (!redirect) return getRoleHomePath(getAccountRole(account));
+  if (!redirect) return roleHome;
 
   try {
     const url = new URL(redirect, window.location.origin);
-    if (url.origin !== window.location.origin || isLoginRedirectTarget(url.pathname)) return 'account.html';
-    return `${url.pathname}${url.search}${url.hash}`;
+    if (url.origin !== window.location.origin || isLoginRedirectTarget(url.pathname)) return roleHome;
+
+    const redirectRole = getDashboardRoleForPath(url.pathname);
+    if (redirectRole) {
+      const normalizedRole = normalizeAccountRole(role);
+      if (redirectRole === 'customer' && normalizedRole !== 'customer') return roleHome;
+      if (normalizedRole !== 'admin' && redirectRole !== normalizedRole) return roleHome;
+    }
+
+    return normalizeRedirectPath(`${url.pathname}${url.search}${url.hash}`);
   } catch (error) {
-    return 'account.html';
+    return roleHome;
   }
 };
 
@@ -783,12 +806,13 @@ loginOtpForm?.addEventListener('submit', async (event) => {
     }
 
     setLoginOtpMessage('Verifying your code…');
-    const account = await verifyLoginOtp(email, otp);
+    const remember = Boolean(loginRememberInput?.checked);
+    const account = await verifyLoginOtp(email, otp, remember);
     const identity = account.identity || { email };
     const profile = account.profile || null;
     accountIdentity = identity;
     try {
-      saveAccountSession({ identity, profile, grant: account.grant, role: account.role, remember: Boolean(loginRememberInput?.checked) });
+      saveAccountSession({ identity, profile, grant: account.grant, role: account.role, remember });
     } catch (storageError) {
       // The server has already set the HttpOnly account cookie, so continue even
       // when a browser blocks sessionStorage/localStorage for this page.
