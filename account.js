@@ -66,6 +66,15 @@ const getRoleHomePath = (role) => accountRoleHomePaths[normalizeAccountRole(role
 
 const getRequiredAccountRole = () => document.body.dataset.requiredAccountRole || '';
 
+const getDashboardWorkspaceHash = () => {
+  const requiredRole = getRequiredAccountRole();
+  return {
+    customer: '#account-workspace',
+    owner: '#owner-workspace',
+    manager: '#manager-workspace',
+  }[requiredRole] || '#account-workspace';
+};
+
 const isRoleAllowedOnPage = (role) => {
   const requiredRole = getRequiredAccountRole();
   if (!requiredRole) return true;
@@ -593,7 +602,7 @@ const setAccountStatus = ({ heading, status, email, role, approved }) => {
       accountLoginLink.href = '#account-workspace';
     } else if (email && approved) {
       accountLoginLink.textContent = isDashboardPage() ? 'Refresh Account' : 'Open Account';
-      accountLoginLink.href = isDashboardPage() ? '#account-workspace' : accountHref;
+      accountLoginLink.href = isDashboardPage() ? getDashboardWorkspaceHash() : accountHref;
     } else {
       accountLoginLink.textContent = 'Login with Email';
       accountLoginLink.href = 'login.html';
