@@ -7,6 +7,7 @@ const accountEmailInput = document.querySelector('[data-account-email-input]');
 const accountProfile = document.querySelector('[data-account-profile]');
 const accountLoginLink = document.querySelector('[data-account-login-link]');
 const loginAccountState = document.querySelector('[data-login-account-state]');
+const loginAccountLink = document.querySelector('[data-login-account-link]');
 const loginActions = document.querySelector('[data-login-actions]');
 const loginSessionStatus = document.querySelector('[data-login-session-status]');
 const loginBoxHead = document.querySelector('.login-box-head');
@@ -45,6 +46,20 @@ const accountEscapeHtml = (value) => String(value || '').replace(/[&<>"]/g, (cha
   '"': '&quot;',
 }[character]));
 
+const fetchAccountAuth = async (url, options = {}) => {
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), accountAuthFetchTimeoutMs);
+
+  try {
+    return await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+  } finally {
+    window.clearTimeout(timeout);
+  }
+};
+
 const isAccountLocalPreview = () => ['localhost', '127.0.0.1', ''].includes(window.location.hostname);
 
 const isSessionFresh = (session) => Boolean(session?.expiresAt && Date.now() < session.expiresAt);
@@ -54,6 +69,15 @@ const normalizeAccountRole = (role) => (accountDashboardRoles.includes(role) ? r
 const getRoleHomePath = (role) => accountRoleHomePaths[normalizeAccountRole(role)] || accountRoleHomePaths.customer;
 
 const getRequiredAccountRole = () => document.body.dataset.requiredAccountRole || '';
+
+const getDashboardWorkspaceHash = () => {
+  const requiredRole = getRequiredAccountRole();
+  return {
+    customer: '#account-workspace',
+    owner: '#owner-workspace',
+    manager: '#manager-workspace',
+  }[requiredRole] || '#account-workspace';
+};
 
 const isRoleAllowedOnPage = (role) => {
   const requiredRole = getRequiredAccountRole();
@@ -129,7 +153,7 @@ const saveAccountSession = ({ identity = accountIdentity, profile = null, grant 
     role: normalizeAccountRole(role || grant?.role || profile?.defaultRole || profile?.requestedRole),
     remembered: shouldRemember,
     savedAt: Date.now(),
-    expiresAt: Date.now() + accountSessionTtlMs,
+    expiresAt: Date.now() + (shouldRemember ? rememberedAccountSessionTtlMs : accountSessionTtlMs),
   });
 
   sessionStorage.setItem(accountSessionKey, serializedSession);
@@ -151,7 +175,7 @@ const accountStatusClass = (status) => {
 
 const getAccessIdentity = async () => {
   try {
-    const response = await fetch('/.cloudflare/access/get-identity', {
+    const response = await fetchAccountAuth('/.cloudflare/access/get-identity', {
       headers: { Accept: 'application/json' },
       credentials: 'same-origin',
       redirect: 'manual',
@@ -182,7 +206,7 @@ const saveAccountProfile = (profile) => {
 
 const loadRemoteAccountProfile = async () => {
   try {
-    const response = await fetch('/api/account', {
+    const response = await fetchAccountAuth('/api/account', {
       headers: { Accept: 'application/json' },
       credentials: 'same-origin',
     });
@@ -198,7 +222,7 @@ const loadRemoteAccountProfile = async () => {
 };
 
 const saveRemoteAccountProfile = async (profile) => {
-  const response = await fetch('/api/account', {
+  const response = await fetchAccountAuth('/api/account', {
     method: 'POST',
     headers: {
       Accept: 'application/json',
@@ -481,13 +505,15 @@ const setAccountStatus = ({ heading, status, email, role, approved }) => {
     else lockDashboard();
   }
 
+  if (loginAccountLink) loginAccountLink.href = accountHref;
+
   if (accountLoginLink) {
     if (isRegisterPage()) {
       accountLoginLink.textContent = 'Continue Registration';
       accountLoginLink.href = '#account-workspace';
     } else if (email && approved) {
       accountLoginLink.textContent = isDashboardPage() ? 'Refresh Account' : 'Open Account';
-      accountLoginLink.href = isDashboardPage() ? '#account-workspace' : accountHref;
+      accountLoginLink.href = isDashboardPage() ? getDashboardWorkspaceHash() : accountHref;
     } else {
       accountLoginLink.textContent = 'Continue with secure login';
       accountLoginLink.href = 'login.html';
