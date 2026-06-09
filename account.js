@@ -7,6 +7,7 @@ const accountEmailInput = document.querySelector('[data-account-email-input]');
 const accountProfile = document.querySelector('[data-account-profile]');
 const accountLoginLink = document.querySelector('[data-account-login-link]');
 const loginAccountState = document.querySelector('[data-login-account-state]');
+const loginAccountLink = document.querySelector('[data-login-account-link]');
 const loginActions = document.querySelector('[data-login-actions]');
 const loginSessionStatus = document.querySelector('[data-login-session-status]');
 const loginBoxHead = document.querySelector('.login-box-head');
@@ -308,15 +309,21 @@ const logoutRemoteAccountSession = async () => {
 };
 
 const getLoginRedirectTarget = (account = {}) => {
+  const roleHomePath = getRoleHomePath(getAccountRole(account));
   const redirect = new URLSearchParams(window.location.search).get('redirect');
-  if (!redirect) return getRoleHomePath(getAccountRole(account));
+  if (!redirect) return roleHomePath;
 
   try {
     const url = new URL(redirect, window.location.origin);
-    if (url.origin !== window.location.origin || isLoginRedirectTarget(url.pathname)) return 'account.html';
+    if (url.origin !== window.location.origin || isLoginRedirectTarget(url.pathname)) return roleHomePath;
+
+    const redirectPath = url.pathname.replace(/^\//, '') || 'account.html';
+    const roleHomePathname = new URL(roleHomePath, window.location.origin).pathname.replace(/^\//, '');
+    if (redirectPath === 'account.html' && roleHomePathname !== 'account.html') return roleHomePath;
+
     return `${url.pathname}${url.search}${url.hash}`;
   } catch (error) {
-    return 'account.html';
+    return roleHomePath;
   }
 };
 
@@ -577,6 +584,8 @@ const setAccountStatus = ({ heading, status, email, role, approved }) => {
     if (email && approved) unlockDashboard();
     else lockDashboard();
   }
+
+  if (loginAccountLink) loginAccountLink.href = accountHref;
 
   if (accountLoginLink) {
     if (isRegisterPage()) {

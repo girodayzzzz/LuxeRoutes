@@ -281,11 +281,6 @@ const verifyOtp = async ({ request, env }) => {
   ]);
 
   const sessionCookie = await createAccountSessionCookie(env, email);
-
-  if (!wantsJsonResponse(request)) {
-    return redirectResponse('/account.html', sessionCookie ? { headers: { 'Set-Cookie': sessionCookie } } : {});
-  }
-
   const role = grant?.role || profile?.defaultRole || 'customer';
   const redirect = {
     customer: '/account.html',
@@ -293,6 +288,10 @@ const verifyOtp = async ({ request, env }) => {
     manager: '/manager-panel.html',
     admin: '/admin/index.html',
   }[role] || '/account.html';
+
+  if (!wantsJsonResponse(request)) {
+    return redirectResponse(redirect, sessionCookie ? { headers: { 'Set-Cookie': sessionCookie } } : {});
+  }
 
   return json({
     ok: true,
