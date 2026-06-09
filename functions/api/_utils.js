@@ -130,28 +130,8 @@ const base64UrlDecode = (value) => {
   return atob(padded);
 };
 
-const getAccountSessionSecret = (env) => env.AUTH_SESSION_SECRET || env.RESEND_API_KEY || '';
 
-const signAccountSessionPayload = async (payload, secret) => {
-  const key = await crypto.subtle.importKey(
-    'raw',
-    textEncoder.encode(secret),
-    { name: 'HMAC', hash: 'SHA-256' },
-    false,
-    ['sign'],
-  );
-  const signature = await crypto.subtle.sign('HMAC', key, textEncoder.encode(payload));
-  return bytesToBase64Url(new Uint8Array(signature));
-};
 
-const timingSafeEqual = (left, right) => {
-  if (left.length !== right.length) return false;
-  let mismatch = 0;
-  for (let index = 0; index < left.length; index += 1) {
-    mismatch |= left.charCodeAt(index) ^ right.charCodeAt(index);
-  }
-  return mismatch === 0;
-};
 
 export const parseCookies = (request) => Object.fromEntries(
   String(request.headers.get('Cookie') || '')
@@ -291,19 +271,36 @@ export const requireAdmin = async (request, env) => {
   return { db, email, grant };
 };
 
+export const getProfileRoleByEmail = async (db, email) => {
+  if (!email) return null;
+  return db.prepare(`
+    SELECT id, email, default_role AS defaultRole, requested_role AS requestedRole, status
+    FROM profiles
+    WHERE lower(trim(email)) = ?
+    LIMIT 1
+  `).bind(normalizeEmail(email)).first();
+};
+
+export const resolveAccountRole = ({ grant = null, profile = null } = {}) => normalizeRole(
+  grant?.role || profile?.defaultRole || 'customer',
+);
+
 export const requireAccountRole = async (request, env, roles = []) => {
   const db = requireDb(env);
   const email = await getAccountSessionEmail(request, env);
-  if (!email) return { error: privateErrorJson('Verified account session is required.', 401) };
+  if (!email) return { error: privateErrorJson('Cloudflare Access identity is required.', 401) };
 
-  const grant = await getActiveGrant(db, email);
-  const role = grant?.role || 'customer';
+  const [grant, profile] = await Promise.all([
+    getActiveGrant(db, email),
+    getProfileRoleByEmail(db, email),
+  ]);
+  const role = resolveAccountRole({ grant, profile });
   const allowedRoles = Array.isArray(roles) ? roles : [roles];
   if (!allowedRoles.includes(role) && role !== 'admin') {
     return { error: privateErrorJson(`${allowedRoles.join(' or ')} access grant is required for this API route.`, 403) };
   }
 
-  return { db, email, grant, role };
+  return { db, email, grant, profile, role };
 };
 
 // Cloudflare Pages treats every JavaScript file under /functions as a route.

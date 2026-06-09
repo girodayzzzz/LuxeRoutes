@@ -7,6 +7,7 @@ const accountEmailInput = document.querySelector('[data-account-email-input]');
 const accountProfile = document.querySelector('[data-account-profile]');
 const accountLoginLink = document.querySelector('[data-account-login-link]');
 const loginAccountState = document.querySelector('[data-login-account-state]');
+const loginAccountLink = document.querySelector('[data-login-account-link]');
 const loginActions = document.querySelector('[data-login-actions]');
 const loginSessionStatus = document.querySelector('[data-login-session-status]');
 const loginBoxHead = document.querySelector('.login-box-head');
@@ -17,15 +18,6 @@ const ownerOffersTarget = document.querySelector('[data-owner-offers]');
 const managerOffersTarget = document.querySelector('[data-manager-offers]');
 const ownerRequestsTarget = document.querySelector('[data-owner-requests]');
 const managerRequestsTarget = document.querySelector('[data-manager-requests]');
-const loginOtpForm = document.querySelector('[data-login-otp-form]');
-const loginEmailStep = document.querySelector('[data-login-email-step]');
-const loginCodeStep = document.querySelector('[data-login-code-step]');
-const loginEmailInput = document.querySelector('[data-login-email-input]');
-const loginCodeInput = document.querySelector('[data-login-code-input]');
-const loginRememberInput = document.querySelector('[data-login-remember-input]');
-const loginOtpEmail = document.querySelector('[data-login-otp-email]');
-const loginOtpMessage = document.querySelector('[data-login-otp-message]');
-const loginOtpBack = document.querySelector('[data-login-otp-back]');
 const isRegisterPage = () => document.body.classList.contains('account-page') && Boolean(accountForm);
 const isDashboardPage = () => document.body.classList.contains('account-dashboard-page');
 const isProtectedAccountPage = () => isDashboardPage();
@@ -44,7 +36,6 @@ const accountRoleHomePaths = {
   owner: 'owner-panel.html',
   manager: 'manager-panel.html',
   admin: 'admin/index.html',
-  partner: 'account.html',
 };
 let accountIdentity = null;
 let accountApiEnabled = false;
@@ -56,6 +47,20 @@ const accountEscapeHtml = (value) => String(value || '').replace(/[&<>"]/g, (cha
   '"': '&quot;',
 }[character]));
 
+const fetchAccountAuth = async (url, options = {}) => {
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), accountAuthFetchTimeoutMs);
+
+  try {
+    return await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+  } finally {
+    window.clearTimeout(timeout);
+  }
+};
+
 const isAccountLocalPreview = () => ['localhost', '127.0.0.1', ''].includes(window.location.hostname);
 
 const isSessionFresh = (session) => Boolean(session?.expiresAt && Date.now() < session.expiresAt);
@@ -65,6 +70,15 @@ const normalizeAccountRole = (role) => (accountDashboardRoles.includes(role) ? r
 const getRoleHomePath = (role) => accountRoleHomePaths[normalizeAccountRole(role)] || accountRoleHomePaths.customer;
 
 const getRequiredAccountRole = () => document.body.dataset.requiredAccountRole || '';
+
+const getDashboardWorkspaceHash = () => {
+  const requiredRole = getRequiredAccountRole();
+  return {
+    customer: '#account-workspace',
+    owner: '#owner-workspace',
+    manager: '#manager-workspace',
+  }[requiredRole] || '#account-workspace';
+};
 
 const isRoleAllowedOnPage = (role) => {
   const requiredRole = getRequiredAccountRole();
@@ -92,7 +106,6 @@ const unlockDashboard = () => {
 
 const getCurrentAccountTarget = () => `${window.location.pathname}${window.location.search}${window.location.hash}`;
 
-const isLoginRedirectTarget = (path) => ['/login', '/login.html'].includes(path.replace(/\/$/, ''));
 
 const getDashboardRoleForPath = (path) => {
   const normalizedPath = String(path || '').replace(/\/$/, '') || '/account.html';
@@ -113,18 +126,11 @@ const redirectToLogin = () => {
   window.location.replace(`login.html?redirect=${encodeURIComponent(target)}`);
 };
 
-const handleMissingVerifiedSession = () => {
-  clearAccountSession();
-  if (isProtectedAccountPage()) {
-    redirectToLogin();
-    return true;
-  }
-  return false;
-};
-
 const clearAccountSession = () => {
   sessionStorage.removeItem(accountSessionKey);
   localStorage.removeItem(accountSessionKey);
+  sessionStorage.removeItem(accountStorageKey);
+  localStorage.removeItem(accountStorageKey);
 };
 
 const parseStoredAccountSession = (stored) => {
@@ -182,7 +188,7 @@ const accountStatusClass = (status) => {
 
 const getAccessIdentity = async () => {
   try {
-    const response = await fetch('/.cloudflare/access/get-identity', {
+    const response = await fetchAccountAuth('/.cloudflare/access/get-identity', {
       headers: { Accept: 'application/json' },
       credentials: 'same-origin',
       redirect: 'manual',
@@ -213,7 +219,7 @@ const saveAccountProfile = (profile) => {
 
 const loadRemoteAccountProfile = async () => {
   try {
-    const response = await fetch('/api/account', {
+    const response = await fetchAccountAuth('/api/account', {
       headers: { Accept: 'application/json' },
       credentials: 'same-origin',
     });
@@ -229,7 +235,7 @@ const loadRemoteAccountProfile = async () => {
 };
 
 const saveRemoteAccountProfile = async (profile) => {
-  const response = await fetch('/api/account', {
+  const response = await fetchAccountAuth('/api/account', {
     method: 'POST',
     headers: {
       Accept: 'application/json',
@@ -352,13 +358,15 @@ const updateAccountAccessCards = (role = 'customer') => {
   const normalizedRole = normalizeAccountRole(role);
 
   document.querySelectorAll('[data-account-role-link]').forEach((card) => {
-    card.hidden = card.dataset.accountRoleLink !== normalizedRole;
+    card.hidden = normalizedRole !== 'admin' && card.dataset.accountRoleLink !== normalizedRole;
   });
 
   document.querySelectorAll('[data-account-role-panel]').forEach((panel) => {
-    panel.hidden = panel.dataset.accountRolePanel !== normalizedRole;
+    panel.hidden = normalizedRole !== 'admin' && panel.dataset.accountRolePanel !== normalizedRole;
   });
 };
+
+const getAccessLogoutUrl = () => `/cdn-cgi/access/logout?redirect_url=${encodeURIComponent(`${window.location.origin}/login.html?logged_out=1`)}`;
 
 const updateAccountLogout = (active = false) => {
   accountLogoutButtons.forEach((button) => {
@@ -366,13 +374,12 @@ const updateAccountLogout = (active = false) => {
   });
 };
 
-const logoutAccount = async () => {
-  await logoutRemoteAccountSession();
+const logoutAccount = () => {
   clearAccountSession();
   accountIdentity = null;
   updateAccountAccessCards();
   updateAccountLogout(false);
-  window.location.href = 'login.html';
+  window.location.href = getAccessLogoutUrl();
 };
 
 const updateAccountNav = ({ email = '', role = '', active = false } = {}) => {
@@ -400,7 +407,11 @@ const setLoginAccountState = (active = false) => {
   [loginBoxHead, loginActions, loginSecurityList, loginSessionStatus, accountSwitchLink].forEach((element) => {
     if (element) element.hidden = active;
   });
-  if (loginAccountState) loginAccountState.hidden = !active;
+  if (loginAccountState) {
+    loginAccountState.hidden = !active;
+    const openAccountLink = loginAccountState.querySelector('a.btn');
+    if (openAccountLink && accountIdentity?.role) openAccountLink.href = getRoleHomePath(accountIdentity.role);
+  }
 };
 
 
@@ -601,77 +612,75 @@ const setAccountStatus = ({ heading, status, email, role, approved }) => {
     else lockDashboard();
   }
 
+  if (loginAccountLink) loginAccountLink.href = accountHref;
+
   if (accountLoginLink) {
     if (isRegisterPage()) {
       accountLoginLink.textContent = 'Continue Registration';
       accountLoginLink.href = '#account-workspace';
     } else if (email && approved) {
       accountLoginLink.textContent = isDashboardPage() ? 'Refresh Account' : 'Open Account';
-      accountLoginLink.href = isDashboardPage() ? '#account-workspace' : accountHref;
+      accountLoginLink.href = isDashboardPage() ? getDashboardWorkspaceHash() : accountHref;
     } else {
-      accountLoginLink.textContent = 'Login with Email';
+      accountLoginLink.textContent = 'Continue with secure login';
       accountLoginLink.href = 'login.html';
     }
   }
+};
+
+const getAccountStatusCopy = (remoteAccount = {}, profile = null) => {
+  if (!profile) {
+    return isLoginPage()
+      ? 'Your Cloudflare Access session is active. Open your account to finish setup.'
+      : 'Your email is verified. Create your profile to request customer, owner, or manager access.';
+  }
+
+  if (remoteAccount.accessStatus === 'pending_admin_grant' || remoteAccount.accessStatus === 'pending_review') {
+    return 'Your profile is saved. Owner or manager dashboard access is pending LuxeRoutes review.';
+  }
+
+  return 'Your email is verified and your LuxeRoutes profile is ready.';
+};
+
+const applyRemoteAccount = (remoteAccount) => {
+  accountIdentity = { email: remoteAccount.identityEmail, role: remoteAccount.role };
+  const profile = remoteAccount.profile || null;
+  saveAccountSession({ identity: accountIdentity, profile, grant: remoteAccount.grant, role: remoteAccount.role });
+  setAccountStatus({
+    heading: remoteAccount.accessStatus === 'pending_admin_grant' || remoteAccount.accessStatus === 'pending_review'
+      ? 'Access pending review'
+      : 'Email verified',
+    status: getAccountStatusCopy(remoteAccount, profile),
+    email: remoteAccount.identityEmail,
+    role: remoteAccount.role || 'customer',
+    approved: true,
+  });
+  renderAccountProfile(profile, remoteAccount.grant);
+  setLoginAccountState(true);
+  if (redirectToRoleHomeIfNeeded(remoteAccount.role || remoteAccount.grant?.role || profile?.defaultRole)) return true;
+  return true;
 };
 
 const initialiseAccount = async () => {
   const cachedSession = loadAccountSession();
   const hasCachedSession = hasVerifiedAccountSession(cachedSession);
   const localPreview = isAccountLocalPreview();
+  const loggedOut = new URLSearchParams(window.location.search).has('logged_out');
   setLoginAccountState(false);
 
-  // Cloudflare Access may have just established a session before this page loaded.
-  // Always wait for its identity response before redirecting a protected page.
-  const identity = await getAccessIdentity();
-  if (identity) accountIdentity = identity;
-
-  if (identity) {
-    const remoteAccount = await loadRemoteAccountProfile();
-    const profile = remoteAccount?.profile || null;
-    saveAccountSession({ identity, profile, grant: remoteAccount?.grant, role: remoteAccount?.role });
-    setAccountStatus({
-      heading: 'Email verified',
-      status: profile
-        ? 'Your email is verified and your LuxeRoutes profile is ready.'
-        : (isLoginPage()
-          ? 'Your secure email session is active. Your private account is ready to open.'
-          : 'Your email is verified. Create your profile to request customer, owner, or manager access.'),
-      email: identity.email,
-      role: remoteAccount?.role ? accountEscapeHtml(remoteAccount.role) : 'customer',
-      approved: true,
-    });
-    renderAccountProfile(profile, remoteAccount?.grant);
-    setLoginAccountState(true);
-    if (redirectToRoleHomeIfNeeded(remoteAccount?.role || remoteAccount?.grant?.role || profile?.defaultRole)) return;
+  const remoteAccount = await loadRemoteAccountProfile();
+  if (remoteAccount?.identityEmail) {
+    applyRemoteAccount(remoteAccount);
     return;
   }
 
-  if (!identity && !localPreview) {
-    const remoteAccount = await loadRemoteAccountProfile();
-    if (remoteAccount?.identityEmail) {
-      accountIdentity = { email: remoteAccount.identityEmail };
-      const profile = remoteAccount.profile || null;
-      saveAccountSession({ identity: accountIdentity, profile, grant: remoteAccount.grant, role: remoteAccount.role });
-      setAccountStatus({
-        heading: 'Email verified',
-        status: profile
-          ? 'Your email is verified and your LuxeRoutes profile is ready.'
-          : (isLoginPage()
-            ? 'Your secure email session is active. Your private account is ready to open.'
-            : 'Your email is verified. Create your profile to request customer, owner, or manager access.'),
-        email: remoteAccount.identityEmail,
-        role: remoteAccount.role ? accountEscapeHtml(remoteAccount.role) : 'customer',
-        approved: true,
-      });
-      renderAccountProfile(profile, remoteAccount.grant);
-      setLoginAccountState(true);
-      if (redirectToRoleHomeIfNeeded(remoteAccount.role || remoteAccount.grant?.role || profile?.defaultRole)) return;
-      return;
-    }
-  }
+  const identity = await getAccessIdentity();
+  if (identity) accountIdentity = identity;
 
-  if (!localPreview && handleMissingVerifiedSession()) return;
+  if (!localPreview && isProtectedAccountPage()) {
+    redirectToLogin();
+    return;
+  }
 
   if (localPreview && hasCachedSession) {
     const restored = restoreCachedAccountSession(cachedSession, 'Your local preview session is active in this browser.');
@@ -680,10 +689,12 @@ const initialiseAccount = async () => {
 
   if (localPreview && isRegisterPage() && accountEmailInput) accountEmailInput.readOnly = false;
   setAccountStatus({
-    heading: 'Account access',
-    status: isLoginPage()
-      ? 'Enter your email above and verify the one-time code to continue.'
-      : 'A verified LuxeRoutes email session is required.',
+    heading: loggedOut ? 'Signed out' : 'Account access',
+    status: loggedOut
+      ? 'You have been signed out of LuxeRoutes on this browser. Use secure login when you are ready to return.'
+      : (isLoginPage()
+        ? 'Use Cloudflare Access to verify your email and open the correct LuxeRoutes dashboard for your role.'
+        : 'A verified Cloudflare Access email session is required before private account details can be shown.'),
     email: 'Email pending',
     role: 'Account',
     approved: false,
@@ -769,16 +780,6 @@ document.addEventListener('submit', async (event) => {
   }
 });
 
-loginOtpBack?.addEventListener('click', () => {
-  showLoginEmailStep();
-  setLoginOtpMessage('Enter your email and we will send a fresh 6-digit login code.');
-});
-
-loginOtpForm?.addEventListener('submit', async (event) => {
-  event.preventDefault();
-  const email = String(loginEmailInput?.value || '').trim().toLowerCase();
-  const otp = String(loginCodeInput?.value || '').trim();
-  const isCodeStep = Boolean(loginCodeStep && !loginCodeStep.hidden);
 
   if (!email || !email.includes('@')) {
     setLoginOtpMessage('Enter a valid email address.', 'error');

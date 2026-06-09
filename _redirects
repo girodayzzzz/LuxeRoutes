@@ -3,3 +3,8 @@
 /admin/users.html /admin/index.html 302
 /admin/partners.html /admin/index.html 302
 /admin/offers.html /admin/index.html 302
+/account /account.html 302
+/login /login.html 302
+/register /register.html 302
+/owner /owner-panel.html 302
+/manager /manager-panel.html 302

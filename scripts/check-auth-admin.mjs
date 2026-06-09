@@ -11,37 +11,22 @@ const loginSource = readFileSync('login.html', 'utf8');
 const ownerPanelSource = readFileSync('owner-panel.html', 'utf8');
 const managerPanelSource = readFileSync('manager-panel.html', 'utf8');
 const siteScriptSource = readFileSync('script.js', 'utf8');
-assert.match(loginSource, /data-login-otp-form/, 'Public login should render the branded email one-time-code form.');
-assert.match(loginSource, /action="\/api\/auth\/otp" method="post"/, 'Public login form should post directly to the OTP API as a no-JavaScript fallback.');
-assert.match(loginSource, /data-admin-access-link[\s\S]*Cloudflare Access|Cloudflare Access[\s\S]*data-admin-access-link/, 'Public login should offer admins a Cloudflare Access path instead of the Resend OTP form.');
-assert.match(loginSource, /name="otp"/, 'Public login should include the one-time-code input.');
-assert.match(loginSource, /href="register\.html"[^>]*>Create an account<\/a>/, 'Public login should link to the protected registration page.');
+assert.match(loginSource, /data-access-login-link/, 'Public login should show a Cloudflare Access account entry button.');
+assert.doesNotMatch(loginSource, /data-login-otp-form|action="\/api\/auth\/otp"|name="otp"/, 'Public login must not render the legacy Resend OTP form.');
+assert.match(loginSource, /Cloudflare Access/, 'Public login should explain that Cloudflare Access is the verified identity source.');
+assert.match(loginSource, /href="register\.html"[^>]*>Create an account<\/a>/, 'Public login should link to registration.');
 assert.match(accountSource, /fetch\('\/.cloudflare\/access\/get-identity',[\s\S]*?redirect: 'manual'/, 'Cloudflare Access identity checks must not follow Access redirects into a browser redirect loop.');
-assert.match(accountSource, /fetch\('\/api\/auth\/otp'/, 'Primary customer client code must request email one-time codes from the OTP endpoint.');
-assert.match(accountSource, /adminAccess[\s\S]*response\?\.redirect[\s\S]*window\.location\.href = response\.redirect/, 'Admin grants detected by the OTP API should continue through Cloudflare Access instead of the Resend code step.');
-assert.match(accountSource, /fetch\('\/api\/auth\/otp\?action=verify'/, 'Primary customer client code must verify email one-time codes with the OTP endpoint.');
+assert.doesNotMatch(accountSource, /fetch\('\/api\/auth\/otp/, 'Account client code must not use the legacy OTP endpoint for login.');
+assert.match(accountSource, /cdn-cgi\/access\/logout/, 'Logout must send users through the Cloudflare Access logout endpoint.');
+assert.match(accountSource, /const isProtectedAccountPage = \(\) => isDashboardPage\(\);/, 'Registration should stay public while dashboards remain protected.');
 assert.ok(
-  accountSource.indexOf('const identity = await getAccessIdentity();') < accountSource.indexOf('if (!localPreview && handleMissingVerifiedSession()) return;'),
-  'Protected account pages must await Cloudflare Access identity before redirecting a fresh browser session.',
+  accountSource.indexOf('const remoteAccount = await loadRemoteAccountProfile();') < accountSource.indexOf('if (!localPreview && isProtectedAccountPage())'),
+  'Protected account pages must check the Access-backed account API before redirecting to login.',
 );
-assert.ok(
-  accountSource.indexOf('if (!localPreview && handleMissingVerifiedSession()) return;') > accountSource.indexOf('const identity = await getAccessIdentity();'),
-  'Protected account pages must require a server-verified OTP or Cloudflare Access session instead of trusting browser storage.',
-);
-assert.match(
+assert.doesNotMatch(
   accountSource,
-  /const handleMissingVerifiedSession = \(\) => \{[\s\S]*clearAccountSession\(\)[\s\S]*redirectToLogin\(\)/,
-  'Missing production sessions should clear cached account state and redirect protected pages to login.',
-);
-assert.match(
-  accountSource,
-  /isLoginRedirectTarget\(url\.pathname\)/,
-  'Login redirects must reject login-page targets so successful OTP verification cannot bounce back to login.',
-);
-assert.match(
-  accountSource,
-  /email: String\(accountIdentity\?\.email \|\| \(isAccountLocalPreview\(\) \? formData\.get\('email'\) : ''\)/,
-  'Production registration must derive its submitted email from the verified account identity.',
+  /if \(!localPreview && hasCachedSession\)/,
+  'Production pages must not trust browser cached sessions as verified identity.',
 );
 assert.doesNotMatch(
   siteScriptSource,
@@ -73,6 +58,10 @@ assert.match(accountHtmlSource, /data-required-account-role="customer"/, 'Custom
 assert.match(accountSource, /return normalizedRole === requiredRole \|\| normalizedRole === 'admin';/, 'Role dashboards should route users to their exact role home while allowing admins to access every dashboard.');
 assert.match(ownerPanelSource, /data-required-account-role="owner"/, 'Owner panel should declare its required owner role.');
 assert.match(managerPanelSource, /data-required-account-role="manager"/, 'Manager panel should declare its required manager role.');
+assert.doesNotMatch(accountHtmlSource, /body\[data-account-locked="true"\] main/, 'Locked account pages should keep the access status visible instead of rendering a blank page.');
+assert.doesNotMatch(ownerPanelSource, /body\[data-account-locked="true"\] main/, 'Locked owner panels should keep the access status visible instead of rendering a blank page.');
+assert.doesNotMatch(managerPanelSource, /body\[data-account-locked="true"\] main/, 'Locked manager panels should keep the access status visible instead of rendering a blank page.');
+assert.match(accountSource, /getDashboardWorkspaceHash[\s\S]*owner: '#owner-workspace'[\s\S]*manager: '#manager-workspace'/, 'Dashboard refresh links should target the current role panel workspace.');
 assert.doesNotMatch(
   siteScriptSource,
   /'owner\.html': \['owner'|manager\.html': \['manager'/,
@@ -449,16 +438,15 @@ const rememberedSessionCookie = await utilsModule.createAccountSessionCookie({ A
 assert.match(rememberedSessionCookie, /Max-Age=2592000; HttpOnly; Secure; SameSite=Lax/, 'Remembered OTP login should create a 30-day account session cookie.');
 const sessionCookieHeader = sessionCookie.split(';')[0];
 const cookieEmail = await utilsModule.getAccountSessionEmail(new Request('https://luxeroutes.test/api/account', {
-  headers: { Cookie: sessionCookieHeader },
+  headers: { Cookie: 'luxeroutes_account_session=legacy' },
 }), { AUTH_SESSION_SECRET: 'test-secret' });
-assert.equal(cookieEmail, 'owner@example.com', 'Account session cookie should restore the verified email.');
+assert.equal(cookieEmail, '', 'Legacy local account cookies must not restore verified identity.');
 
 const cookieAccountResponse = await accountModule.onRequestGet({
-  request: new Request('https://luxeroutes.test/api/account', { headers: { Cookie: sessionCookieHeader } }),
+  request: new Request('https://luxeroutes.test/api/account', { headers: { Cookie: 'luxeroutes_account_session=legacy' } }),
   env: { DB: db, AUTH_SESSION_SECRET: 'test-secret' },
 });
-assert.equal(cookieAccountResponse.status, 200, 'Account API should accept a verified OTP account session cookie.');
-assert.equal((await cookieAccountResponse.json()).identityEmail, 'owner@example.com', 'OTP account sessions should restore the normalized account email.');
+assert.equal(cookieAccountResponse.status, 401, 'Account API should require Cloudflare Access instead of a local OTP session cookie.');
 
 const mismatchedRegistrationResponse = await accountModule.onRequestPost({
   request: makeRequest('owner@example.com', { email: 'attacker@example.com', name: 'Wrong Email' }),
