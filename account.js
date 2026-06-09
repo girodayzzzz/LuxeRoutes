@@ -69,7 +69,7 @@ const isRoleAllowedOnPage = (role) => {
   const requiredRole = getRequiredAccountRole();
   if (!requiredRole) return true;
   const normalizedRole = normalizeAccountRole(role);
-  return normalizedRole === requiredRole || normalizedRole === 'admin';
+  return normalizedRole === requiredRole;
 };
 
 const redirectToRoleHomeIfNeeded = (role) => {
@@ -98,6 +98,15 @@ const redirectToLogin = () => {
   lockDashboard();
   const target = getCurrentAccountTarget();
   window.location.replace(`login.html?redirect=${encodeURIComponent(target)}`);
+};
+
+const handleMissingVerifiedSession = () => {
+  clearAccountSession();
+  if (isProtectedAccountPage()) {
+    redirectToLogin();
+    return true;
+  }
+  return false;
 };
 
 const clearAccountSession = () => {
@@ -632,18 +641,7 @@ const initialiseAccount = async () => {
     }
   }
 
-  if (!localPreview && hasCachedSession) {
-    const restored = restoreCachedAccountSession(
-      cachedSession,
-      'Your verified browser session is active while we reconnect to your account. Refresh if your latest profile details do not appear.',
-    );
-    if (restored) return;
-  }
-
-  if (!localPreview && isProtectedAccountPage()) {
-    redirectToLogin();
-    return;
-  }
+  if (!localPreview && handleMissingVerifiedSession()) return;
 
   if (localPreview && hasCachedSession) {
     const restored = restoreCachedAccountSession(cachedSession, 'Your local preview session is active in this browser.');
