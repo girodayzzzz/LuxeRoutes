@@ -21,6 +21,9 @@ assert.match(accountSource, /const isLoginRedirectTarget = \(path\) =>/, 'Login 
 assert.match(accountSource, /fetchRemoteAccountProfile = async \(endpoint\)[\s\S]*fetchAccountAuth\(endpoint,[\s\S]*?redirect: 'manual'/, 'Account API probes must not follow accidental Cloudflare Access redirects into a browser redirect loop.');
 assert.match(accountSource, /fetchRemoteAccountProfile\('\/api\/auth\/otp\?action=session'\)/, 'Account pages should fall back to the public OTP session API when the account API is unavailable.');
 assert.match(accountSource, /fetch\('\/api\/auth\/otp/, 'Account client code should use the Resend OTP endpoint for public login and logout.');
+assert.match(accountSource, /fetch\('\/api\/auth\/otp',[\s\S]*?redirect: 'manual'/, 'OTP request fetches must not follow Cloudflare Access redirects.');
+assert.match(accountSource, /fetch\('\/api\/auth\/otp\?action=verify',[\s\S]*?redirect: 'manual'/, 'OTP verification fetches must not follow Cloudflare Access redirects.');
+assert.match(accountSource, /Cloudflare Access is redirecting a public LuxeRoutes login API/, 'Login errors should explain when Cloudflare Access is protecting public OTP routes.');
 assert.match(accountSource, /logoutRemoteAccountSession/, 'Logout must clear the signed OTP account session.');
 assert.match(accountSource, /const isProtectedAccountPage = \(\) => isDashboardPage\(\);/, 'Registration should stay public while dashboards remain protected.');
 assert.ok(

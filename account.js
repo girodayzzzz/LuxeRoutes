@@ -335,6 +335,23 @@ const showLoginEmailStep = () => {
   loginEmailInput?.focus();
 };
 
+
+const getAuthRedirectMessage = () => 'Cloudflare Access is redirecting a public LuxeRoutes login API. Keep /login.html, /api/auth/otp, /api/account, /account.html, /owner-panel.html, and /manager-panel.html public in Cloudflare Access; protect only /admin/* and /api/admin/*.';
+
+const readJsonOrAuthError = async (response, fallbackMessage) => {
+  const contentType = response.headers.get('content-type') || '';
+  const location = response.headers.get('location') || '';
+
+  if (response.type === 'opaqueredirect' || response.redirected || (response.status >= 300 && response.status < 400) || /cloudflareaccess|cdn-cgi\/access/i.test(location)) {
+    throw new Error(getAuthRedirectMessage());
+  }
+
+  const data = contentType.includes('application/json') ? await response.json().catch(() => ({})) : {};
+  if (!response.ok) throw new Error(data.error || fallbackMessage);
+  if (!contentType.includes('application/json')) throw new Error(getAuthRedirectMessage());
+  return data;
+};
+
 const setLoginOtpBusy = (busy = false) => {
   loginOtpForm?.querySelectorAll('button').forEach((button) => {
     button.disabled = busy;
@@ -347,11 +364,10 @@ const requestLoginOtp = async (email) => {
     method: 'POST',
     headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
     credentials: 'same-origin',
+    redirect: 'manual',
     body: JSON.stringify({ email }),
   });
-  const data = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(data.error || 'Unable to send the login code right now.');
-  return data;
+  return readJsonOrAuthError(response, 'Unable to send the login code right now.');
 };
 
 const verifyLoginOtp = async (email, otp, remember = false) => {
@@ -359,11 +375,10 @@ const verifyLoginOtp = async (email, otp, remember = false) => {
     method: 'POST',
     headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
     credentials: 'same-origin',
+    redirect: 'manual',
     body: JSON.stringify({ email, otp, remember }),
   });
-  const data = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(data.error || 'Unable to verify the login code right now.');
-  return data;
+  return readJsonOrAuthError(response, 'Unable to verify the login code right now.');
 };
 
 const logoutRemoteAccountSession = async () => {
