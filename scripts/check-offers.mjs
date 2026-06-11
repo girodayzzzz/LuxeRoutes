@@ -34,6 +34,7 @@ class FakeStatement {
   }
   first() {
     if (this.sql.includes('FROM access_grants')) return this.db.grants.find((grant) => grant.email === this.params[0] && grant.status === 'active') || null;
+    if (this.sql.includes('FROM profiles')) return this.db.profiles?.find((profile) => profile.email === this.params[0]) || null;
     if (this.sql.includes('FROM stay_offers')) return this.db.offers.find((offer) => offer.id === this.params[0]) || null;
     throw new Error(`Unhandled first SQL: ${this.sql}`);
   }
@@ -66,6 +67,7 @@ class FakeDb {
       { id: 'grant-owner', email: 'owner@example.com', role: 'owner', status: 'active' },
       { id: 'grant-manager', email: 'manager@example.com', role: 'manager', status: 'active' },
     ];
+    this.profiles = [];
     this.offers = [{ id: 'offer-existing', title: 'Existing Villa', slug: 'existing-villa', country: 'italy', region: 'lakes', stayType: 'villa', options: 'pool', locationLabel: 'Italy · Lakes', guestLabel: '6 guests', priceLabel: 'From €500/night', description: 'Existing public offer.', imageUrl: '', imageAlt: 'Existing Villa', status: 'published', publishedAt: '2026-06-04T00:00:00.000Z', ownerEmail: 'owner@example.com', managerEmail: 'manager@example.com', partnerStatus: 'published', ownerNotes: 'Owner note', managerNotes: 'Manager note', availableFrom: null, availableTo: null, discountLabel: '', availabilityNotes: '', updatedAt: '2026-06-04T00:00:00.000Z' }];
     this.inquiries = [{ id: 'inquiry-stay-1', inquiryType: 'Trip request', name: 'Traveler', email: 'traveler@example.com', phone: '', offerId: 'offer-existing', offerTitle: 'Existing Villa', ownerEmail: 'owner@example.com', managerEmail: 'manager@example.com', payloadJson: JSON.stringify({ offer: 'Existing Villa', message: 'Can we stay in July?', guests: '4' }), status: 'new', createdAt: '2026-06-05T00:00:00.000Z', updatedAt: '2026-06-05T00:00:00.000Z' }];
   }

@@ -11,13 +11,13 @@ const loginSource = readFileSync('login.html', 'utf8');
 const ownerPanelSource = readFileSync('owner-panel.html', 'utf8');
 const managerPanelSource = readFileSync('manager-panel.html', 'utf8');
 const siteScriptSource = readFileSync('script.js', 'utf8');
-assert.match(loginSource, /data-access-login-link/, 'Public login should show a Cloudflare Access account entry button.');
-assert.doesNotMatch(loginSource, /data-login-otp-form|action="\/api\/auth\/otp"|name="otp"/, 'Public login must not render the legacy Resend OTP form.');
-assert.match(loginSource, /Cloudflare Access/, 'Public login should explain that Cloudflare Access is the verified identity source.');
+assert.match(loginSource, /data-login-otp-form/, 'Public login should show the Resend OTP account form.');
+assert.match(loginSource, /action="\/api\/auth\/otp"/, 'Public login should post OTP requests to the Resend-backed API.');
+assert.match(loginSource, /data-admin-access-link[\s\S]*Continue with Cloudflare Access/, 'Public login should keep a separate Cloudflare Access entry for admins.');
 assert.match(loginSource, /href="register\.html"[^>]*>Create an account<\/a>/, 'Public login should link to registration.');
-assert.match(accountSource, /fetch\('\/.cloudflare\/access\/get-identity',[\s\S]*?redirect: 'manual'/, 'Cloudflare Access identity checks must not follow Access redirects into a browser redirect loop.');
-assert.doesNotMatch(accountSource, /fetch\('\/api\/auth\/otp/, 'Account client code must not use the legacy OTP endpoint for login.');
-assert.match(accountSource, /cdn-cgi\/access\/logout/, 'Logout must send users through the Cloudflare Access logout endpoint.');
+assert.match(accountSource, /fetchAccountAuth\('\/.cloudflare\/access\/get-identity',[\s\S]*?redirect: 'manual'/, 'Cloudflare Access identity checks must not follow Access redirects into a browser redirect loop.');
+assert.match(accountSource, /fetch\('\/api\/auth\/otp/, 'Account client code should use the Resend OTP endpoint for public login and logout.');
+assert.match(accountSource, /logoutRemoteAccountSession/, 'Logout must clear the signed OTP account session.');
 assert.match(accountSource, /const isProtectedAccountPage = \(\) => isDashboardPage\(\);/, 'Registration should stay public while dashboards remain protected.');
 assert.ok(
   accountSource.indexOf('const remoteAccount = await loadRemoteAccountProfile();') < accountSource.indexOf('if (!localPreview && isProtectedAccountPage())'),

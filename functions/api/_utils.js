@@ -21,6 +21,8 @@ export const normalizeEmail = (email) => String(email || '').trim().toLowerCase(
 
 export const isValidRole = (role, roles = ROLE_ORDER) => roles.includes(role);
 
+const normalizeRole = (role) => (isValidRole(role) ? role : 'customer');
+
 const getCloudflareAccessJwt = (request) => {
   const headerToken = request.headers.get('Cf-Access-Jwt-Assertion')
     || request.headers.get('cf-access-jwt-assertion');
@@ -130,8 +132,28 @@ const base64UrlDecode = (value) => {
   return atob(padded);
 };
 
+const getAccountSessionSecret = (env) => env.AUTH_SESSION_SECRET || env.RESEND_API_KEY || '';
 
+const signAccountSessionPayload = async (payload, secret) => {
+  const key = await crypto.subtle.importKey(
+    'raw',
+    textEncoder.encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign'],
+  );
+  const signature = await crypto.subtle.sign('HMAC', key, textEncoder.encode(payload));
+  return bytesToBase64Url(new Uint8Array(signature));
+};
 
+const timingSafeEqual = (left, right) => {
+  if (left.length !== right.length) return false;
+  let mismatch = 0;
+  for (let index = 0; index < left.length; index += 1) {
+    mismatch |= left.charCodeAt(index) ^ right.charCodeAt(index);
+  }
+  return mismatch === 0;
+};
 
 export const parseCookies = (request) => Object.fromEntries(
   String(request.headers.get('Cookie') || '')
@@ -288,7 +310,7 @@ export const resolveAccountRole = ({ grant = null, profile = null } = {}) => nor
 export const requireAccountRole = async (request, env, roles = []) => {
   const db = requireDb(env);
   const email = await getAccountSessionEmail(request, env);
-  if (!email) return { error: privateErrorJson('Cloudflare Access identity is required.', 401) };
+  if (!email) return { error: privateErrorJson('Verified account session is required.', 401) };
 
   const [grant, profile] = await Promise.all([
     getActiveGrant(db, email),
