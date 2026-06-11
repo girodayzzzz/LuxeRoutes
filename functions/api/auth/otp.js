@@ -1,4 +1,4 @@
-import { createAccountSessionCookie, ensureAuthSchema, errorJson, getActiveGrant, json, makeId, normalizeEmail, nowIso, requireDb } from '../_utils.js';
+import { createAccountSessionCookie, ensureAuthSchema, errorJson, getAccountSessionEmail, getActiveGrant, json, makeId, normalizeEmail, nowIso, privateErrorJson, privateJson, requireDb, resolveAccountRole } from '../_utils.js';
 
 const OTP_TTL_MINUTES = 10;
 const OTP_LENGTH = 6;
@@ -179,6 +179,36 @@ const otpErrorResponse = (request, message, status = 400, email = '') => (wantsJ
   ? errorJson(message, status)
   : htmlResponse(otpHtmlPage({ email, message, isError: true }), { status }));
 
+
+const getAccessStatus = (profile, grant) => {
+  if (!profile) return 'profile_required';
+  if (profile.requestedRole && profile.requestedRole !== 'customer' && !['admin', profile.requestedRole].includes(grant?.role)) {
+    return profile.status || 'pending_admin_grant';
+  }
+  return profile.status || 'active';
+};
+
+const getSessionAccount = async ({ request, env }) => {
+  const db = requireDb(env);
+  const email = await getAccountSessionEmail(request, env);
+  if (!email) return privateErrorJson('Verified account session is required.', 401);
+
+  await ensureAuthSchema(db);
+  const [profile, grant] = await Promise.all([
+    getProfile(db, email),
+    getActiveGrant(db, email),
+  ]);
+
+  const role = resolveAccountRole({ grant, profile });
+  return privateJson({
+    identityEmail: email,
+    profile,
+    grant,
+    role,
+    accessStatus: getAccessStatus(profile, grant),
+  });
+};
+
 const requestOtp = async ({ request, env }) => {
   const db = requireDb(env);
   const body = await parseRequestBody(request);
@@ -303,6 +333,16 @@ const verifyOtp = async ({ request, env }) => {
     role,
     redirect,
   }, sessionCookie ? { headers: { 'Set-Cookie': sessionCookie } } : {});
+};
+
+export const onRequestGet = async (context) => {
+  try {
+    const action = new URL(context.request.url).searchParams.get('action');
+    if (action === 'session') return await getSessionAccount(context);
+    return errorJson('Not found.', 404);
+  } catch (error) {
+    return privateErrorJson(error.message || 'Unable to load account session.', 500);
+  }
 };
 
 export const onRequestPost = async (context) => {

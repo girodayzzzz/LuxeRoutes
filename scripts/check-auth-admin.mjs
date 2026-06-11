@@ -18,7 +18,8 @@ assert.match(loginSource, /href="register\.html"[^>]*>Create an account<\/a>/, '
 assert.match(accountSource, /fetchAccountAuth\('\/.cloudflare\/access\/get-identity',[\s\S]*?redirect: 'manual'/, 'Cloudflare Access identity checks must not follow Access redirects into a browser redirect loop.');
 assert.match(accountSource, /const accountAuthFetchTimeoutMs = 8000;/, 'Account auth fetches should use a defined timeout instead of throwing before session checks.');
 assert.match(accountSource, /const isLoginRedirectTarget = \(path\) =>/, 'Login redirect sanitizing should define the login-target helper used after OTP verification.');
-assert.match(accountSource, /fetchAccountAuth\('\/api\/account',[\s\S]*?redirect: 'manual'/, 'Account API probes must not follow accidental Cloudflare Access redirects into a browser redirect loop.');
+assert.match(accountSource, /fetchRemoteAccountProfile = async \(endpoint\)[\s\S]*fetchAccountAuth\(endpoint,[\s\S]*?redirect: 'manual'/, 'Account API probes must not follow accidental Cloudflare Access redirects into a browser redirect loop.');
+assert.match(accountSource, /fetchRemoteAccountProfile\('\/api\/auth\/otp\?action=session'\)/, 'Account pages should fall back to the public OTP session API when the account API is unavailable.');
 assert.match(accountSource, /fetch\('\/api\/auth\/otp/, 'Account client code should use the Resend OTP endpoint for public login and logout.');
 assert.match(accountSource, /logoutRemoteAccountSession/, 'Logout must clear the signed OTP account session.');
 assert.match(accountSource, /const isProtectedAccountPage = \(\) => isDashboardPage\(\);/, 'Registration should stay public while dashboards remain protected.');

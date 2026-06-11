@@ -262,17 +262,23 @@ const saveAccountProfile = (profile) => {
   storageSet('localStorage', accountStorageKey, JSON.stringify(profile));
 };
 
+const fetchRemoteAccountProfile = async (endpoint) => {
+  const response = await fetchAccountAuth(endpoint, {
+    headers: { Accept: 'application/json' },
+    credentials: 'same-origin',
+    redirect: 'manual',
+  });
+
+  if (!response.ok) return null;
+  return response.json();
+};
+
 const loadRemoteAccountProfile = async () => {
   try {
-    const response = await fetchAccountAuth('/api/account', {
-      headers: { Accept: 'application/json' },
-      credentials: 'same-origin',
-      redirect: 'manual',
-    });
+    const data = await fetchRemoteAccountProfile('/api/account')
+      || await fetchRemoteAccountProfile('/api/auth/otp?action=session');
+    if (!data) return null;
 
-    if (!response.ok) return null;
-
-    const data = await response.json();
     accountApiEnabled = true;
     return data;
   } catch (error) {

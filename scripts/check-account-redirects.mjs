@@ -68,6 +68,7 @@ const runAccountClient = async ({
   bodyClasses = ['account-page', 'account-dashboard-page'],
   bodyDataset = { requiredAccountRole: 'customer' },
   accountResponse = new Response(JSON.stringify({ error: 'Verified email is required.' }), { status: 401 }),
+  sessionResponse = new Response(JSON.stringify({ error: 'Verified account session is required.' }), { status: 401 }),
   accessResponse = new Response('Not found', { status: 404 }),
   storageUnavailable = false,
 } = {}) => {
@@ -122,6 +123,7 @@ const runAccountClient = async ({
     fetch: async (url) => {
       fetches.push(url);
       if (url === '/api/account') return accountResponse.clone();
+      if (url === '/api/auth/otp?action=session') return sessionResponse.clone();
       if (url === '/.cloudflare/access/get-identity') return accessResponse.clone();
       if (url === '/api/owner/offers' || url === '/api/manager/offers') {
         return new Response(JSON.stringify({ offers: [] }), { status: 200, headers: { 'Content-Type': 'application/json' } });
@@ -151,8 +153,8 @@ assert.deepEqual(
 );
 assert.deepEqual(
   unauthenticatedAccount.fetches.slice(0, 2),
-  ['/api/account', '/.cloudflare/access/get-identity'],
-  'Account page should check the signed account API first, then the Cloudflare Access identity fallback.',
+  ['/api/account', '/api/auth/otp?action=session'],
+  'Account page should check the account API first, then the OTP session fallback.',
 );
 
 const storageBlockedAccount = await runAccountClient({ storageUnavailable: true });
@@ -160,6 +162,29 @@ assert.deepEqual(
   storageBlockedAccount.redirects,
   ['login.html?redirect=%2Faccount.html'],
   'Blocked browser storage should not break the unauthenticated account redirect.',
+);
+
+
+const fallbackSessionResponse = new Response(JSON.stringify({
+  identityEmail: 'customer@example.com',
+  profile: { email: 'customer@example.com', defaultRole: 'customer', requestedRole: 'customer', status: 'active' },
+  grant: null,
+  role: 'customer',
+  accessStatus: 'active',
+}), { status: 200, headers: { 'Content-Type': 'application/json' } });
+const accountApiRedirectFallback = await runAccountClient({
+  accountResponse: new Response(null, { status: 302, headers: { Location: '/cdn-cgi/access/login' } }),
+  sessionResponse: fallbackSessionResponse,
+});
+assert.deepEqual(
+  accountApiRedirectFallback.redirects,
+  [],
+  'A verified OTP session should keep account.html open even if /api/account is accidentally redirected by Access.',
+);
+assert.deepEqual(
+  accountApiRedirectFallback.fetches.slice(0, 2),
+  ['/api/account', '/api/auth/otp?action=session'],
+  'The OTP session fallback should run immediately after an unavailable account API response.',
 );
 
 const ownerAccountResponse = new Response(JSON.stringify({
