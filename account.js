@@ -57,6 +57,40 @@ const accountEscapeHtml = (value) => String(value || '').replace(/[&<>"]/g, (cha
   '"': '&quot;',
 }[character]));
 
+
+const getBrowserStorage = (storageName) => {
+  try {
+    return window[storageName] || null;
+  } catch (error) {
+    return null;
+  }
+};
+
+const storageGet = (storageName, key) => {
+  try {
+    return getBrowserStorage(storageName)?.getItem(key) || null;
+  } catch (error) {
+    return null;
+  }
+};
+
+const storageSet = (storageName, key, value) => {
+  try {
+    getBrowserStorage(storageName)?.setItem(key, value);
+  } catch (error) {
+    // The signed HttpOnly account cookie remains the source of truth when
+    // browser storage is unavailable.
+  }
+};
+
+const storageRemove = (storageName, key) => {
+  try {
+    getBrowserStorage(storageName)?.removeItem(key);
+  } catch (error) {
+    // Ignore unavailable browser storage and continue with server-side session checks.
+  }
+};
+
 const fetchAccountAuth = async (url, options = {}) => {
   const controller = new AbortController();
   const timeout = window.setTimeout(() => controller.abort(), accountAuthFetchTimeoutMs);
@@ -138,10 +172,10 @@ const redirectToLogin = () => {
 };
 
 const clearAccountSession = () => {
-  sessionStorage.removeItem(accountSessionKey);
-  localStorage.removeItem(accountSessionKey);
-  sessionStorage.removeItem(accountStorageKey);
-  localStorage.removeItem(accountStorageKey);
+  storageRemove('sessionStorage', accountSessionKey);
+  storageRemove('localStorage', accountSessionKey);
+  storageRemove('sessionStorage', accountStorageKey);
+  storageRemove('localStorage', accountStorageKey);
 };
 
 const parseStoredAccountSession = (stored) => {
@@ -157,8 +191,8 @@ const parseStoredAccountSession = (stored) => {
 };
 
 const loadAccountSession = () => {
-  const sessionSession = parseStoredAccountSession(sessionStorage.getItem(accountSessionKey));
-  const rememberedSession = parseStoredAccountSession(localStorage.getItem(accountSessionKey));
+  const sessionSession = parseStoredAccountSession(storageGet('sessionStorage', accountSessionKey));
+  const rememberedSession = parseStoredAccountSession(storageGet('localStorage', accountSessionKey));
   const session = sessionSession || rememberedSession;
 
   if (!session) clearAccountSession();
@@ -169,7 +203,7 @@ const loadAccountSession = () => {
 const saveAccountSession = ({ identity = accountIdentity, profile = null, grant = null, role = null, remember = false } = {}) => {
   if (!identity?.email && !profile?.email) return;
 
-  const shouldRemember = remember || Boolean(parseStoredAccountSession(localStorage.getItem(accountSessionKey)));
+  const shouldRemember = remember || Boolean(parseStoredAccountSession(storageGet('localStorage', accountSessionKey)));
   const serializedSession = JSON.stringify({
     identity,
     profile,
@@ -180,9 +214,9 @@ const saveAccountSession = ({ identity = accountIdentity, profile = null, grant 
     expiresAt: Date.now() + (shouldRemember ? accountRememberedSessionTtlMs : accountSessionTtlMs),
   });
 
-  sessionStorage.setItem(accountSessionKey, serializedSession);
-  if (shouldRemember) localStorage.setItem(accountSessionKey, serializedSession);
-  else localStorage.removeItem(accountSessionKey);
+  storageSet('sessionStorage', accountSessionKey, serializedSession);
+  if (shouldRemember) storageSet('localStorage', accountSessionKey, serializedSession);
+  else storageRemove('localStorage', accountSessionKey);
 };
 
 const accountStatusLabel = (status) => ({
@@ -214,7 +248,7 @@ const getAccessIdentity = async () => {
 };
 
 const loadAccountProfile = () => {
-  const stored = localStorage.getItem(accountStorageKey);
+  const stored = storageGet('localStorage', accountStorageKey);
   if (!stored) return null;
 
   try {
@@ -225,7 +259,7 @@ const loadAccountProfile = () => {
 };
 
 const saveAccountProfile = (profile) => {
-  localStorage.setItem(accountStorageKey, JSON.stringify(profile));
+  storageSet('localStorage', accountStorageKey, JSON.stringify(profile));
 };
 
 const loadRemoteAccountProfile = async () => {
