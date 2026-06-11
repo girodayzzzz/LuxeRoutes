@@ -39,6 +39,7 @@ const accountStorageKey = 'luxeroutes-account-profile-v1';
 const accountSessionKey = 'luxeroutes-account-session-v1';
 const accountSessionTtlMs = 4 * 60 * 60 * 1000;
 const accountRememberedSessionTtlMs = 30 * 24 * 60 * 60 * 1000;
+const accountAuthFetchTimeoutMs = 8000;
 const accountDashboardRoles = ['customer', 'owner', 'manager', 'admin', 'partner'];
 const accountRoleHomePaths = {
   customer: 'account.html',
@@ -115,6 +116,7 @@ const unlockDashboard = () => {
 
 const getCurrentAccountTarget = () => `${window.location.pathname}${window.location.search}${window.location.hash}`;
 
+const isLoginRedirectTarget = (path) => ['/login', '/login.html'].includes(String(path || '').replace(/\/$/, ''));
 
 const getDashboardRoleForPath = (path) => {
   const normalizedPath = String(path || '').replace(/\/$/, '') || '/account.html';
@@ -231,6 +233,7 @@ const loadRemoteAccountProfile = async () => {
     const response = await fetchAccountAuth('/api/account', {
       headers: { Accept: 'application/json' },
       credentials: 'same-origin',
+      redirect: 'manual',
     });
 
     if (!response.ok) return null;
@@ -639,7 +642,7 @@ const setAccountStatus = ({ heading, status, email, role, approved }) => {
 const getAccountStatusCopy = (remoteAccount = {}, profile = null) => {
   if (!profile) {
     return isLoginPage()
-      ? 'Your Cloudflare Access session is active. Open your account to finish setup.'
+      ? 'Your LuxeRoutes OTP session is active. Open your account to finish setup.'
       : 'Your email is verified. Create your profile to request customer, owner, or manager access.';
   }
 
@@ -701,8 +704,8 @@ const initialiseAccount = async () => {
     status: loggedOut
       ? 'You have been signed out of LuxeRoutes on this browser. Use secure login when you are ready to return.'
       : (isLoginPage()
-        ? 'Use Cloudflare Access to verify your email and open the correct LuxeRoutes dashboard for your role.'
-        : 'A verified Cloudflare Access email session is required before private account details can be shown.'),
+        ? 'Enter your email above and verify the Resend one-time code to open the correct LuxeRoutes dashboard for your role.'
+        : 'A verified LuxeRoutes OTP session is required before private account details can be shown.'),
     email: 'Email pending',
     role: 'Account',
     approved: false,
