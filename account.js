@@ -18,6 +18,15 @@ const ownerOffersTarget = document.querySelector('[data-owner-offers]');
 const managerOffersTarget = document.querySelector('[data-manager-offers]');
 const ownerRequestsTarget = document.querySelector('[data-owner-requests]');
 const managerRequestsTarget = document.querySelector('[data-manager-requests]');
+const loginOtpForm = document.querySelector('[data-login-otp-form]');
+const loginEmailStep = document.querySelector('[data-login-email-step]');
+const loginCodeStep = document.querySelector('[data-login-code-step]');
+const loginEmailInput = document.querySelector('[data-login-email-input]');
+const loginCodeInput = document.querySelector('[data-login-code-input]');
+const loginRememberInput = document.querySelector('[data-login-remember-input]');
+const loginOtpEmail = document.querySelector('[data-login-otp-email]');
+const loginOtpMessage = document.querySelector('[data-login-otp-message]');
+const loginOtpBack = document.querySelector('[data-login-otp-back]');
 const isRegisterPage = () => document.body.classList.contains('account-page') && Boolean(accountForm);
 const isDashboardPage = () => document.body.classList.contains('account-dashboard-page');
 const isProtectedAccountPage = () => isDashboardPage();
@@ -366,20 +375,19 @@ const updateAccountAccessCards = (role = 'customer') => {
   });
 };
 
-const getAccessLogoutUrl = () => `/cdn-cgi/access/logout?redirect_url=${encodeURIComponent(`${window.location.origin}/login.html?logged_out=1`)}`;
-
 const updateAccountLogout = (active = false) => {
   accountLogoutButtons.forEach((button) => {
     button.hidden = !active;
   });
 };
 
-const logoutAccount = () => {
+const logoutAccount = async () => {
   clearAccountSession();
   accountIdentity = null;
   updateAccountAccessCards();
   updateAccountLogout(false);
-  window.location.href = getAccessLogoutUrl();
+  await logoutRemoteAccountSession();
+  window.location.href = 'login.html?logged_out=1';
 };
 
 const updateAccountNav = ({ email = '', role = '', active = false } = {}) => {
@@ -780,6 +788,16 @@ document.addEventListener('submit', async (event) => {
   }
 });
 
+loginOtpBack?.addEventListener('click', () => {
+  showLoginEmailStep();
+  setLoginOtpMessage('Enter your email and we will send a fresh 6-digit login code.');
+});
+
+loginOtpForm?.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const email = String(loginEmailInput?.value || '').trim().toLowerCase();
+  const otp = String(loginCodeInput?.value || '').trim();
+  const isCodeStep = Boolean(loginCodeStep && !loginCodeStep.hidden);
 
   if (!email || !email.includes('@')) {
     setLoginOtpMessage('Enter a valid email address.', 'error');
