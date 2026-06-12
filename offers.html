@@ -71,7 +71,7 @@
         <div>
           <p class="eyebrow">Private stay collection</p>
           <h1>Curated European stays matched to the way you travel.</h1>
-          <p>Browse selected stay concepts, filter by region and style, then ask LuxeRoutes to check fit, availability, and route pairing.</p>
+          <p>Browse selected stay concepts, filter by region and style, then ask LuxeRoutes to check fit, availability, and route pairing before anything is reserved.</p>
           <div class="button-row">
             <a class="btn btn-primary" href="#stay-finder">Explore Stays</a>
             <a class="btn btn-secondary" href="partners.html">List Your Property</a>
@@ -79,7 +79,7 @@
         </div>
         <aside class="marketplace-note" aria-label="How LuxeRoutes curated stays work">
           <span>How it works</span>
-          <p>LuxeRoutes helps refine the stay, route, and partner connection before final details are confirmed.</p>
+          <p>LuxeRoutes helps refine the stay, route, and partner connection before final details are confirmed. Every request remains a private, no-obligation inquiry.</p>
         </aside>
       </div>
     </section>
@@ -103,6 +103,11 @@
           <span>Inquiry-led matching</span>
         </article>
       </div>
+      <div class="container offer-process-strip" aria-label="Stay request process">
+        <article><span>01</span><strong>Choose a direction</strong><p>Filter by country, region, stay type, or mood.</p></article>
+        <article><span>02</span><strong>Send a private request</strong><p>The stay link carries your selected context into the trip brief.</p></article>
+        <article><span>03</span><strong>Confirm personally</strong><p>Dates, pricing, and terms are verified before you decide.</p></article>
+      </div>
     </section>
 
     <section id="stay-finder" class="section stay-finder" aria-labelledby="stay-finder-heading">
@@ -112,6 +117,11 @@
           <h2 id="stay-finder-heading">Filter accommodation offers by country, region, and desired options.</h2>
         </div>
         <p>Use the filters to explore villas, chalets, boutique hotels, apartments, cabins, and wellness retreats. Each offer is a curated starting point; final dates, pricing, and terms are confirmed directly after inquiry.</p>
+        <div class="finder-reassurance" role="note">
+          <span>Proposal-first booking</span>
+          <span>No instant charge or obligation</span>
+          <span>Availability confirmed personally</span>
+        </div>
       </div>
 
       <div class="container offers-layout" data-offer-filter>
@@ -123,7 +133,7 @@
 
           <label>
             Search
-            <input type="search" data-filter-search placeholder="Bled, spa, chef, Riviera..." autocomplete="off" />
+            <input type="search" data-filter-search placeholder="Try: family villa, spa, Riviera..." autocomplete="off" aria-label="Search stays by place, style, or option" />
           </label>
 
           <label>
@@ -167,7 +177,7 @@
           </label>
 
           <fieldset>
-            <legend>Options</legend>
+            <legend>Best for / options</legend>
             <label class="checkbox-line"><input type="checkbox" value="pool" data-filter-option /> Pool</label>
             <label class="checkbox-line"><input type="checkbox" value="spa" data-filter-option /> Spa or sauna</label>
             <label class="checkbox-line"><input type="checkbox" value="sea-view" data-filter-option /> Sea view</label>
@@ -180,7 +190,7 @@
         <div class="offers-results-shell">
           <div class="results-toolbar">
             <p><strong data-result-count>12</strong> curated offers found</p>
-            <span>Availability by private request</span>
+            <span>Request links prefill your private brief</span>
           </div>
 
           <div class="stay-offer-grid" data-offer-results>
@@ -359,8 +369,8 @@
           <div class="no-offers" data-no-results hidden>
             <p class="eyebrow">No exact match</p>
             <h3>We can still shape this stay request privately.</h3>
-            <p>Reset the filters or send us your preferred country, region, and options so we can match you with a suitable European provider.</p>
-            <a class="btn btn-primary" href="plan-trip.html">Send a Custom Brief</a>
+            <p>Reset the filters or send us your preferred country, region, and options so we can match you with a suitable European provider. Pricing and availability will be checked manually before you make any commitment.</p>
+            <a class="btn btn-primary" href="plan-trip.html?request_type=Not+sure+yet#trip-brief">Send a Custom Brief</a>
           </div>
         </div>
       </div>
