@@ -694,15 +694,26 @@ const setAccountStatus = ({ heading, status, email, role, approved }) => {
   }
 };
 
+const getVerifiedRoleLabel = (role) => ({
+  owner: 'Owner access confirmed',
+  manager: 'Manager access confirmed',
+  admin: 'Admin access confirmed',
+  customer: 'Email verified',
+}[normalizeAccountRole(role)] || 'Email verified');
+
 const getAccountStatusCopy = (remoteAccount = {}, profile = null) => {
+  const role = normalizeAccountRole(remoteAccount.role || remoteAccount.grant?.role || profile?.defaultRole || profile?.requestedRole);
+  if (remoteAccount.accessStatus === 'pending_admin_grant' || remoteAccount.accessStatus === 'pending_review') {
+    return 'Your profile is saved. Owner or manager dashboard access is pending LuxeRoutes review.';
+  }
+  if (role === 'owner') return 'Your verified email has active owner access. This owner workspace is ready.';
+  if (role === 'manager') return 'Your verified email has active manager access. This manager workspace is ready.';
+  if (role === 'admin') return 'Your verified email has admin access. Admin and role dashboards are available.';
+
   if (!profile) {
     return isLoginPage()
       ? 'Your LuxeRoutes OTP session is active. Open your account to finish setup.'
       : 'Your email is verified. Create your profile to request customer, owner, or manager access.';
-  }
-
-  if (remoteAccount.accessStatus === 'pending_admin_grant' || remoteAccount.accessStatus === 'pending_review') {
-    return 'Your profile is saved. Owner or manager dashboard access is pending LuxeRoutes review.';
   }
 
   return 'Your email is verified and your LuxeRoutes profile is ready.';
@@ -711,14 +722,15 @@ const getAccountStatusCopy = (remoteAccount = {}, profile = null) => {
 const applyRemoteAccount = (remoteAccount) => {
   accountIdentity = { email: remoteAccount.identityEmail, role: remoteAccount.role };
   const profile = remoteAccount.profile || null;
+  const role = remoteAccount.role || remoteAccount.grant?.role || profile?.defaultRole || 'customer';
   saveAccountSession({ identity: accountIdentity, profile, grant: remoteAccount.grant, role: remoteAccount.role });
   setAccountStatus({
     heading: remoteAccount.accessStatus === 'pending_admin_grant' || remoteAccount.accessStatus === 'pending_review'
       ? 'Access pending review'
-      : 'Email verified',
+      : getVerifiedRoleLabel(role),
     status: getAccountStatusCopy(remoteAccount, profile),
     email: remoteAccount.identityEmail,
-    role: remoteAccount.role || 'customer',
+    role,
     approved: true,
   });
   renderAccountProfile(profile, remoteAccount.grant);

@@ -31,6 +31,7 @@ class FakeElement {
     this.value = '';
     this.textContent = '';
     this.href = '';
+    this.innerHTML = '';
   }
 
   addEventListener() {}
@@ -78,9 +79,17 @@ const runAccountClient = async ({
   body.classList = new FakeClassList(bodyClasses);
   body.dataset = { ...bodyDataset };
 
+  const elements = {
+    '[data-account-heading]': new FakeElement(),
+    '[data-account-status]': new FakeElement(),
+    '[data-account-email]': new FakeElement(),
+    '[data-account-role]': new FakeElement(),
+    '[data-account-profile]': new FakeElement(),
+  };
+
   const document = {
     body,
-    querySelector: () => null,
+    querySelector: (selector) => elements[selector] || null,
     querySelectorAll: () => [],
     addEventListener: () => {},
   };
@@ -142,7 +151,7 @@ const runAccountClient = async ({
 
   vm.runInContext(accountSource, context, { filename: 'account.js' });
   await waitForAccountInitialise();
-  return { redirects, assignments, fetches, body };
+  return { redirects, assignments, fetches, body, elements };
 };
 
 const unauthenticatedAccount = await runAccountClient();
@@ -200,6 +209,19 @@ assert.deepEqual(
   ['owner-panel.html'],
   'Approved owners who open account.html should be routed to owner-panel.html.',
 );
+
+
+const ownerOnOwnerPanel = await runAccountClient({
+  pathname: '/owner-panel.html',
+  bodyDataset: { requiredAccountRole: 'owner' },
+  accountResponse: ownerAccountResponse,
+});
+assert.deepEqual(ownerOnOwnerPanel.redirects, [], 'Approved owners should stay on owner-panel.html.');
+assert.equal(ownerOnOwnerPanel.body.dataset.accountLocked, 'false', 'Approved owners should unlock the owner workspace.');
+assert.equal(ownerOnOwnerPanel.elements['[data-account-heading]'].textContent, 'Owner access confirmed', 'Owner panel status heading should confirm owner access.');
+assert.equal(ownerOnOwnerPanel.elements['[data-account-email]'].textContent, 'owner@example.com', 'Owner panel should display the verified owner email.');
+assert.equal(ownerOnOwnerPanel.elements['[data-account-role]'].textContent, 'owner', 'Owner panel should display the resolved owner role.');
+assert.match(ownerOnOwnerPanel.elements['[data-account-status]'].textContent, /active owner access/, 'Owner panel status should explain active owner access.');
 
 const customerAccountResponse = new Response(JSON.stringify({
   identityEmail: 'customer@example.com',
