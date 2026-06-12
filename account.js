@@ -39,6 +39,7 @@ const accountStorageKey = 'luxeroutes-account-profile-v1';
 const accountSessionKey = 'luxeroutes-account-session-v1';
 const accountSessionTtlMs = 4 * 60 * 60 * 1000;
 const accountRememberedSessionTtlMs = 30 * 24 * 60 * 60 * 1000;
+const accountAuthFetchTimeoutMs = 8000;
 const accountDashboardRoles = ['customer', 'owner', 'manager', 'admin', 'partner'];
 const accountRoleHomePaths = {
   customer: 'account.html',
@@ -55,6 +56,40 @@ const accountEscapeHtml = (value) => String(value || '').replace(/[&<>"]/g, (cha
   '>': '&gt;',
   '"': '&quot;',
 }[character]));
+
+
+const getBrowserStorage = (storageName) => {
+  try {
+    return window[storageName] || null;
+  } catch (error) {
+    return null;
+  }
+};
+
+const storageGet = (storageName, key) => {
+  try {
+    return getBrowserStorage(storageName)?.getItem(key) || null;
+  } catch (error) {
+    return null;
+  }
+};
+
+const storageSet = (storageName, key, value) => {
+  try {
+    getBrowserStorage(storageName)?.setItem(key, value);
+  } catch (error) {
+    // The signed HttpOnly account cookie remains the source of truth when
+    // browser storage is unavailable.
+  }
+};
+
+const storageRemove = (storageName, key) => {
+  try {
+    getBrowserStorage(storageName)?.removeItem(key);
+  } catch (error) {
+    // Ignore unavailable browser storage and continue with server-side session checks.
+  }
+};
 
 const fetchAccountAuth = async (url, options = {}) => {
   const controller = new AbortController();
@@ -115,6 +150,7 @@ const unlockDashboard = () => {
 
 const getCurrentAccountTarget = () => `${window.location.pathname}${window.location.search}${window.location.hash}`;
 
+const isLoginRedirectTarget = (path) => ['/login', '/login.html'].includes(String(path || '').replace(/\/$/, ''));
 
 const getDashboardRoleForPath = (path) => {
   const normalizedPath = String(path || '').replace(/\/$/, '') || '/account.html';
@@ -136,10 +172,10 @@ const redirectToLogin = () => {
 };
 
 const clearAccountSession = () => {
-  sessionStorage.removeItem(accountSessionKey);
-  localStorage.removeItem(accountSessionKey);
-  sessionStorage.removeItem(accountStorageKey);
-  localStorage.removeItem(accountStorageKey);
+  storageRemove('sessionStorage', accountSessionKey);
+  storageRemove('localStorage', accountSessionKey);
+  storageRemove('sessionStorage', accountStorageKey);
+  storageRemove('localStorage', accountStorageKey);
 };
 
 const parseStoredAccountSession = (stored) => {
@@ -155,8 +191,8 @@ const parseStoredAccountSession = (stored) => {
 };
 
 const loadAccountSession = () => {
-  const sessionSession = parseStoredAccountSession(sessionStorage.getItem(accountSessionKey));
-  const rememberedSession = parseStoredAccountSession(localStorage.getItem(accountSessionKey));
+  const sessionSession = parseStoredAccountSession(storageGet('sessionStorage', accountSessionKey));
+  const rememberedSession = parseStoredAccountSession(storageGet('localStorage', accountSessionKey));
   const session = sessionSession || rememberedSession;
 
   if (!session) clearAccountSession();
@@ -167,7 +203,7 @@ const loadAccountSession = () => {
 const saveAccountSession = ({ identity = accountIdentity, profile = null, grant = null, role = null, remember = false } = {}) => {
   if (!identity?.email && !profile?.email) return;
 
-  const shouldRemember = remember || Boolean(parseStoredAccountSession(localStorage.getItem(accountSessionKey)));
+  const shouldRemember = remember || Boolean(parseStoredAccountSession(storageGet('localStorage', accountSessionKey)));
   const serializedSession = JSON.stringify({
     identity,
     profile,
@@ -178,9 +214,9 @@ const saveAccountSession = ({ identity = accountIdentity, profile = null, grant 
     expiresAt: Date.now() + (shouldRemember ? accountRememberedSessionTtlMs : accountSessionTtlMs),
   });
 
-  sessionStorage.setItem(accountSessionKey, serializedSession);
-  if (shouldRemember) localStorage.setItem(accountSessionKey, serializedSession);
-  else localStorage.removeItem(accountSessionKey);
+  storageSet('sessionStorage', accountSessionKey, serializedSession);
+  if (shouldRemember) storageSet('localStorage', accountSessionKey, serializedSession);
+  else storageRemove('localStorage', accountSessionKey);
 };
 
 const accountStatusLabel = (status) => ({
@@ -212,7 +248,7 @@ const getAccessIdentity = async () => {
 };
 
 const loadAccountProfile = () => {
-  const stored = localStorage.getItem(accountStorageKey);
+  const stored = storageGet('localStorage', accountStorageKey);
   if (!stored) return null;
 
   try {
@@ -223,19 +259,26 @@ const loadAccountProfile = () => {
 };
 
 const saveAccountProfile = (profile) => {
-  localStorage.setItem(accountStorageKey, JSON.stringify(profile));
+  storageSet('localStorage', accountStorageKey, JSON.stringify(profile));
+};
+
+const fetchRemoteAccountProfile = async (endpoint) => {
+  const response = await fetchAccountAuth(endpoint, {
+    headers: { Accept: 'application/json' },
+    credentials: 'same-origin',
+    redirect: 'manual',
+  });
+
+  if (!response.ok) return null;
+  return response.json();
 };
 
 const loadRemoteAccountProfile = async () => {
   try {
-    const response = await fetchAccountAuth('/api/account', {
-      headers: { Accept: 'application/json' },
-      credentials: 'same-origin',
-    });
+    const data = await fetchRemoteAccountProfile('/api/account')
+      || await fetchRemoteAccountProfile('/api/auth/otp?action=session');
+    if (!data) return null;
 
-    if (!response.ok) return null;
-
-    const data = await response.json();
     accountApiEnabled = true;
     return data;
   } catch (error) {
@@ -292,6 +335,23 @@ const showLoginEmailStep = () => {
   loginEmailInput?.focus();
 };
 
+
+const getAuthRedirectMessage = () => 'Cloudflare Access is redirecting a public LuxeRoutes login API. Keep /login.html, /api/auth/otp, /api/account, /account.html, /owner-panel.html, and /manager-panel.html public in Cloudflare Access; protect only /admin/* and /api/admin/*.';
+
+const readJsonOrAuthError = async (response, fallbackMessage) => {
+  const contentType = response.headers.get('content-type') || '';
+  const location = response.headers.get('location') || '';
+
+  if (response.type === 'opaqueredirect' || response.redirected || (response.status >= 300 && response.status < 400) || /cloudflareaccess|cdn-cgi\/access/i.test(location)) {
+    throw new Error(getAuthRedirectMessage());
+  }
+
+  const data = contentType.includes('application/json') ? await response.json().catch(() => ({})) : {};
+  if (!response.ok) throw new Error(data.error || fallbackMessage);
+  if (!contentType.includes('application/json')) throw new Error(getAuthRedirectMessage());
+  return data;
+};
+
 const setLoginOtpBusy = (busy = false) => {
   loginOtpForm?.querySelectorAll('button').forEach((button) => {
     button.disabled = busy;
@@ -304,11 +364,10 @@ const requestLoginOtp = async (email) => {
     method: 'POST',
     headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
     credentials: 'same-origin',
+    redirect: 'manual',
     body: JSON.stringify({ email }),
   });
-  const data = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(data.error || 'Unable to send the login code right now.');
-  return data;
+  return readJsonOrAuthError(response, 'Unable to send the login code right now.');
 };
 
 const verifyLoginOtp = async (email, otp, remember = false) => {
@@ -316,11 +375,10 @@ const verifyLoginOtp = async (email, otp, remember = false) => {
     method: 'POST',
     headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
     credentials: 'same-origin',
+    redirect: 'manual',
     body: JSON.stringify({ email, otp, remember }),
   });
-  const data = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(data.error || 'Unable to verify the login code right now.');
-  return data;
+  return readJsonOrAuthError(response, 'Unable to verify the login code right now.');
 };
 
 const logoutRemoteAccountSession = async () => {
@@ -639,7 +697,7 @@ const setAccountStatus = ({ heading, status, email, role, approved }) => {
 const getAccountStatusCopy = (remoteAccount = {}, profile = null) => {
   if (!profile) {
     return isLoginPage()
-      ? 'Your Cloudflare Access session is active. Open your account to finish setup.'
+      ? 'Your LuxeRoutes OTP session is active. Open your account to finish setup.'
       : 'Your email is verified. Create your profile to request customer, owner, or manager access.';
   }
 
@@ -701,8 +759,8 @@ const initialiseAccount = async () => {
     status: loggedOut
       ? 'You have been signed out of LuxeRoutes on this browser. Use secure login when you are ready to return.'
       : (isLoginPage()
-        ? 'Use Cloudflare Access to verify your email and open the correct LuxeRoutes dashboard for your role.'
-        : 'A verified Cloudflare Access email session is required before private account details can be shown.'),
+        ? 'Enter your email above and verify the Resend one-time code to open the correct LuxeRoutes dashboard for your role.'
+        : 'A verified LuxeRoutes OTP session is required before private account details can be shown.'),
     email: 'Email pending',
     role: 'Account',
     approved: false,
