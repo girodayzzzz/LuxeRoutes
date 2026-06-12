@@ -4718,3 +4718,267 @@ p {
     border-radius: 24px;
   }
 }
+
+/* Customer experience upgrade: responsive polish, quick actions, and softer premium motion. */
+:root {
+  --tap-target: 44px;
+  --glass-surface: rgba(8, 12, 19, .72);
+  --glass-border: rgba(241, 215, 150, .22);
+}
+
+html.customer-experience-ready {
+  scroll-padding-top: 92px;
+}
+
+.page-progress {
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 90;
+  height: 3px;
+  pointer-events: none;
+  transform-origin: left center;
+  transform: scaleX(var(--progress, 0));
+  background: linear-gradient(90deg, var(--color-gold-light), var(--color-gold), rgba(255,255,255,.78));
+  box-shadow: 0 0 22px rgba(241, 215, 150, .42);
+}
+
+.customer-assist {
+  position: fixed;
+  right: max(1rem, env(safe-area-inset-right));
+  bottom: max(1rem, env(safe-area-inset-bottom));
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  gap: .45rem;
+  padding: .45rem;
+  border: 1px solid var(--glass-border);
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgba(10,15,24,.86), rgba(5,8,13,.72));
+  box-shadow: 0 18px 52px rgba(0,0,0,.38);
+  backdrop-filter: blur(18px) saturate(1.25);
+  transition: transform .22s ease, border-color .22s ease, box-shadow .22s ease;
+}
+
+.customer-assist.is-elevated {
+  border-color: rgba(241, 215, 150, .34);
+  box-shadow: 0 22px 70px rgba(0,0,0,.48), 0 0 0 1px rgba(255,255,255,.04) inset;
+}
+
+.customer-assist a,
+.customer-assist button {
+  min-height: var(--tap-target);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 999px;
+  color: var(--color-text);
+  background: rgba(255,255,255,.055);
+  padding: .7rem .95rem;
+  font: inherit;
+  font-size: .78rem;
+  font-weight: 900;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  transition: transform .18s ease, background .18s ease, color .18s ease;
+}
+
+.customer-assist a:hover,
+.customer-assist button:hover {
+  transform: translateY(-2px);
+  background: rgba(255,255,255,.11);
+}
+
+.customer-assist .assist-primary {
+  min-width: 148px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: .05rem;
+  color: #080b10;
+  background: linear-gradient(135deg, #f6df9f, #c79d52 62%, #9d7134);
+  box-shadow: 0 12px 32px rgba(198, 161, 91, .24);
+}
+
+.customer-assist .assist-primary small {
+  color: rgba(8, 11, 16, .72);
+  font-size: .65rem;
+  letter-spacing: .04em;
+  text-transform: none;
+}
+
+.customer-assist [data-back-to-top][hidden] {
+  display: none;
+}
+
+.nav-shell,
+.primary-nav,
+.nav-link,
+.btn,
+.image-card,
+.route-card,
+.stay-offer-card,
+.destination-card,
+.discovery-card {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.nav-link,
+.btn,
+.text-link,
+.customer-assist a,
+.customer-assist button {
+  touch-action: manipulation;
+}
+
+.primary-nav a,
+.customer-assist a,
+.customer-assist button,
+.btn {
+  min-height: var(--tap-target);
+}
+
+.image-card,
+.route-card,
+.stay-offer-card,
+.destination-card,
+.discovery-card,
+.final-cta .container,
+.form-shell,
+.auth-card,
+.login-box {
+  position: relative;
+}
+
+.image-card,
+.route-card,
+.stay-offer-card,
+.destination-card,
+.discovery-card,
+.final-cta .container {
+  box-shadow: var(--shadow-soft), inset 0 1px 0 rgba(255,255,255,.08);
+}
+
+.image-card:hover img,
+.stay-offer-card:hover img,
+.destination-card:hover img {
+  transform: scale(1.035);
+}
+
+.image-card img,
+.stay-offer-card img,
+.destination-card img {
+  transition: transform .5s ease, filter .35s ease;
+}
+
+.reveal-on-scroll {
+  opacity: 0;
+  transform: translateY(18px);
+  transition: opacity .55s ease, transform .55s ease;
+}
+
+.reveal-on-scroll.is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+.form-status {
+  min-height: 1.4em;
+  padding-inline: .15rem;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: rgba(215, 205, 189, .62);
+}
+
+select {
+  color-scheme: dark;
+}
+
+@media (max-width: 1020px) {
+  html.customer-experience-ready { scroll-padding-top: 76px; }
+
+  .primary-nav {
+    max-height: min(78svh, 680px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  body.nav-open {
+    overflow: hidden;
+  }
+
+  .nav-dropdown a {
+    min-height: 42px;
+  }
+}
+
+@media (max-width: 700px) {
+  :root { --tap-target: 46px; }
+
+  body {
+    padding-bottom: calc(76px + env(safe-area-inset-bottom));
+  }
+
+  .customer-assist {
+    left: max(.7rem, env(safe-area-inset-left));
+    right: max(.7rem, env(safe-area-inset-right));
+    bottom: max(.65rem, env(safe-area-inset-bottom));
+    display: grid;
+    grid-template-columns: 1.35fr .8fr .8fr auto;
+    border-radius: 24px;
+    padding: .45rem;
+  }
+
+  .customer-assist a,
+  .customer-assist button {
+    width: 100%;
+    padding: .62rem .55rem;
+    font-size: .68rem;
+    letter-spacing: .04em;
+  }
+
+  .customer-assist .assist-primary {
+    min-width: 0;
+    align-items: center;
+  }
+
+  .button-row .btn,
+  .final-cta .btn,
+  .luxury-form .btn,
+  .auth-form .btn {
+    min-height: 50px;
+  }
+
+  .image-card,
+  .plain-card,
+  .route-card,
+  .stay-offer-card,
+  .process-grid article,
+  .info-columns > div {
+    border-radius: 22px;
+  }
+}
+
+@media (max-width: 420px) {
+  .customer-assist {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+
+  .customer-assist .assist-primary {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal-on-scroll,
+  .image-card img,
+  .stay-offer-card img,
+  .destination-card img,
+  .customer-assist,
+  .customer-assist a,
+  .customer-assist button {
+    transition: none !important;
+  }
+}
