@@ -1,4 +1,6 @@
-import { privateErrorJson, privateJson, requireAccountRole } from '../_utils.js';
+import { nowIso, privateErrorJson, privateJson, requireAccountRole } from '../_utils.js';
+
+const INQUIRY_STATUSES = ['new', 'in_progress', 'waiting', 'resolved', 'closed'];
 
 const inquirySelect = `
   SELECT id, inquiry_type AS inquiryType, name, email, phone, source_page AS sourcePage,
@@ -20,5 +22,34 @@ export const onRequestGet = async ({ request, env }) => {
     return privateJson({ email: auth.email, role: auth.role, inquiries: inquiries.results || [] });
   } catch (error) {
     return privateErrorJson(error.message || 'Unable to load manager inquiries.', 500);
+  }
+};
+
+export const onRequestPatch = async ({ request, env }) => {
+  try {
+    const auth = await requireAccountRole(request, env, ['manager']);
+    if (auth.error) return auth.error;
+
+    const body = await request.json().catch(() => ({}));
+    const id = String(body.id || '').trim();
+    const status = String(body.status || '').trim();
+
+    if (!id) return privateErrorJson('Inquiry ID is required.', 400);
+    if (!INQUIRY_STATUSES.includes(status)) return privateErrorJson('Invalid inquiry status.', 400);
+
+    const inquiry = await auth.db.prepare(`${inquirySelect} WHERE id = ? LIMIT 1`).bind(id).first();
+    if (!inquiry) return privateErrorJson('Inquiry not found.', 404);
+    if (auth.role !== 'admin' && String(inquiry.managerEmail || '').trim().toLowerCase() !== auth.email) {
+      return privateErrorJson('This inquiry is not assigned to your manager account.', 403);
+    }
+
+    await auth.db.prepare('UPDATE inquiries SET status = ?, updated_at = ? WHERE id = ?')
+      .bind(status, nowIso(), id)
+      .run();
+
+    const updated = await auth.db.prepare(`${inquirySelect} WHERE id = ? LIMIT 1`).bind(id).first();
+    return privateJson({ inquiry: updated });
+  } catch (error) {
+    return privateErrorJson(error.message || 'Unable to update manager inquiry.', 500);
   }
 };

@@ -126,7 +126,8 @@ export const onRequestPatch = async ({ request, env }) => {
     const status = cleanString(body.status, 30).toLowerCase();
     const ownerEmail = cleanEmail(body.ownerEmail);
     const managerEmail = cleanEmail(body.managerEmail);
-    const partnerStatus = cleanString(body.partnerStatus, 40).toLowerCase();
+    const requestedPartnerStatus = cleanString(body.partnerStatus, 40).toLowerCase();
+    const partnerStatus = requestedPartnerStatus || (status === 'published' ? 'published' : status === 'unpublished' ? 'approved' : '');
     const ownerNotes = cleanString(body.ownerNotes, 2000);
     const managerNotes = cleanString(body.managerNotes, 2000);
     if (!id) return privateErrorJson('Offer ID is required.', 400);
@@ -152,6 +153,18 @@ export const onRequestPatch = async ({ request, env }) => {
       managerNotes, timestamp, id).run();
     const offer = await auth.db.prepare(`${offerSelect} WHERE id = ? LIMIT 1`).bind(id).first();
     if (!offer) return privateErrorJson('Offer not found.', 404);
+
+    if (body.ownerEmail !== undefined || body.managerEmail !== undefined) {
+      await auth.db.prepare(`
+        UPDATE inquiries
+        SET owner_email = CASE WHEN ? IS NULL THEN owner_email ELSE NULLIF(?, '') END,
+          manager_email = CASE WHEN ? IS NULL THEN manager_email ELSE NULLIF(?, '') END,
+          updated_at = ?
+        WHERE offer_id = ?
+      `).bind(body.ownerEmail === undefined ? null : ownerEmail, ownerEmail,
+        body.managerEmail === undefined ? null : managerEmail, managerEmail, timestamp, id).run();
+    }
+
     return privateJson({ offer });
   } catch (error) {
     return privateErrorJson(error.message || 'Unable to update offer.', 500);
