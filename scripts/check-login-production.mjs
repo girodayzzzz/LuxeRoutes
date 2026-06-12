@@ -1,19 +1,36 @@
 const baseUrl = String(process.argv[2] || 'https://luxeroutes.eu').replace(/\/$/, '');
 
+const isHtmlOk = ({ status, contentType, accessRedirect }) => status === 200 && contentType.includes('text/html') && !accessRedirect;
+const isExtensionlessRedirect = (target) => ({ status, location, accessRedirect }) => [301, 302, 307, 308].includes(status) && location === target && !accessRedirect;
+
 const checks = [
   {
-    name: 'Public login page',
+    name: 'Public login page (.html or canonical redirect)',
     path: '/login.html',
-    expect: ({ status, contentType, accessRedirect }) => status === 200 && contentType.includes('text/html') && !accessRedirect,
-    pass: 'login.html is public and serving HTML.',
-    fail: 'login.html should be public HTML. If this is an Access redirect, remove login routes from Cloudflare Access.',
+    expect: (result) => isHtmlOk(result) || isExtensionlessRedirect('/login')(result),
+    pass: 'login.html is public, or it redirects once to the extensionless /login route.',
+    fail: 'login.html should be public HTML or a single /login canonical redirect. Access redirects or other redirects break login.',
   },
   {
-    name: 'Public account shell',
+    name: 'Public login canonical route',
+    path: '/login',
+    expect: isHtmlOk,
+    pass: 'login is public and serving the login HTML shell.',
+    fail: 'login should serve public HTML. If this redirects back to /login.html, it creates a loop with an .html canonical redirect rule.',
+  },
+  {
+    name: 'Public account shell (.html or canonical redirect)',
     path: '/account.html',
-    expect: ({ status, contentType, accessRedirect }) => status === 200 && contentType.includes('text/html') && !accessRedirect,
-    pass: 'account.html static shell is public; client JS can redirect logged-out users to login.',
-    fail: 'account.html should be public HTML. Logged-out redirect is handled by account.js, not Cloudflare Access.',
+    expect: (result) => isHtmlOk(result) || isExtensionlessRedirect('/account')(result),
+    pass: 'account.html is public, or it redirects once to the extensionless /account route.',
+    fail: 'account.html should be public HTML or a single /account canonical redirect. Access redirects or other redirects break account loading.',
+  },
+  {
+    name: 'Public account canonical route',
+    path: '/account',
+    expect: isHtmlOk,
+    pass: 'account is public and serving the account HTML shell; client JS handles logged-out redirect to login.',
+    fail: 'account should serve public HTML. If this redirects back to /account.html, it creates a loop with an .html canonical redirect rule.',
   },
   {
     name: 'OTP session API',
@@ -92,7 +109,8 @@ for (const check of checks) {
 }
 
 console.log('\nExpected production shape:');
-console.log('- /login.html and /account.html: 200 text/html, no Cloudflare Access redirect');
+console.log('- /login.html and /account.html: 200 text/html or one-way 30x to /login and /account');
+console.log('- /login and /account: 200 text/html, no redirect back to .html');
 console.log('- /api/auth/otp?action=session and /api/account without cookies: 401 application/json, no Cloudflare Access redirect');
 console.log('- /admin/index.html: Cloudflare Access redirect/challenge for a clean request');
 
