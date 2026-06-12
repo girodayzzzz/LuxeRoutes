@@ -3,8 +3,3 @@
 /admin/users.html /admin/index.html 200
 /admin/partners.html /admin/index.html 200
 /admin/offers.html /admin/index.html 200
-/account /account.html 200
-/login /login.html 200
-/register /register.html 200
-/owner /owner-panel.html 200
-/manager /manager-panel.html 200
