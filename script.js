@@ -182,8 +182,36 @@ if (toggle && nav) {
 
 
 
-const customerFacingPage = !window.location.pathname.includes('/admin/')
-  && !['admin-panel.html', 'owner-panel.html', 'manager-panel.html'].includes(currentPage);
+const customerMarketingPages = new Set([
+  'index.html',
+  'destinations.html',
+  'stays.html',
+  'offers.html',
+  'routes.html',
+  'experiences.html',
+  'plan-trip.html',
+  'contact.html',
+  'hotels.html',
+  'apartments.html',
+  'chalets.html',
+  'villas.html',
+  'cabins.html',
+  'boutique-hotels.html',
+  'wellness-retreats.html',
+  'romantic-getaways.html',
+  'private-transfers.html',
+  'wine-tours.html',
+  'fishing-escapes.html',
+  'yacht-experiences.html',
+  'other-offers.html',
+  'slovenia.html',
+  'croatia.html',
+  'italy.html',
+  'france.html',
+  'austria.html',
+  'switzerland.html',
+]);
+const customerFacingPage = customerMarketingPages.has(currentPage) && !window.location.pathname.includes('/admin/');
 
 if (customerFacingPage) {
   document.documentElement.classList.add('customer-experience-ready');
@@ -202,28 +230,38 @@ if (customerFacingPage) {
   window.addEventListener('scroll', updatePageProgress, { passive: true });
   window.addEventListener('resize', updatePageProgress);
 
-  const assist = document.createElement('aside');
-  assist.className = 'customer-assist';
-  assist.setAttribute('aria-label', 'Quick LuxeRoutes actions');
-  assist.innerHTML = `
-    <a class="assist-primary" href="plan-trip.html#trip-brief">
-      <span>Plan trip</span>
-      <small>Private brief</small>
-    </a>
-    <a href="offers.html#offers" aria-label="Browse curated stays">Stays</a>
-    <a href="mailto:info@luxeroutes.eu" aria-label="Email LuxeRoutes concierge">Email</a>
-    <button type="button" data-back-to-top aria-label="Back to top">↑</button>
-  `;
-  document.body.append(assist);
+  const quickAssistPages = new Set(['index.html', 'destinations.html', 'stays.html', 'offers.html', 'routes.html', 'experiences.html']);
+  if (quickAssistPages.has(currentPage)) {
+    const assist = document.createElement('aside');
+    assist.className = 'customer-assist';
+    assist.setAttribute('aria-label', 'Quick LuxeRoutes actions');
+    assist.innerHTML = `
+      <a class="assist-primary" href="plan-trip.html#trip-brief">
+        <span>Plan trip</span>
+        <small>Private brief</small>
+      </a>
+      <a href="offers.html#stay-finder" aria-label="Browse curated stays">Stays</a>
+      <a href="mailto:info@luxeroutes.eu" aria-label="Email LuxeRoutes concierge">Email</a>
+      <button type="button" data-back-to-top aria-label="Back to top">↑</button>
+    `;
+    document.body.append(assist);
 
-  const backToTop = assist.querySelector('[data-back-to-top]');
-  const updateAssistState = () => {
-    assist.classList.toggle('is-elevated', window.scrollY > 420);
-    if (backToTop) backToTop.hidden = window.scrollY < 520;
-  };
-  updateAssistState();
-  window.addEventListener('scroll', updateAssistState, { passive: true });
-  backToTop?.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+    const backToTop = assist.querySelector('[data-back-to-top]');
+    const formControls = document.querySelectorAll('input, select, textarea');
+    const updateAssistState = () => {
+      assist.classList.toggle('is-elevated', window.scrollY > 420);
+      assist.classList.toggle('is-compact', window.scrollY < 320);
+      if (backToTop) backToTop.hidden = window.scrollY < 520;
+    };
+    const setAssistFormState = (isFormActive) => assist.classList.toggle('is-form-active', isFormActive);
+    updateAssistState();
+    window.addEventListener('scroll', updateAssistState, { passive: true });
+    formControls.forEach((control) => {
+      control.addEventListener('focus', () => setAssistFormState(true));
+      control.addEventListener('blur', () => setAssistFormState(false));
+    });
+    backToTop?.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+  }
 
   document.querySelectorAll('.has-dropdown > .nav-link').forEach((link) => {
     link.setAttribute('aria-haspopup', 'true');
@@ -477,18 +515,37 @@ if (offerFilterRoot) {
   const resetButton = offerFilterRoot.querySelector('[data-filter-reset]');
   const escapeOfferHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[character]));
   const typeLabels = { villa: 'Private villa', chalet: 'Chalet', 'boutique-hotel': 'Boutique hotel', apartment: 'Apartment', cabin: 'Cabin', retreat: 'Wellness retreat' };
+  const bestForLabels = {
+    villa: 'Best for families, privacy, and longer stays',
+    chalet: 'Best for alpine weeks and fireside downtime',
+    'boutique-hotel': 'Best for service-led escapes and short stays',
+    apartment: 'Best for independent city or lakeside living',
+    cabin: 'Best for slower countryside resets',
+    retreat: 'Best for wellness-led itineraries',
+  };
   let offerCards = offerFilterRoot.querySelectorAll('[data-offer-card]');
+
+  const addOfferGuidance = (card) => {
+    const body = card.querySelector('.stay-offer-body');
+    if (!body || body.querySelector('.offer-best-for')) return;
+    const guidance = document.createElement('p');
+    guidance.className = 'offer-best-for';
+    guidance.textContent = bestForLabels[card.dataset.type] || 'Best for a private, inquiry-led LuxeRoutes proposal';
+    const featureList = body.querySelector('ul');
+    body.insertBefore(guidance, featureList || body.querySelector('.offer-footer'));
+  };
 
   const wireRequestLink = (card) => {
     const requestLink = card.querySelector('.offer-footer a');
     const offerTitle = card.querySelector('h3')?.textContent.trim();
+    addOfferGuidance(card);
     if (!requestLink || !offerTitle) return;
     const query = new URLSearchParams({
       offer: offerTitle,
       request_type: 'Specific accommodation',
       stay_preference: formatLabel(card.dataset.type || 'Curated stay'),
       region: [formatLabel(card.dataset.country || ''), formatLabel(card.dataset.region || '')].filter(Boolean).join(' · '),
-      source_url: `${window.location.origin}${window.location.pathname}#offers`,
+      source_url: `${window.location.origin}${window.location.pathname}#stay-finder`,
     });
     requestLink.href = `plan-trip.html?${query.toString()}#trip-brief`;
     requestLink.textContent = 'Request this stay';

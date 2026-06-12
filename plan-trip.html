@@ -93,14 +93,14 @@
       <div class="container section-heading split-heading">
         <div>
           <p class="eyebrow">How it works</p>
-          <h2>One focused page for guests who are ready to start.</h2>
+          <h2>What happens after you submit your private brief.</h2>
         </div>
-        <p>The form keeps the main menu cleaner while giving travelers a dedicated place to explain the trip. It also separates private travel briefs from general contact, partner, and manager inquiries.</p>
+        <p>Your message is a private inquiry, not a booking commitment. LuxeRoutes reviews the details personally, checks fit and availability, then replies with a clear proposal direction before anything is reserved.</p>
       </div>
-      <div class="container card-grid three">
-        <article class="plain-card numbered-card"><span>01</span><h3>Tell us the shape</h3><p>Dates, group size, countries, occasion, travel pace, and the level of privacy you prefer.</p></article>
-        <article class="plain-card numbered-card"><span>02</span><h3>We design the route</h3><p>LuxeRoutes drafts the destination order, stay logic, transfer rhythm, and experience highlights.</p></article>
-        <article class="plain-card numbered-card"><span>03</span><h3>You approve next steps</h3><p>No stay, transfer, or experience is treated as confirmed until we reply and align in writing.</p></article>
+      <div class="container card-grid three after-submit-grid">
+        <article class="plain-card numbered-card"><span>01</span><h3>Brief received privately</h3><p>We read your dates, group size, preferred regions, budget guidance, and non-negotiables so the first reply is focused.</p></article>
+        <article class="plain-card numbered-card"><span>02</span><h3>Availability is checked</h3><p>Stays, transfers, and experiences are treated as proposal targets until availability and pricing are confirmed personally.</p></article>
+        <article class="plain-card numbered-card"><span>03</span><h3>You decide next steps</h3><p>We reply with questions or a first direction. There is no obligation to proceed until you approve the scope in writing.</p></article>
       </div>
     </section>
 
@@ -121,49 +121,74 @@
 
     <section id="trip-brief" class="section plan-brief-section">
       <div class="container form-shell plan-form-shell">
-        <div>
+        <div class="plan-brief-intro">
           <p class="eyebrow">Private route brief</p>
           <h2>Plan your route</h2>
           <p>Use this brief for holidays, honeymoons, family escapes, celebration trips, and multi-country European journeys. After submission, you will stay on this page and see a confirmation message from LuxeRoutes.</p>
+          <div class="brief-reassurance" aria-label="Private inquiry reassurance">
+            <strong>Private, no-obligation inquiry</strong>
+            <span>Pricing and availability are proposal targets until confirmed personally by LuxeRoutes.</span>
+          </div>
         </div>
         <form class="luxury-form trip-brief-form" data-inquiry-form data-endpoint="/api/inquiries" data-form-type="Private LuxeRoutes trip brief" data-recipient="info@luxeroutes.eu">
           <input type="hidden" name="source_page" value="Plan a Trip">
           <label class="honeypot" aria-hidden="true">Leave this field empty<input name="website" type="text" tabindex="-1" autocomplete="off"></label>
-          <label>Name<input name="name" type="text" autocomplete="name" required></label>
-          <label>Email<input name="email" type="email" autocomplete="email" required></label>
           <input type="hidden" name="source_offer_url" data-prefill-param="source_url">
           <div class="form-context-card full" data-offer-context hidden>
             <span>Selected stay request</span>
             <strong data-offer-context-title>Custom LuxeRoutes request</strong>
             <small data-offer-context-meta>Offer details will be included in the email JSON.</small>
           </div>
-          <label class="full">Accommodation / offer interest<input name="accommodation_interest" type="text" data-prefill-param="offer" placeholder="e.g. Lake View Villa Bled, private villa in Croatia, hotel guidance..."></label>
-          <label>Request type<select name="request_type" data-prefill-param="request_type" required><option value="">Select request type</option><option>Specific accommodation</option><option>Private villa</option><option>Luxury hotel</option><option>Apartment or chalet</option><option>Full private route</option><option>Transfer or experience</option><option>Not sure yet</option></select></label>
-          <label>Phone / WhatsApp<input name="phone" type="tel" autocomplete="tel" placeholder="Optional, for faster coordination"></label>
-          <label>Arrival date<input name="arrival_date" type="date" required></label>
-          <label>Departure date<input name="departure_date" type="date" required></label>
-          <label>Flexible dates?<select name="flexible_dates"><option value="">Select flexibility</option><option>Exact dates</option><option>Flexible by a few days</option><option>Flexible by one week</option><option>Open to best availability</option></select></label>
-          <label>Nights<input name="nights" type="text" placeholder="e.g. 7–10 nights"></label>
-          <label>Adults<input name="adults" type="number" min="1" placeholder="2" required></label>
-          <label>Children<input name="children" type="number" min="0" placeholder="0"></label>
-          <label>Rooms needed<input name="rooms" type="number" min="1" placeholder="1"></label>
-          <label>Preferred regions<input name="preferred_regions" type="text" data-prefill-param="region" placeholder="Slovenia, Croatia, Italy..." required></label>
-          <label>Approx. budget<input name="approx_budget" type="text" placeholder="Optional range per trip"></label>
-          <label>Departure city / airport<input name="departure_city" type="text" placeholder="Optional"></label>
-          <label>Stay preference<select name="stay_preference" data-prefill-param="stay_preference"><option value="">Select preference</option><option>Luxury hotel</option><option>Private villa</option><option>Boutique apartment</option><option>Chalet or cabin</option><option>Wellness retreat</option><option>Mix of curated stays</option></select></label>
-          <label>Transfer preference<select name="transfer_preference"><option value="">Select preference</option><option>Private driver</option><option>Self-drive route</option><option>Train plus private transfers</option><option>Yacht or sea transfer</option><option>Not sure yet</option></select></label>
-          <label class="full">Trip style<select name="trip_style" required><option value="">Select trip style</option><option>Romantic escape</option><option>Family journey</option><option>Food and wine route</option><option>Wellness retreat</option><option>Adventure and nature</option><option>Multi-country signature route</option><option>Business or partner trip</option></select></label>
-          <fieldset class="full form-options">
-            <legend>Experiences to include</legend>
-            <label><input type="checkbox" name="experience_interests" value="Wine tasting"> Wine tasting</label>
-            <label><input type="checkbox" name="experience_interests" value="Private transfers"> Private transfers</label>
-            <label><input type="checkbox" name="experience_interests" value="Yacht or coast day"> Yacht or coast day</label>
-            <label><input type="checkbox" name="experience_interests" value="Wellness and spa"> Wellness and spa</label>
-            <label><input type="checkbox" name="experience_interests" value="Nature or adventure"> Nature or adventure</label>
-            <label><input type="checkbox" name="experience_interests" value="Restaurants and local hosts"> Restaurants and local hosts</label>
-          </fieldset>
-          <label class="full">What should the trip feel like?<textarea name="message" rows="7" placeholder="Tell us about the occasion, preferred pace, must-see places, hotel style, transfers, experiences, or anything you want to avoid." required></textarea></label>
-          <button class="btn btn-primary" type="submit">Send Trip Brief</button>
+
+          <section class="form-section full" aria-labelledby="brief-contact-heading">
+            <div class="form-section-heading"><span>01</span><h3 id="brief-contact-heading">Your contact and request</h3><p>Start with the essentials so we can reply clearly and privately.</p></div>
+            <div class="form-field-grid">
+              <label>Name<input name="name" type="text" autocomplete="name" required></label>
+              <label>Email<input name="email" type="email" autocomplete="email" required></label>
+              <label class="full">Accommodation / offer interest<input name="accommodation_interest" type="text" data-prefill-param="offer" placeholder="e.g. Lake View Villa Bled, private villa in Croatia, hotel guidance..."></label>
+              <label>Request type<select name="request_type" data-prefill-param="request_type" required><option value="">Select request type</option><option>Specific accommodation</option><option>Private villa</option><option>Luxury hotel</option><option>Apartment or chalet</option><option>Full private route</option><option>Transfer or experience</option><option>Not sure yet</option></select></label>
+              <label>Phone / WhatsApp<input name="phone" type="tel" autocomplete="tel" placeholder="Optional, for faster coordination"></label>
+            </div>
+          </section>
+
+          <section class="form-section full" aria-labelledby="brief-timing-heading">
+            <div class="form-section-heading"><span>02</span><h3 id="brief-timing-heading">Dates, guests, and destination flow</h3><p>Exact details help; flexible ranges are welcome when availability matters most.</p></div>
+            <div class="form-field-grid">
+              <label>Arrival date<input name="arrival_date" type="date" required></label>
+              <label>Departure date<input name="departure_date" type="date" required></label>
+              <label>Flexible dates?<select name="flexible_dates"><option value="">Select flexibility</option><option>Exact dates</option><option>Flexible by a few days</option><option>Flexible by one week</option><option>Open to best availability</option></select></label>
+              <label>Nights<input name="nights" type="text" placeholder="e.g. 7–10 nights"></label>
+              <label>Adults<input name="adults" type="number" min="1" placeholder="2" required></label>
+              <label>Children<input name="children" type="number" min="0" placeholder="0"></label>
+              <label>Rooms needed<input name="rooms" type="number" min="1" placeholder="1"></label>
+              <label>Preferred regions<input name="preferred_regions" type="text" data-prefill-param="region" placeholder="Slovenia, Croatia, Italy..." required></label>
+              <label>Approx. budget<input name="approx_budget" type="text" placeholder="Optional range per trip"></label>
+              <label>Departure city / airport<input name="departure_city" type="text" placeholder="Optional"></label>
+            </div>
+          </section>
+
+          <section class="form-section full" aria-labelledby="brief-style-heading">
+            <div class="form-section-heading"><span>03</span><h3 id="brief-style-heading">Stay style and experience priorities</h3><p>Tell us what the trip should feel like; we will shape the route around that.</p></div>
+            <div class="form-field-grid">
+              <label>Stay preference<select name="stay_preference" data-prefill-param="stay_preference"><option value="">Select preference</option><option>Luxury hotel</option><option>Private villa</option><option>Boutique apartment</option><option>Chalet or cabin</option><option>Wellness retreat</option><option>Mix of curated stays</option></select></label>
+              <label>Transfer preference<select name="transfer_preference"><option value="">Select preference</option><option>Private driver</option><option>Self-drive route</option><option>Train plus private transfers</option><option>Yacht or sea transfer</option><option>Not sure yet</option></select></label>
+              <label class="full">Trip style<select name="trip_style" required><option value="">Select trip style</option><option>Romantic escape</option><option>Family journey</option><option>Food and wine route</option><option>Wellness retreat</option><option>Adventure and nature</option><option>Multi-country signature route</option><option>Business or partner trip</option></select></label>
+              <fieldset class="full form-options">
+                <legend>Experiences to include</legend>
+                <label><input type="checkbox" name="experience_interests" value="Wine tasting"> Wine tasting</label>
+                <label><input type="checkbox" name="experience_interests" value="Private transfers"> Private transfers</label>
+                <label><input type="checkbox" name="experience_interests" value="Yacht or coast day"> Yacht or coast day</label>
+                <label><input type="checkbox" name="experience_interests" value="Wellness and spa"> Wellness and spa</label>
+                <label><input type="checkbox" name="experience_interests" value="Nature or adventure"> Nature or adventure</label>
+                <label><input type="checkbox" name="experience_interests" value="Restaurants and local hosts"> Restaurants and local hosts</label>
+              </fieldset>
+              <label class="full">What should the trip feel like?<textarea name="message" rows="7" placeholder="Tell us about the occasion, preferred pace, must-see places, hotel style, transfers, experiences, or anything you want to avoid." required></textarea></label>
+            </div>
+          </section>
+          <div class="form-submit-panel full">
+            <p><strong>After you submit:</strong> LuxeRoutes reviews your brief, confirms availability and pricing manually, then replies with the next best step before any commitment.</p>
+            <button class="btn btn-primary" type="submit">Send Private Trip Brief</button>
+          </div>
         </form>
       </div>
     </section>
