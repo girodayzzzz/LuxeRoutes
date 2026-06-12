@@ -91,7 +91,8 @@ const renderInquiries = () => {
 };
 const renderOffers = () => {
   if (!offersTarget) return;
-  offersTarget.innerHTML = offers.map((offer) => `<tr><td><strong>${escapeHtml(offer.title)}</strong><br><small>${escapeHtml(offer.locationLabel)}</small></td><td>${escapeHtml(roleLabel(offer.stayType))}<br><small>${escapeHtml(offer.country)} · ${escapeHtml(offer.region)}</small></td><td>${escapeHtml(statusLabel(offer.status))}<br><small>${escapeHtml(statusLabel(offer.partnerStatus || 'pending_review'))}</small></td><td><small>Owner: ${escapeHtml(offer.ownerEmail || '—')}</small><br><small>Manager: ${escapeHtml(offer.managerEmail || '—')}</small></td><td>${escapeHtml(formatDate(offer.updatedAt))}</td><td>${offer.status === 'published' ? `<button class="mini-action" type="button" data-offer-status="unpublished" data-id="${escapeHtml(offer.id)}">Unpublish</button>` : `<button class="mini-action" type="button" data-offer-status="published" data-id="${escapeHtml(offer.id)}">Publish</button>`}</td></tr>`).join('') || '<tr><td colspan="6" class="empty-state">No database-backed stay offers yet.</td></tr>';
+  const partnerStatuses = ['draft', 'pending_review', 'changes_requested', 'approved', 'published', 'archived'];
+  offersTarget.innerHTML = offers.map((offer) => `<tr><td><strong>${escapeHtml(offer.title)}</strong><br><small>${escapeHtml(offer.locationLabel)}</small></td><td>${escapeHtml(roleLabel(offer.stayType))}<br><small>${escapeHtml(offer.country)} · ${escapeHtml(offer.region)}</small></td><td>${escapeHtml(statusLabel(offer.status))}<br><small>${escapeHtml(statusLabel(offer.partnerStatus || 'pending_review'))}</small></td><td><form class="inline-offer-form" data-offer-form data-id="${escapeHtml(offer.id)}"><label>Owner email<input type="email" name="ownerEmail" value="${escapeHtml(offer.ownerEmail || '')}" placeholder="owner@example.com" /></label><label>Manager email<input type="email" name="managerEmail" value="${escapeHtml(offer.managerEmail || '')}" placeholder="manager@example.com" /></label><label>Partner status<select name="partnerStatus">${partnerStatuses.map((status) => `<option value="${status}" ${(offer.partnerStatus || 'pending_review') === status ? 'selected' : ''}>${statusLabel(status)}</option>`).join('')}</select></label><label>Owner note<textarea name="ownerNotes" rows="2" placeholder="Message visible in owner panel">${escapeHtml(offer.ownerNotes || '')}</textarea></label><label>Manager note<textarea name="managerNotes" rows="2" placeholder="Message visible in manager panel">${escapeHtml(offer.managerNotes || '')}</textarea></label><button class="mini-action" type="submit">Save assignments</button></form></td><td>${escapeHtml(formatDate(offer.updatedAt))}</td><td><div class="admin-action-stack">${offer.status === 'published' ? `<button class="mini-action" type="button" data-offer-status="unpublished" data-partner-status="approved" data-id="${escapeHtml(offer.id)}">Unpublish</button>` : `<button class="mini-action" type="button" data-offer-status="published" data-partner-status="published" data-id="${escapeHtml(offer.id)}">Approve & publish</button>`}<button class="mini-action" type="button" data-offer-status="unpublished" data-partner-status="changes_requested" data-id="${escapeHtml(offer.id)}">Request changes</button><button class="mini-action" type="button" data-offer-status="unpublished" data-partner-status="archived" data-id="${escapeHtml(offer.id)}">Decline/archive</button></div></td></tr>`).join('') || '<tr><td colspan="6" class="empty-state">No database-backed stay offers yet.</td></tr>';
 };
 const renderAll = () => { renderStats(); renderApplications(); renderMembers(); renderInquiries(); renderOffers(); };
 const loadAdminData = async () => {
@@ -151,9 +152,24 @@ document.addEventListener('click', async (event) => {
   const publishButton = event.target.closest('[data-publish-inquiry]');
   if (publishButton) { const inquiry = inquiries.find((item) => item.id === publishButton.dataset.publishInquiry); if (inquiry) openPublishDialog(inquiry); return; }
   const statusButton = event.target.closest('[data-offer-status]');
-  if (statusButton) { statusButton.disabled = true; try { await requestJson('/api/admin/offers', { method: 'PATCH', body: JSON.stringify({ id: statusButton.dataset.id, status: statusButton.dataset.offerStatus }) }); showAlert(`Offer ${statusButton.dataset.offerStatus}.`, 'success'); await loadAdminData(); } catch (error) { showAlert(error.message); statusButton.disabled = false; } }
+  if (statusButton) { statusButton.disabled = true; try { await requestJson('/api/admin/offers', { method: 'PATCH', body: JSON.stringify({ id: statusButton.dataset.id, status: statusButton.dataset.offerStatus, partnerStatus: statusButton.dataset.partnerStatus }) }); showAlert(`Offer ${statusButton.textContent.trim().toLowerCase()} saved.`, 'success'); await loadAdminData(); } catch (error) { showAlert(error.message); statusButton.disabled = false; } }
 });
 document.addEventListener('submit', async (event) => {
+  const offerForm = event.target.closest('[data-offer-form]');
+  if (offerForm) {
+    event.preventDefault();
+    const data = new FormData(offerForm);
+    const payload = Object.fromEntries(data.entries());
+    payload.id = offerForm.dataset.id;
+    try {
+      await requestJson('/api/admin/offers', { method: 'PATCH', body: JSON.stringify(payload) });
+      showAlert('Offer assignments and partner notes saved.', 'success');
+      await loadAdminData();
+    } catch (error) {
+      showAlert(error.message);
+    }
+    return;
+  }
   const memberForm = event.target.closest('[data-member-form]');
   if (memberForm) { event.preventDefault(); try { await saveGrant({ email: memberForm.dataset.email, role: new FormData(memberForm).get('role'), note: 'Role updated from admin console' }); } catch (error) { showAlert(error.message); } return; }
   if (event.target === grantForm) { event.preventDefault(); const data = new FormData(grantForm); try { await saveGrant({ email: data.get('email'), role: data.get('role'), note: data.get('note') }); grantForm.reset(); } catch (error) { showAlert(error.message); } return; }

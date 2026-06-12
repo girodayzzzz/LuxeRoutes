@@ -502,7 +502,9 @@ const parseInquiryPayload = (inquiry = {}) => {
 
 const getInquiryContact = (inquiry = {}, payload = {}) => inquiry.email || inquiry.phone || payload.email || payload.phone || payload.whatsapp || 'No contact provided';
 
-const renderRoleRequests = (target, inquiries = [], emptyMessage = 'No customer requests yet.') => {
+const requestStatusOptions = ['new', 'in_progress', 'waiting', 'resolved', 'closed'];
+
+const renderRoleRequests = (target, inquiries = [], emptyMessage = 'No customer requests yet.', role = '') => {
   if (!target) return;
   if (!inquiries.length) {
     target.innerHTML = `<p class="empty-state">${accountEscapeHtml(emptyMessage)}</p>`;
@@ -514,6 +516,7 @@ const renderRoleRequests = (target, inquiries = [], emptyMessage = 'No customer 
     const dates = [payload.start_date || payload.check_in || payload.from, payload.end_date || payload.check_out || payload.to]
       .filter(Boolean)
       .join(' → ');
+    const status = inquiry.status || 'new';
     return `
       <div class="stack-item">
         <div>
@@ -523,7 +526,7 @@ const renderRoleRequests = (target, inquiries = [], emptyMessage = 'No customer 
           ${payload.guests ? `<span>Guests: ${accountEscapeHtml(payload.guests)}</span>` : ''}
           ${payload.message || payload.notes ? `<span>Request: ${accountEscapeHtml(payload.message || payload.notes)}</span>` : ''}
         </div>
-        <span class="status-pill ${inquiry.status === 'resolved' || inquiry.status === 'closed' ? 'status-approved' : 'status-pending'}">${accountEscapeHtml((inquiry.status || 'new').replaceAll('_', ' '))}</span>
+        ${role ? `<label class="mini-field">Request status<select data-role-request-status data-role="${accountEscapeHtml(role)}" data-id="${accountEscapeHtml(inquiry.id || '')}" aria-label="Request status for ${accountEscapeHtml(inquiry.offerTitle || payload.offer || 'customer request')}">${requestStatusOptions.map((option) => `<option value="${option}" ${status === option ? 'selected' : ''}>${accountEscapeHtml(option.replaceAll('_', ' '))}</option>`).join('')}</select></label>` : `<span class="status-pill ${status === 'resolved' || status === 'closed' ? 'status-approved' : 'status-pending'}">${accountEscapeHtml(status.replaceAll('_', ' '))}</span>`}
       </div>
     `;
   }).join('');
@@ -583,10 +586,26 @@ const loadRolePanelRequests = async (role) => {
     const inquiries = await fetchRoleCollection(endpoint, 'inquiries');
     renderRoleRequests(target, inquiries, role === 'owner'
       ? 'No customer stay requests are connected to your properties yet.'
-      : 'No customer stay requests are connected to your assigned properties yet.');
+      : 'No customer stay requests are connected to your assigned properties yet.', role);
   } catch (error) {
-    renderRoleRequests(target, [], error.message || 'Unable to load customer requests.');
+    renderRoleRequests(target, [], error.message || 'Unable to load customer requests.', role);
   }
+};
+
+
+const updateRoleRequestStatus = async (role, id, status) => {
+  const endpoint = role === 'owner' ? '/api/owner/inquiries' : role === 'manager' ? '/api/manager/inquiries' : '';
+  if (!endpoint || !id) throw new Error('Unable to identify this request.');
+
+  const response = await fetch(endpoint, {
+    method: 'PATCH',
+    headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+    credentials: 'same-origin',
+    body: JSON.stringify({ id, status }),
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data.error || 'Unable to update request status.');
+  return data.inquiry;
 };
 
 const loadRolePanelOffers = async (role) => {
@@ -605,6 +624,23 @@ const loadRolePanelOffers = async (role) => {
 
   await loadRolePanelRequests(role);
 };
+
+
+document.addEventListener('change', async (event) => {
+  const select = event.target.closest('[data-role-request-status]');
+  if (!select) return;
+
+  select.disabled = true;
+  try {
+    await updateRoleRequestStatus(select.dataset.role, select.dataset.id, select.value);
+    await loadRolePanelRequests(select.dataset.role);
+  } catch (error) {
+    window.alert(error.message || 'Unable to update request status.');
+    await loadRolePanelRequests(select.dataset.role);
+  } finally {
+    select.disabled = false;
+  }
+});
 
 const renderAccountProfile = (profile, grant = null) => {
   if (!accountProfile) return;
