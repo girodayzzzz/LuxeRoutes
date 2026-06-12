@@ -180,6 +180,74 @@ if (toggle && nav) {
   });
 }
 
+
+
+const customerFacingPage = !window.location.pathname.includes('/admin/')
+  && !['admin-panel.html', 'owner-panel.html', 'manager-panel.html'].includes(currentPage);
+
+if (customerFacingPage) {
+  document.documentElement.classList.add('customer-experience-ready');
+
+  const progressBar = document.createElement('div');
+  progressBar.className = 'page-progress';
+  progressBar.setAttribute('aria-hidden', 'true');
+  document.body.prepend(progressBar);
+
+  const updatePageProgress = () => {
+    const scrollable = document.documentElement.scrollHeight - window.innerHeight;
+    const progress = scrollable > 0 ? Math.min(1, Math.max(0, window.scrollY / scrollable)) : 0;
+    progressBar.style.setProperty('--progress', progress.toFixed(4));
+  };
+  updatePageProgress();
+  window.addEventListener('scroll', updatePageProgress, { passive: true });
+  window.addEventListener('resize', updatePageProgress);
+
+  const assist = document.createElement('aside');
+  assist.className = 'customer-assist';
+  assist.setAttribute('aria-label', 'Quick LuxeRoutes actions');
+  assist.innerHTML = `
+    <a class="assist-primary" href="plan-trip.html#trip-brief">
+      <span>Plan trip</span>
+      <small>Private brief</small>
+    </a>
+    <a href="offers.html#offers" aria-label="Browse curated stays">Stays</a>
+    <a href="mailto:info@luxeroutes.eu" aria-label="Email LuxeRoutes concierge">Email</a>
+    <button type="button" data-back-to-top aria-label="Back to top">↑</button>
+  `;
+  document.body.append(assist);
+
+  const backToTop = assist.querySelector('[data-back-to-top]');
+  const updateAssistState = () => {
+    assist.classList.toggle('is-elevated', window.scrollY > 420);
+    if (backToTop) backToTop.hidden = window.scrollY < 520;
+  };
+  updateAssistState();
+  window.addEventListener('scroll', updateAssistState, { passive: true });
+  backToTop?.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+
+  document.querySelectorAll('.has-dropdown > .nav-link').forEach((link) => {
+    link.setAttribute('aria-haspopup', 'true');
+  });
+
+  const revealTargets = document.querySelectorAll('.section, .image-card, .plain-card, .route-card, .stay-offer-card, .final-cta .container');
+  if ('IntersectionObserver' in window) {
+    const revealObserver = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        entry.target.classList.add('is-visible');
+        revealObserver.unobserve(entry.target);
+      });
+    }, { rootMargin: '0px 0px -10% 0px', threshold: 0.12 });
+
+    revealTargets.forEach((target) => {
+      target.classList.add('reveal-on-scroll');
+      revealObserver.observe(target);
+    });
+  } else {
+    revealTargets.forEach((target) => target.classList.add('is-visible'));
+  }
+}
+
 const formatLabel = (name) => name.replace(/[_-]/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase());
 
 const params = new URLSearchParams(window.location.search);
@@ -287,12 +355,64 @@ const submitInquiryPayload = async (endpoint, payload, formData) => {
   return response;
 };
 
-document.querySelectorAll('[data-inquiry-form]').forEach((form) => {
+document.querySelectorAll('[data-inquiry-form]').forEach((form, formIndex) => {
   const status = document.createElement('p');
   status.className = 'form-status';
   status.setAttribute('role', 'status');
   status.setAttribute('tabindex', '-1');
   form.append(status);
+
+  const draftKey = `luxeroutes-inquiry-draft:${window.location.pathname}:${form.id || formIndex}`;
+  const draftFields = Array.from(form.elements).filter((field) => field.name && field.type !== 'hidden' && field.name !== 'website');
+  const readDraft = () => {
+    try {
+      return JSON.parse(localStorage.getItem(draftKey) || '{}');
+    } catch (error) {
+      return {};
+    }
+  };
+  const restoreDraft = () => {
+    const draft = readDraft();
+    draftFields.forEach((field) => {
+      if (!Object.prototype.hasOwnProperty.call(draft, field.name) || field.value) return;
+      if (field.type === 'checkbox' || field.type === 'radio') {
+        field.checked = Array.isArray(draft[field.name])
+          ? draft[field.name].includes(field.value)
+          : draft[field.name] === field.value;
+        return;
+      }
+      field.value = draft[field.name];
+    });
+  };
+  const saveDraft = () => {
+    const draft = {};
+    draftFields.forEach((field) => {
+      if (field.type === 'checkbox') {
+        if (!draft[field.name]) draft[field.name] = [];
+        if (field.checked) draft[field.name].push(field.value);
+        return;
+      }
+      if (field.type === 'radio') {
+        if (field.checked) draft[field.name] = field.value;
+        return;
+      }
+      if (field.value.trim()) draft[field.name] = field.value.trim();
+    });
+
+    try {
+      if (Object.keys(draft).length) {
+        localStorage.setItem(draftKey, JSON.stringify(draft));
+      } else {
+        try { localStorage.removeItem(draftKey); } catch (error) {}
+      }
+    } catch (error) {
+      // Draft saving is a convenience feature; keep the inquiry form usable if storage is unavailable.
+    }
+  };
+
+  restoreDraft();
+  form.addEventListener('input', saveDraft);
+  form.addEventListener('change', saveDraft);
 
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
@@ -319,6 +439,7 @@ document.querySelectorAll('[data-inquiry-form]').forEach((form) => {
     if (!endpoint) {
       status.textContent = 'Thank you. Your inquiry has been prepared — please email info@luxeroutes.eu if you do not hear from us within 48 hours.';
       form.reset();
+      try { localStorage.removeItem(draftKey); } catch (error) {}
       form.removeAttribute('aria-busy');
       if (submitButton) submitButton.disabled = false;
       return;
@@ -329,6 +450,7 @@ document.querySelectorAll('[data-inquiry-form]').forEach((form) => {
       status.classList.add('is-success');
       status.textContent = 'Thank you. Your inquiry has been received — LuxeRoutes will review it and reply within 48 hours.';
       form.reset();
+      try { localStorage.removeItem(draftKey); } catch (error) {}
       status.focus({ preventScroll: true });
     } catch (error) {
       console.error(error);
