@@ -18,6 +18,8 @@ const ownerOffersTarget = document.querySelector('[data-owner-offers]');
 const managerOffersTarget = document.querySelector('[data-manager-offers]');
 const ownerRequestsTarget = document.querySelector('[data-owner-requests]');
 const managerRequestsTarget = document.querySelector('[data-manager-requests]');
+const ownerNewOfferForm = document.querySelector('[data-owner-new-offer-form]');
+const ownerNewOfferStatus = document.querySelector('[data-owner-new-offer-status]');
 const loginOtpForm = document.querySelector('[data-login-otp-form]');
 const loginEmailStep = document.querySelector('[data-login-email-step]');
 const loginCodeStep = document.querySelector('[data-login-code-step]');
@@ -481,7 +483,13 @@ const setLoginAccountState = (active = false) => {
 };
 
 
-const offerStatusLabel = (offer = {}) => accountEscapeHtml(offer.partnerStatus || offer.status || 'pending_review').replaceAll('_', ' ');
+const offerStatusLabel = (offer = {}) => {
+  const partnerStatus = offer.partnerStatus || '';
+  if (partnerStatus === 'pending_review') return 'Waiting for admin approval';
+  if (partnerStatus === 'changes_requested') return 'Changes requested by admin';
+  if (partnerStatus === 'published') return 'Published';
+  return accountEscapeHtml(partnerStatus || offer.status || 'pending_review').replaceAll('_', ' ');
+};
 
 const dateRangeLabel = (offer = {}) => {
   const from = offer.availableFrom || '';
@@ -502,7 +510,7 @@ const parseInquiryPayload = (inquiry = {}) => {
 
 const getInquiryContact = (inquiry = {}, payload = {}) => inquiry.email || inquiry.phone || payload.email || payload.phone || payload.whatsapp || 'No contact provided';
 
-const requestStatusOptions = ['new', 'in_progress', 'waiting', 'resolved', 'closed'];
+const requestStatusOptions = ['new', 'in_progress', 'waiting', 'approved', 'resolved', 'closed', 'declined'];
 
 const renderRoleRequests = (target, inquiries = [], emptyMessage = 'No customer requests yet.', role = '') => {
   if (!target) return;
@@ -526,7 +534,7 @@ const renderRoleRequests = (target, inquiries = [], emptyMessage = 'No customer 
           ${payload.guests ? `<span>Guests: ${accountEscapeHtml(payload.guests)}</span>` : ''}
           ${payload.message || payload.notes ? `<span>Request: ${accountEscapeHtml(payload.message || payload.notes)}</span>` : ''}
         </div>
-        ${role ? `<label class="mini-field">Request status<select data-role-request-status data-role="${accountEscapeHtml(role)}" data-id="${accountEscapeHtml(inquiry.id || '')}" aria-label="Request status for ${accountEscapeHtml(inquiry.offerTitle || payload.offer || 'customer request')}">${requestStatusOptions.map((option) => `<option value="${option}" ${status === option ? 'selected' : ''}>${accountEscapeHtml(option.replaceAll('_', ' '))}</option>`).join('')}</select></label>` : `<span class="status-pill ${status === 'resolved' || status === 'closed' ? 'status-approved' : 'status-pending'}">${accountEscapeHtml(status.replaceAll('_', ' '))}</span>`}
+        ${role ? `<label class="mini-field">Request status<select data-role-request-status data-role="${accountEscapeHtml(role)}" data-id="${accountEscapeHtml(inquiry.id || '')}" aria-label="Request status for ${accountEscapeHtml(inquiry.offerTitle || payload.offer || 'customer request')}">${requestStatusOptions.map((option) => `<option value="${option}" ${status === option ? 'selected' : ''}>${accountEscapeHtml(option.replaceAll('_', ' '))}</option>`).join('')}</select></label>` : `<span class="status-pill ${['approved', 'resolved', 'closed'].includes(status) ? 'status-approved' : status === 'declined' ? 'status-warning' : 'status-pending'}">${accountEscapeHtml(status.replaceAll('_', ' '))}</span>`}
       </div>
     `;
   }).join('');
@@ -608,6 +616,14 @@ const updateRoleRequestStatus = async (role, id, status) => {
   return data.inquiry;
 };
 
+const setOwnerNewOfferStatus = (message = '', tone = 'pending') => {
+  if (!ownerNewOfferStatus) return;
+  ownerNewOfferStatus.textContent = message;
+  ownerNewOfferStatus.classList.toggle('status-approved', tone === 'success');
+  ownerNewOfferStatus.classList.toggle('status-warning', tone === 'error');
+  ownerNewOfferStatus.classList.toggle('status-pending', tone !== 'success' && tone !== 'error');
+};
+
 const loadRolePanelOffers = async (role) => {
   const endpoint = role === 'owner' ? '/api/owner/offers' : role === 'manager' ? '/api/manager/offers' : '';
   const target = role === 'owner' ? ownerOffersTarget : role === 'manager' ? managerOffersTarget : null;
@@ -624,6 +640,35 @@ const loadRolePanelOffers = async (role) => {
 
   await loadRolePanelRequests(role);
 };
+
+
+ownerNewOfferForm?.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const submitButton = ownerNewOfferForm.querySelector('[type="submit"]');
+  const formData = new FormData(ownerNewOfferForm);
+  const payload = Object.fromEntries(formData.entries());
+  payload.options = formData.getAll('options');
+  submitButton.disabled = true;
+  setOwnerNewOfferStatus('Submitting your offer for admin review…');
+
+  try {
+    const response = await fetch('/api/owner/offers', {
+      method: 'POST',
+      headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify(payload),
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || 'Unable to submit this offer.');
+    ownerNewOfferForm.reset();
+    setOwnerNewOfferStatus('Offer submitted. Admin can now review, approve, publish, and assign a manager.', 'success');
+    await loadRolePanelOffers('owner');
+  } catch (error) {
+    setOwnerNewOfferStatus(error.message || 'Unable to submit this offer.', 'error');
+  } finally {
+    submitButton.disabled = false;
+  }
+});
 
 
 document.addEventListener('change', async (event) => {

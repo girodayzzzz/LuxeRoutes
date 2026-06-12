@@ -39,9 +39,21 @@ class FakeStatement {
     throw new Error(`Unhandled first SQL: ${this.sql}`);
   }
   run() {
+    if (this.sql.includes('INSERT INTO stay_offers') && this.sql.includes('available_from')) {
+      const [id, title, slug, country, region, stayType, options, locationLabel, guestLabel, priceLabel, availableFrom, availableTo, discountLabel, availabilityNotes, description, imageUrl, imageAlt, createdByEmail, ownerEmail, ownerNotes, createdAt, updatedAt] = this.params;
+      this.db.offers.unshift({ id, sourceInquiryId: null, title, slug, country, region, stayType, options, locationLabel, guestLabel, priceLabel, availableFrom, availableTo, discountLabel, availabilityNotes, description, imageUrl, imageAlt, status: 'unpublished', publishedAt: null, createdByEmail, ownerEmail, managerEmail: null, partnerStatus: 'pending_review', ownerNotes, managerNotes: '', createdAt, updatedAt });
+      return { success: true };
+    }
     if (this.sql.includes('INSERT INTO stay_offers')) {
       const [id, sourceInquiryId, title, slug, country, region, stayType, options, locationLabel, guestLabel, priceLabel, description, imageUrl, imageAlt, status, publishedAt, createdByEmail, ownerEmail, managerEmail, partnerStatus, ownerNotes, managerNotes, createdAt, updatedAt] = this.params;
       this.db.offers.unshift({ id, sourceInquiryId, title, slug, country, region, stayType, options, locationLabel, guestLabel, priceLabel, availableFrom: null, availableTo: null, discountLabel: '', availabilityNotes: '', description, imageUrl, imageAlt, status, publishedAt, createdByEmail, ownerEmail, managerEmail, partnerStatus, ownerNotes, managerNotes, createdAt, updatedAt });
+      return { success: true };
+    }
+    if (this.sql.includes('UPDATE inquiries') && this.sql.includes('offer_id = ?')) {
+      const [status, offerId, offerTitle, ownerEmail, managerEmail, updatedAt, id] = this.params;
+      const inquiry = this.db.inquiries.find((item) => item.id === id);
+      if (inquiry) Object.assign(inquiry, { status: status === 'published' ? 'resolved' : inquiry.status, offerId, offerTitle, ownerEmail: ownerEmail || null, managerEmail: managerEmail || null, updatedAt });
+      this.db.resolvedInquiry = id;
       return { success: true };
     }
     if (this.sql.includes('UPDATE inquiries SET status')) { this.db.resolvedInquiry = this.params[1]; return { success: true }; }
@@ -69,7 +81,10 @@ class FakeDb {
     ];
     this.profiles = [];
     this.offers = [{ id: 'offer-existing', title: 'Existing Villa', slug: 'existing-villa', country: 'italy', region: 'lakes', stayType: 'villa', options: 'pool', locationLabel: 'Italy · Lakes', guestLabel: '6 guests', priceLabel: 'From €500/night', description: 'Existing public offer.', imageUrl: '', imageAlt: 'Existing Villa', status: 'published', publishedAt: '2026-06-04T00:00:00.000Z', ownerEmail: 'owner@example.com', managerEmail: 'manager@example.com', partnerStatus: 'published', ownerNotes: 'Owner note', managerNotes: 'Manager note', availableFrom: null, availableTo: null, discountLabel: '', availabilityNotes: '', updatedAt: '2026-06-04T00:00:00.000Z' }];
-    this.inquiries = [{ id: 'inquiry-stay-1', inquiryType: 'Trip request', name: 'Traveler', email: 'traveler@example.com', phone: '', offerId: 'offer-existing', offerTitle: 'Existing Villa', ownerEmail: 'owner@example.com', managerEmail: 'manager@example.com', payloadJson: JSON.stringify({ offer: 'Existing Villa', message: 'Can we stay in July?', guests: '4' }), status: 'new', createdAt: '2026-06-05T00:00:00.000Z', updatedAt: '2026-06-05T00:00:00.000Z' }];
+    this.inquiries = [
+      { id: 'inquiry-stay-1', inquiryType: 'Trip request', name: 'Traveler', email: 'traveler@example.com', phone: '', offerId: 'offer-existing', offerTitle: 'Existing Villa', ownerEmail: 'owner@example.com', managerEmail: 'manager@example.com', payloadJson: JSON.stringify({ offer: 'Existing Villa', message: 'Can we stay in July?', guests: '4' }), status: 'new', createdAt: '2026-06-05T00:00:00.000Z', updatedAt: '2026-06-05T00:00:00.000Z' },
+      { id: 'inquiry-1', inquiryType: 'Partner stay submission', name: 'Owner', email: 'owner@example.com', phone: '', offerId: null, offerTitle: '', ownerEmail: null, managerEmail: null, payloadJson: JSON.stringify({ property_name: 'Lake House', property_summary: 'A private lakeside house.' }), status: 'new', createdAt: '2026-06-06T00:00:00.000Z', updatedAt: '2026-06-06T00:00:00.000Z' },
+    ];
   }
   prepare(sql) { return new FakeStatement(this, sql); }
 }
@@ -86,12 +101,24 @@ assert.equal(db.offers[0].options, 'pool family', 'Only supported taxonomy optio
 assert.equal(db.offers[0].ownerEmail, 'owner@example.com', 'Admin publishing should assign an owner email to the offer.');
 assert.equal(db.offers[0].managerEmail, 'manager@example.com', 'Admin publishing should assign a manager email to the offer.');
 assert.equal(db.resolvedInquiry, 'inquiry-1', 'Publishing should resolve its source inquiry.');
+const sourceInquiry = db.inquiries.find((inquiry) => inquiry.id === 'inquiry-1');
+assert.equal(sourceInquiry.offerId, db.offers[0].id, 'Publishing should link the source inquiry to the new offer.');
+assert.equal(sourceInquiry.offerTitle, 'Lake House', 'Publishing should copy the offer title back to the source inquiry.');
+assert.equal(sourceInquiry.ownerEmail, 'owner@example.com', 'Publishing should copy the owner assignment back to the source inquiry.');
+assert.equal(sourceInquiry.managerEmail, 'manager@example.com', 'Publishing should copy the manager assignment back to the source inquiry.');
 
+const ownerSubmitResponse = await ownerOffers.onRequestPost({ request: new Request('https://luxeroutes.test/api/owner/offers', { method: 'POST', headers: { 'Content-Type': 'application/json', 'CF-Access-Authenticated-User-Email': 'owner@example.com' }, body: JSON.stringify({ title: 'Owner Submitted Chalet', country: 'austria', region: 'alps', stayType: 'chalet', locationLabel: 'Austria · Alps', guestLabel: 'Up to 10 guests', description: 'Owner submitted mountain chalet for LuxeRoutes review.', options: ['spa', 'pool', 'unknown'], availableFrom: '2026-09-01', availableTo: '2026-12-15', priceLabel: 'From €900/night' }) }), env: { DB: db } });
+assert.equal(ownerSubmitResponse.status, 201, await ownerSubmitResponse.text());
+assert.equal(db.offers[0].ownerEmail, 'owner@example.com', 'Owner-submitted offers should be assigned to the submitting owner.');
+assert.equal(db.offers[0].status, 'unpublished', 'Owner-submitted offers should stay hidden until admin approval.');
+assert.equal(db.offers[0].partnerStatus, 'pending_review', 'Owner-submitted offers should enter the admin review queue.');
+assert.equal(db.offers[0].managerEmail, null, 'Owner-submitted offers should wait for admin manager assignment.');
+assert.equal(db.offers[0].options, 'spa pool', 'Owner-submitted offers should keep only supported taxonomy options.');
 
 const ownerResponse = await ownerOffers.onRequestGet({ request: new Request('https://luxeroutes.test/api/owner/offers', { headers: { 'CF-Access-Authenticated-User-Email': 'owner@example.com' } }), env: { DB: db } });
 assert.equal(ownerResponse.status, 200, 'Approved owners should read their assigned offers.');
 const ownerPayload = await ownerResponse.json();
-assert.equal(ownerPayload.offers.length >= 1, true, 'Owner API should return assigned offers.');
+assert.equal(ownerPayload.offers.length >= 2, true, 'Owner API should return assigned and owner-submitted offers.');
 assert.equal(ownerPayload.offers.every((offer) => offer.ownerEmail === 'owner@example.com'), true, 'Owner API should only return owner-assigned offers.');
 
 const ownerPatchResponse = await ownerOffers.onRequestPatch({ request: new Request('https://luxeroutes.test/api/owner/offers', { method: 'PATCH', headers: { 'Content-Type': 'application/json', 'CF-Access-Authenticated-User-Email': 'owner@example.com' }, body: JSON.stringify({ id: 'offer-existing', availableFrom: '2026-07-01', availableTo: '2026-08-31', priceLabel: 'From €600/night', discountLabel: '10% for 7+ nights', availabilityNotes: 'August weekends fill quickly.' }) }), env: { DB: db } });
@@ -101,18 +128,18 @@ assert.equal(db.offers.find((offer) => offer.id === 'offer-existing').discountLa
 const ownerInquiryResponse = await ownerInquiries.onRequestGet({ request: new Request('https://luxeroutes.test/api/owner/inquiries', { headers: { 'CF-Access-Authenticated-User-Email': 'owner@example.com' } }), env: { DB: db } });
 assert.equal(ownerInquiryResponse.status, 200, 'Approved owners should read customer requests for their offers.');
 const ownerInquiryPayload = await ownerInquiryResponse.json();
-assert.equal(ownerInquiryPayload.inquiries.length, 1, 'Owner inquiry API should return owner-assigned requests.');
+assert.equal(ownerInquiryPayload.inquiries.length, 2, 'Owner inquiry API should return owner-assigned requests and linked source submissions.');
 
 const managerResponse = await managerOffers.onRequestGet({ request: new Request('https://luxeroutes.test/api/manager/offers', { headers: { 'CF-Access-Authenticated-User-Email': 'manager@example.com' } }), env: { DB: db } });
 assert.equal(managerResponse.status, 200, 'Approved managers should read their assigned offers.');
 const managerPayload = await managerResponse.json();
-assert.equal(managerPayload.offers.length >= 1, true, 'Manager API should return assigned offers.');
+assert.equal(managerPayload.offers.length >= 1, true, 'Manager API should return assigned offers but not unassigned owner submissions.');
 assert.equal(managerPayload.offers.every((offer) => offer.managerEmail === 'manager@example.com'), true, 'Manager API should only return manager-assigned offers.');
 
 const managerInquiryResponse = await managerInquiries.onRequestGet({ request: new Request('https://luxeroutes.test/api/manager/inquiries', { headers: { 'CF-Access-Authenticated-User-Email': 'manager@example.com' } }), env: { DB: db } });
 assert.equal(managerInquiryResponse.status, 200, 'Approved managers should read customer requests for assigned properties.');
 const managerInquiryPayload = await managerInquiryResponse.json();
-assert.equal(managerInquiryPayload.inquiries.length, 1, 'Manager inquiry API should return manager-assigned requests.');
+assert.equal(managerInquiryPayload.inquiries.length, 2, 'Manager inquiry API should return manager-assigned requests and linked source submissions.');
 
 const invalidResponse = await adminOffers.onRequestPost({ request: adminRequest('POST', { title: 'Bad', country: 'unknown', region: 'lakes', stayType: 'villa', locationLabel: 'Bad', description: 'Bad country' }), env: { DB: db } });
 assert.equal(invalidResponse.status, 400, 'Invalid taxonomy values should be rejected.');
@@ -126,5 +153,6 @@ assert.match(publicSource, /fetch\('\/api\/offers'/, 'Public offer finder should
 assert.match(adminSource, /ownerEmail/, 'Admin publish form should collect owner assignments for offers.');
 const accountSource = readFileSync('account.js', 'utf8');
 assert.match(accountSource, /data-owner-offer-form/, 'Owner panel should render availability and pricing controls.');
+assert.match(accountSource, /data-owner-new-offer-form/, 'Owner panel should submit new offers for admin approval.');
 assert.match(accountSource, /\/api\/manager\/inquiries/, 'Manager panel should load customer requests for assigned properties.');
 console.log('Offer publishing checks passed.');

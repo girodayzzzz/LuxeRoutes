@@ -63,7 +63,7 @@ const isPropertyInquiry = (inquiry) => {
 const renderStats = () => {
   if (!statsTarget) return;
   const pending = profiles.filter((profile) => profile.status === 'pending_admin_grant').length;
-  const openInquiries = inquiries.filter((inquiry) => !['resolved', 'closed'].includes(inquiry.status)).length;
+  const openInquiries = inquiries.filter((inquiry) => !['approved', 'resolved', 'closed', 'declined'].includes(inquiry.status)).length;
   const publishedOffers = offers.filter((offer) => offer.status === 'published').length;
   statsTarget.innerHTML = [['Pending applications', pending], ['Active members', grants.filter((grant) => grant.status === 'active').length], ['Open inquiries', openInquiries], ['Published stays', publishedOffers]]
     .map(([label, value]) => `<article><strong>${value}</strong><span>${label}</span></article>`).join('');
@@ -87,7 +87,7 @@ const renderMembers = () => {
 };
 const renderInquiries = () => {
   if (!inquiriesTarget) return;
-  inquiriesTarget.innerHTML = inquiries.map((inquiry) => `<tr><td><strong>${escapeHtml(inquiry.name || 'Unnamed')}</strong><br><small>${escapeHtml(inquiry.email || inquiry.phone || 'No contact')}</small></td><td>${escapeHtml(inquiry.inquiryType)}</td><td>${escapeHtml(formatDate(inquiry.createdAt))}</td><td><select data-inquiry-status data-id="${escapeHtml(inquiry.id)}" aria-label="Status for ${escapeHtml(inquiry.inquiryType)}">${['new', 'in_progress', 'waiting', 'resolved', 'closed'].map((status) => `<option value="${status}" ${inquiry.status === status ? 'selected' : ''}>${statusLabel(status)}</option>`).join('')}</select></td><td><button class="mini-action" type="button" data-inquiry-detail="${escapeHtml(inquiry.id)}">View details</button>${isPropertyInquiry(inquiry) && !offers.some((offer) => offer.sourceInquiryId === inquiry.id) ? ` <button class="mini-action" type="button" data-publish-inquiry="${escapeHtml(inquiry.id)}">Publish stay</button>` : ''}</td></tr>`).join('') || '<tr><td colspan="5" class="empty-state">No inquiries received yet.</td></tr>';
+  inquiriesTarget.innerHTML = inquiries.map((inquiry) => `<tr><td><strong>${escapeHtml(inquiry.name || 'Unnamed')}</strong><br><small>${escapeHtml(inquiry.email || inquiry.phone || 'No contact')}</small></td><td>${escapeHtml(inquiry.inquiryType)}</td><td>${escapeHtml(formatDate(inquiry.createdAt))}</td><td><select data-inquiry-status data-id="${escapeHtml(inquiry.id)}" aria-label="Status for ${escapeHtml(inquiry.inquiryType)}">${['new', 'in_progress', 'waiting', 'approved', 'resolved', 'closed', 'declined'].map((status) => `<option value="${status}" ${inquiry.status === status ? 'selected' : ''}>${statusLabel(status)}</option>`).join('')}</select></td><td><button class="mini-action" type="button" data-inquiry-detail="${escapeHtml(inquiry.id)}">View details</button>${isPropertyInquiry(inquiry) && !offers.some((offer) => offer.sourceInquiryId === inquiry.id) ? ` <button class="mini-action" type="button" data-publish-inquiry="${escapeHtml(inquiry.id)}">Publish stay</button>` : ''}</td></tr>`).join('') || '<tr><td colspan="5" class="empty-state">No inquiries received yet.</td></tr>';
 };
 const renderOffers = () => {
   if (!offersTarget) return;

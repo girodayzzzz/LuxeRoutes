@@ -105,9 +105,17 @@ export const onRequestPost = async ({ request, env }) => {
       offer.imageAlt || offer.title, offer.status, publishedAt, auth.email, offer.ownerEmail, offer.managerEmail,
       offer.partnerStatus, offer.ownerNotes, offer.managerNotes, timestamp, timestamp).run();
 
-    if (offer.sourceInquiryId && offer.status === 'published') {
-      await auth.db.prepare("UPDATE inquiries SET status = 'resolved', updated_at = ? WHERE id = ?")
-        .bind(timestamp, offer.sourceInquiryId).run();
+    if (offer.sourceInquiryId) {
+      await auth.db.prepare(`
+        UPDATE inquiries
+        SET status = CASE WHEN ? = 'published' THEN 'resolved' ELSE status END,
+          offer_id = ?,
+          offer_title = ?,
+          owner_email = NULLIF(?, ''),
+          manager_email = NULLIF(?, ''),
+          updated_at = ?
+        WHERE id = ?
+      `).bind(offer.status, id, offer.title, offer.ownerEmail, offer.managerEmail, timestamp, offer.sourceInquiryId).run();
     }
     const saved = await auth.db.prepare(`${offerSelect} WHERE id = ? LIMIT 1`).bind(id).first();
     return privateJson({ offer: saved }, { status: 201 });
