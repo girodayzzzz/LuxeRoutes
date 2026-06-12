@@ -177,6 +177,17 @@ assert.equal(verifyPayload.identity.email, 'traveler@example.com', 'OTP verifica
 assert.equal(verifyPayload.role, 'customer', 'OTP verification should default unprofiled users to customer access.');
 assert.equal(verifyPayload.redirect, '/account.html', 'OTP verification should return a concrete account redirect target.');
 assert.match(verifyResponse.headers.get('Set-Cookie') || '', /luxeroutes_account_session=/, 'OTP verification should set the HttpOnly account session cookie.');
+const sessionCookie = (verifyResponse.headers.get('Set-Cookie') || '').split(';')[0];
+const sessionResponse = await otpModule.onRequestGet({
+  request: new Request('https://luxeroutes.test/api/auth/otp?action=session', {
+    headers: { Accept: 'application/json', Cookie: sessionCookie },
+  }),
+  env,
+});
+const sessionPayload = await sessionResponse.json();
+assert.equal(sessionResponse.status, 200, 'OTP session fallback should accept the signed account cookie.');
+assert.equal(sessionPayload.identityEmail, 'traveler@example.com', 'OTP session fallback should identify the signed-in account email.');
+assert.equal(sessionPayload.role, 'customer', 'OTP session fallback should return the resolved account role.');
 assert.equal(db.otps[0].status, 'verified', 'OTP verification should mark the challenge verified.');
 
 const fallbackDb = new FakeDb();
