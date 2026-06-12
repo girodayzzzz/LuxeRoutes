@@ -11,6 +11,12 @@ const loginSource = readFileSync('login.html', 'utf8');
 const ownerPanelSource = readFileSync('owner-panel.html', 'utf8');
 const managerPanelSource = readFileSync('manager-panel.html', 'utf8');
 const siteScriptSource = readFileSync('script.js', 'utf8');
+const redirectsSource = readFileSync('_redirects', 'utf8');
+assert.doesNotMatch(
+  redirectsSource,
+  /^\/(account|login|register|owner|manager)\s+/m,
+  'Cloudflare Pages clean URLs should serve public extensionless account routes; _redirects rewrites for them can self-redirect on Pages.',
+);
 assert.match(loginSource, /data-login-otp-form/, 'Public login should show the Resend OTP account form.');
 assert.match(loginSource, /action="\/api\/auth\/otp"/, 'Public login should post OTP requests to the Resend-backed API.');
 assert.match(loginSource, /data-admin-access-link[\s\S]*Continue with Cloudflare Access/, 'Public login should keep a separate Cloudflare Access entry for admins.');
