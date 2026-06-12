@@ -1,6 +1,6 @@
 import { privateErrorJson, privateJson, nowIso, requireAdmin } from '../_utils.js';
 
-const INQUIRY_STATUSES = ['new', 'in_progress', 'waiting', 'resolved', 'closed'];
+const INQUIRY_STATUSES = ['new', 'in_progress', 'waiting', 'approved', 'resolved', 'closed', 'declined'];
 
 const inquirySelect = `
   SELECT id, inquiry_type AS inquiryType, name, email, phone, source_page AS sourcePage,
