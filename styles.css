@@ -1859,14 +1859,14 @@ body.home-page {
 }
 
 .header-top-inner {
-  min-height: 28px;
+  min-height: 30px;
   font-size: .64rem;
   letter-spacing: .1em;
 }
 
 .nav-shell {
   justify-content: space-between;
-  min-height: 62px;
+  min-height: 66px;
   gap: clamp(.75rem, 2vw, 1.25rem);
 }
 
@@ -1878,7 +1878,7 @@ body.home-page {
 
 .brand img,
 .footer-brand img {
-  width: 146px;
+  width: 148px;
 }
 
 .primary-nav {
@@ -1890,15 +1890,17 @@ body.home-page {
 .nav-link {
   min-height: 34px;
   padding: .46rem .58rem;
-  font-size: .72rem;
-  letter-spacing: .04em;
+  font-size: .66rem;
+  letter-spacing: .08em;
 }
 
 .nav-cta {
   min-height: 34px;
   margin-left: .18rem;
   padding: .58rem .82rem;
-  font-size: .72rem;
+  font-size: .66rem;
+  letter-spacing: .08em;
+  min-width: 122px;
 }
 
 .menu-toggle {
