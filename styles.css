@@ -54,8 +54,8 @@ button { cursor: pointer; }
 .skip-link:focus { top: 1rem; }
 
 h1, h2, h3 { font-family: "Playfair Display", "Cormorant Garamond", Georgia, serif; line-height: .98; letter-spacing: -0.035em; color: var(--color-ink); }
-h1 { font-size: clamp(3.25rem, 8vw, 7.45rem); max-width: 980px; }
-h2 { font-size: clamp(2.15rem, 5vw, 4.5rem); }
+h1 { font-size: clamp(2.8rem, 6.6vw, 6.2rem); max-width: 980px; }
+h2 { font-size: clamp(1.9rem, 4vw, 3.65rem); }
 h3 { font-size: clamp(1.35rem, 2.4vw, 2rem); }
 p { color: var(--color-muted); }
 .eyebrow { color: var(--color-gold-light); text-transform: uppercase; letter-spacing: .2em; font-size: .74rem; font-weight: 900; margin-bottom: .9rem; }
@@ -847,7 +847,7 @@ body.home-page {
 }
 .hero-stage h1 {
   max-width: 930px;
-  font-size: clamp(4.2rem, 9vw, 8.8rem);
+  font-size: clamp(3.4rem, 7.2vw, 7rem);
   line-height: .88;
   text-wrap: balance;
   text-shadow: 0 24px 80px rgba(0,0,0,.58);
@@ -1703,7 +1703,7 @@ body.home-page {
 
 .refined-hero .hero-stage h1 {
   max-width: 980px;
-  font-size: clamp(3.6rem, 7.6vw, 7.4rem);
+  font-size: clamp(3.05rem, 6.2vw, 6.2rem);
 }
 
 .signature-routes,
@@ -1782,7 +1782,7 @@ body.home-page {
 
 .route-card h3 {
   margin-top: .75rem;
-  font-size: clamp(1.8rem, 3vw, 2.8rem);
+  font-size: clamp(1.55rem, 2.4vw, 2.25rem);
 }
 
 .route-card p {
@@ -5648,7 +5648,7 @@ body { font-size: 15px; }
 
 .home-page .site-header:not(.scrolled):not(.nav-open) .primary-nav { background: rgba(6,7,10,.34); }
 .home-page .cinematic-hero { min-height: clamp(660px, 84svh, 780px); padding: 7.8rem 0 5.4rem; }
-.home-page .hero-stage h1 { font-size: clamp(3.15rem, 7vw, 6.6rem); }
+.home-page .hero-stage h1 { font-size: clamp(2.8rem, 5.8vw, 5.4rem); }
 .home-page .hero-stage .hero-lead { max-width: 560px; font-size: clamp(.98rem, 1.6vw, 1.12rem); line-height: 1.65; }
 .home-page .section { padding-block: clamp(4.2rem, 7vw, 6.5rem); }
 .home-page .customer-image-card {
@@ -5659,7 +5659,7 @@ body { font-size: 15px; }
 }
 .home-page .destination-grid { gap: 1rem; }
 .home-page .destination-card { min-height: 245px; border-radius: var(--customer-card-radius); }
-.home-page .destination-card h3 { font-size: clamp(1.65rem, 2.5vw, 2.35rem); }
+.home-page .destination-card h3 { font-size: clamp(1.45rem, 2.1vw, 2rem); }
 .home-page .process-grid article { min-height: 235px; padding: 1.35rem; }
 .deal-preview-grid article { padding: 1.25rem; border-radius: var(--customer-card-radius); }
 
@@ -5686,7 +5686,7 @@ body { font-size: 15px; }
 .card-grid.four .plain-card h2 { font-size: clamp(1.25rem, 2vw, 1.65rem); }
 .card-grid.four .plain-card p { font-size: .94rem; line-height: 1.6; }
 .form-shell { grid-template-columns: minmax(250px, .72fr) minmax(0, 1.28fr); gap: 1.5rem; padding: clamp(1.25rem, 3vw, 2.1rem); }
-.form-shell h2 { font-size: clamp(1.9rem, 3.4vw, 3rem); }
+.form-shell h2 { font-size: clamp(1.65rem, 2.8vw, 2.45rem); }
 .form-shell p:not(.eyebrow) { font-size: .96rem; line-height: 1.65; }
 .luxury-form { gap: .85rem; }
 .luxury-form label { font-size: .88rem; }
@@ -5705,7 +5705,7 @@ input, textarea, select { padding: .82rem .9rem; border-radius: 13px; font-size:
   .container { width: min(100% - 24px, var(--customer-max)); }
   body { font-size: 14px; }
   .page-hero { padding: 4rem 0 2.75rem; }
-  .page-hero h1 { font-size: clamp(2.25rem, 12vw, 3.55rem); }
+  .page-hero h1 { font-size: clamp(2rem, 10vw, 3rem); }
   .page-hero-image { min-height: 420px; }
   .card-grid.three,
   .journal-grid,
@@ -5721,5 +5721,5 @@ input, textarea, select { padding: .82rem .9rem; border-radius: 13px; font-size:
   .affiliate-offer-card.plain-card { padding: 1.05rem; }
   .section-soft .split { padding: 1rem; }
   .home-page .cinematic-hero { min-height: auto; padding: 7rem 0 4.5rem; }
-  .home-page .hero-stage h1 { font-size: clamp(2.75rem, 14vw, 4.5rem); }
+  .home-page .hero-stage h1 { font-size: clamp(2.35rem, 11vw, 3.6rem); }
 }
