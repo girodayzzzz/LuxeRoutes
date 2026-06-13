@@ -84,7 +84,7 @@ const updateRoleBasedNavigation = () => {
   const session = readAccountSession();
   const isLoggedIn = Boolean(session?.identity?.email || session?.profile?.email);
   const prefix = getPathPrefix();
-  const visibleLabels = new Set(['Home', 'Destinations', 'Stays', 'Experiences', 'Journal', isLoggedIn ? 'Account' : 'Login', 'Plan a Trip']);
+  const visibleLabels = new Set(['Home', 'Destinations', 'Stays', 'Experiences', 'Partners', 'Journal', isLoggedIn ? 'Account' : 'Login', 'Plan a Trip']);
 
   document.querySelectorAll('[data-nav-login]').forEach((link) => {
     link.hidden = isLoggedIn;
@@ -191,6 +191,8 @@ const customerMarketingPages = new Set([
   'experiences.html',
   'plan-trip.html',
   'contact.html',
+  'partner-signup.html',
+  'travel-deals.html',
   'hotels.html',
   'apartments.html',
   'chalets.html',
