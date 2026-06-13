@@ -556,11 +556,12 @@ textarea { resize: vertical; }
   color: var(--color-muted-strong);
 }
 .footer-grid {
-  grid-template-columns: minmax(260px, 1.35fr) repeat(4, minmax(130px, .65fr));
+  grid-template-columns: minmax(260px, 1.35fr) repeat(5, minmax(120px, .65fr));
   gap: clamp(1.4rem, 3vw, 2.5rem);
   align-items: start;
 }
 .footer-about p { color: var(--color-muted-strong); }
+.faq-list { display: grid; gap: 1rem; margin-top: 1.5rem; }
 .footer-grid h2 {
   color: var(--color-gold-light);
   font-size: .74rem;
