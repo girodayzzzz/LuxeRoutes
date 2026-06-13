@@ -5912,7 +5912,42 @@ body:not(.auth-page) .page-hero h1 {
   object-fit: contain;
 }
 
+.affiliate-script-widget {
+  min-width: 0;
+}
+
+.affiliate-widget-frame {
+  position: relative;
+  min-height: 380px;
+  overflow: hidden;
+  border: 1px solid rgba(217, 188, 122, .32);
+  border-radius: 24px;
+  background: #ffffff;
+  box-shadow: 0 22px 55px rgba(0, 0, 0, .24);
+}
+
+.affiliate-widget-frame iframe,
+.affiliate-widget-frame > div:not(.affiliate-widget-loading) {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+}
+
+.affiliate-widget-loading {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 1.25rem;
+  color: #111722;
+  font-weight: 800;
+  text-align: center;
+  background: linear-gradient(135deg, #fff, #f4efe3);
+}
+
 .affiliate-script-widget p {
+  position: relative;
+  z-index: 2;
   padding: 1rem;
   color: #111722;
 }
