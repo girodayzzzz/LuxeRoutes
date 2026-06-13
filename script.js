@@ -243,7 +243,7 @@ if (customerFacingPage) {
         <small>Private brief</small>
       </a>
       <a href="offers.html#stay-finder" aria-label="Browse curated stays">Stays</a>
-      <a href="mailto:info@luxeroutes.eu" aria-label="Email LuxeRoutes concierge">Email</a>
+      <a href="contact.html" aria-label="Open LuxeRoutes contact page">Contact</a>
       <button type="button" data-back-to-top aria-label="Back to top">↑</button>
     `;
     document.body.append(assist);
