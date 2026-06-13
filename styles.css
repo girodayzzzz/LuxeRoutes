@@ -5692,6 +5692,24 @@ body { font-size: 15px; }
 .luxury-form label { font-size: .88rem; }
 input, textarea, select { padding: .82rem .9rem; border-radius: 13px; font-size: .95rem; }
 
+/* Light heading scale tune-up: keep marketing pages premium without oversized titles. */
+body:not(.auth-page) .page-hero h1 {
+  font-size: clamp(2.45rem, 5.15vw, 4.55rem);
+}
+
+.home-page .hero-stage h1 {
+  font-size: clamp(2.7rem, 5.2vw, 4.85rem);
+}
+
+.editorial-split h2 {
+  font-size: clamp(1.85rem, 3vw, 2.75rem);
+  line-height: 1.08;
+}
+
+.route-card h3 {
+  font-size: clamp(1.35rem, 2vw, 1.95rem);
+}
+
 @media (max-width: 1020px) {
   .card-grid.three,
   .journal-grid,
@@ -5705,7 +5723,7 @@ input, textarea, select { padding: .82rem .9rem; border-radius: 13px; font-size:
   .container { width: min(100% - 24px, var(--customer-max)); }
   body { font-size: 14px; }
   .page-hero { padding: 4rem 0 2.75rem; }
-  .page-hero h1 { font-size: clamp(2rem, 10vw, 3rem); }
+  body:not(.auth-page) .page-hero h1 { font-size: clamp(2rem, 9.2vw, 2.65rem); }
   .page-hero-image { min-height: 420px; }
   .card-grid.three,
   .journal-grid,
@@ -5721,5 +5739,5 @@ input, textarea, select { padding: .82rem .9rem; border-radius: 13px; font-size:
   .affiliate-offer-card.plain-card { padding: 1.05rem; }
   .section-soft .split { padding: 1rem; }
   .home-page .cinematic-hero { min-height: auto; padding: 7rem 0 4.5rem; }
-  .home-page .hero-stage h1 { font-size: clamp(2.35rem, 11vw, 3.6rem); }
+  .home-page .hero-stage h1 { font-size: clamp(2.25rem, 10vw, 3.2rem); }
 }
