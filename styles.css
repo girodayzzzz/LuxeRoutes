@@ -5919,18 +5919,21 @@ body:not(.auth-page) .page-hero h1 {
 .affiliate-banner-widget {
   display: block;
   width: min(100%, 660px);
+  aspect-ratio: 660 / 270;
   margin-top: .1rem;
   overflow: hidden;
   border: 1px solid rgba(217, 188, 122, .32);
   border-radius: 22px;
   background: rgba(255, 255, 255, .06);
   box-shadow: 0 18px 45px rgba(0, 0, 0, .2);
+  transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease;
 }
 
 .affiliate-banner-widget img {
   display: block;
   width: 100%;
-  height: auto;
+  height: 100%;
+  object-fit: contain;
 }
 
 .affiliate-banner-widget:hover,
