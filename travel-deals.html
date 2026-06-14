@@ -78,9 +78,18 @@
             <p>This embedded partner widget lets visitors explore live affiliate travel offers directly on LuxeRoutes.</p>
           </div>
           <div class="affiliate-script-widget" aria-label="Interactive travel offer widget">
-            <div class="affiliate-widget-frame">
-              <div class="affiliate-widget-loading" aria-hidden="true">Loading live travel deals…</div>
+            <div class="affiliate-widget-frame" data-affiliate-widget-frame>
+              <div class="affiliate-widget-loading" aria-hidden="true" data-affiliate-widget-loading>Loading live travel deals…</div>
               <script src="https://tpwdg.com/content?currency=EUR&trs=538815&shmarker=738692&locale=en&city_id=116&category=1&amount=3&powered_by=true&campaign_id=137&promo_id=4497" charset="utf-8"></script>
+              <div class="affiliate-widget-fallback" data-affiliate-widget-fallback hidden>
+                <span class="offer-label">Partner widget unavailable</span>
+                <h4>Explore travel deal categories instead</h4>
+                <p>The live affiliate widget could not be loaded. This can happen when the affiliate platform blocks the domain, campaign, or responsive widget placement.</p>
+                <div class="affiliate-fallback-actions">
+                  <a class="btn btn-primary" href="#travel-partners-heading">View partner cards</a>
+                  <a class="btn btn-secondary" href="contact.html">Ask LuxeRoutes</a>
+                </div>
+              </div>
               <noscript><p>Please enable JavaScript to browse travel offers.</p></noscript>
             </div>
           </div>

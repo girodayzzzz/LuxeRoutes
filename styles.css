@@ -5945,7 +5945,47 @@ body:not(.auth-page) .page-hero h1 {
   background: linear-gradient(135deg, #fff, #f4efe3);
 }
 
-.affiliate-script-widget p {
+.affiliate-widget-frame.is-loaded .affiliate-widget-loading {
+  display: none;
+}
+
+.affiliate-widget-fallback {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  min-height: 380px;
+  align-content: center;
+  gap: 1rem;
+  padding: clamp(1.25rem, 4vw, 2rem);
+  color: #111722;
+  background: linear-gradient(135deg, #fff, #f4efe3);
+}
+
+.affiliate-widget-fallback[hidden] {
+  display: none;
+}
+
+.affiliate-widget-fallback h4 {
+  margin: 0;
+  color: #111722;
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 3vw, 2.3rem);
+}
+
+.affiliate-widget-fallback p {
+  max-width: 34rem;
+  padding: 0;
+  color: #3b4350;
+}
+
+.affiliate-fallback-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .8rem;
+}
+
+.affiliate-script-widget > p,
+.affiliate-widget-frame > noscript p {
   position: relative;
   z-index: 2;
   padding: 1rem;
