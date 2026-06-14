@@ -5847,6 +5847,20 @@ body:not(.auth-page) .page-hero h1 {
   color: var(--color-gold-light);
 }
 
+
+.affiliate-widget-panel {
+  margin-bottom: clamp(2.3rem, 5vw, 4rem);
+}
+
+.affiliate-script-widget {
+  overflow: hidden;
+  padding: clamp(1rem, 3vw, 1.6rem);
+  border: 1px solid rgba(217, 188, 122, .24);
+  border-radius: 30px;
+  background: linear-gradient(135deg, rgba(217, 188, 122, .1), rgba(12, 18, 29, .94));
+  box-shadow: var(--shadow-soft);
+}
+
 .affiliate-link-wrap {
   margin-bottom: clamp(2.3rem, 5vw, 4rem);
 }
