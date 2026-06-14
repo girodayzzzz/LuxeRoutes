@@ -5967,3 +5967,113 @@ body:not(.auth-page) .page-hero h1 {
     grid-template-columns: 1fr;
   }
 }
+
+/* Responsive Booking.com affiliate widgets */
+.booking-widget-feature {
+  overflow: hidden;
+}
+
+.booking-widget-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: .8rem;
+}
+
+.booking-widget-grid.compact {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.booking-widget-card {
+  position: relative;
+  display: flex;
+  min-height: 150px;
+  flex-direction: column;
+  justify-content: flex-end;
+  overflow: hidden;
+  padding: 1rem;
+  border: 1px solid rgba(217, 188, 122, .2);
+  border-radius: 22px;
+  background:
+    linear-gradient(145deg, rgba(21, 94, 168, .34), rgba(10, 15, 24, .96)),
+    radial-gradient(circle at 16% 18%, rgba(0, 113, 194, .5), transparent 12rem);
+  box-shadow: var(--shadow-soft);
+  transition: transform .22s ease, border-color .22s ease, box-shadow .22s ease;
+}
+
+.booking-widget-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(255,255,255,.08), transparent 45%);
+  pointer-events: none;
+}
+
+.booking-widget-card::after {
+  content: "↗";
+  position: absolute;
+  top: .85rem;
+  right: .9rem;
+  color: rgba(248, 243, 233, .82);
+  font-weight: 900;
+}
+
+.booking-widget-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(241, 215, 150, .48);
+  box-shadow: 0 24px 56px rgba(0, 0, 0, .32);
+}
+
+.booking-widget-card span,
+.booking-widget-card strong,
+.booking-widget-card small {
+  position: relative;
+  z-index: 1;
+}
+
+.booking-widget-card span {
+  color: var(--color-gold-light);
+  font-size: .66rem;
+  font-weight: 900;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+}
+
+.booking-widget-card strong {
+  margin-top: .35rem;
+  color: var(--color-ink);
+  font-family: "Playfair Display", Georgia, serif;
+  font-size: clamp(1.3rem, 2vw, 1.8rem);
+  line-height: 1;
+}
+
+.booking-widget-card small {
+  margin-top: .55rem;
+  color: rgba(248, 243, 233, .76);
+  font-size: .78rem;
+  font-weight: 750;
+  line-height: 1.35;
+}
+
+.booking-widget-card-primary {
+  background:
+    linear-gradient(145deg, rgba(0, 113, 194, .58), rgba(10, 15, 24, .96)),
+    radial-gradient(circle at 16% 18%, rgba(0, 53, 128, .72), transparent 12rem);
+}
+
+@media (max-width: 900px) {
+  .booking-widget-grid,
+  .booking-widget-grid.compact {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .booking-widget-grid,
+  .booking-widget-grid.compact {
+    grid-template-columns: 1fr;
+  }
+
+  .booking-widget-card {
+    min-height: 128px;
+  }
+}
