@@ -4,6 +4,35 @@ document.querySelectorAll('[data-current-year]').forEach((year) => {
   year.textContent = String(new Date().getFullYear());
 });
 
+document.querySelectorAll('[data-affiliate-widget-frame]').forEach((frame) => {
+  const loading = frame.querySelector('[data-affiliate-widget-loading]');
+  const fallback = frame.querySelector('[data-affiliate-widget-fallback]');
+  const widgetScript = frame.querySelector('script[src*="tpwdg.com"]');
+  const showFallback = () => {
+    if (!fallback) return;
+    frame.classList.add('is-loaded');
+    loading?.setAttribute('aria-hidden', 'true');
+    fallback.hidden = false;
+  };
+  const markLoaded = () => {
+    frame.classList.add('is-loaded');
+    loading?.setAttribute('aria-hidden', 'true');
+  };
+  const hasRenderedWidget = () => Array.from(frame.children).some((child) => {
+    if (child === loading || child === fallback || child === widgetScript || child.tagName === 'NOSCRIPT') return false;
+    return child.tagName === 'IFRAME' || child.offsetHeight > 40 || child.textContent.trim().length > 0;
+  });
+
+  widgetScript?.addEventListener('error', showFallback);
+  window.setTimeout(() => {
+    if (hasRenderedWidget()) {
+      markLoaded();
+      return;
+    }
+    showFallback();
+  }, 4500);
+});
+
 
 const navAccountSessionKey = 'luxeroutes-account-session-v1';
 
