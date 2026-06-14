@@ -232,7 +232,7 @@ if (customerFacingPage) {
   window.addEventListener('scroll', updatePageProgress, { passive: true });
   window.addEventListener('resize', updatePageProgress);
 
-  const quickAssistPages = new Set(['index.html', 'destinations.html', 'stays.html', 'offers.html', 'routes.html', 'experiences.html']);
+  const quickAssistPages = new Set(['index.html', 'destinations.html', 'stays.html', 'offers.html', 'routes.html', 'experiences.html', 'travel-deals.html']);
   if (quickAssistPages.has(currentPage)) {
     const assist = document.createElement('aside');
     assist.className = 'customer-assist';
