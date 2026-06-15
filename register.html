@@ -84,28 +84,23 @@
           <div class="auth-card-head register-card-head">
             <p class="eyebrow">Account registration</p>
             <h2>Create your private profile</h2>
-            <p>Start with email verification. After the code is confirmed, the profile form unlocks with your verified email already protected.</p>
+            <p>Fill in the essentials first. We will send a 6-digit email code only when you are ready to create the account.</p>
           </div>
 
 
-          <form class="auth-form register-otp-form admin-form" data-register-otp-form>
-            <div class="auth-card-head compact-head">
-              <p class="eyebrow">Step 1 · Verify email</p>
-              <h3>Confirm your email before registering</h3>
-              <p>We will send a one-time code with Resend. After verification, you can create your LuxeRoutes password and profile.</p>
-            </div>
-            <label>Email<input name="email" type="email" placeholder="you@example.com" autocomplete="email" required data-register-otp-email-input></label>
-            <label>6-digit code<input name="otp" type="text" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" placeholder="123456" data-register-otp-code-input></label>
-            <button class="btn btn-primary" type="submit" data-register-otp-submit>Send verification code</button>
-            <p class="full admin-helper" data-register-otp-message>Already verified? Your email will appear in the account form below.</p>
-          </form>
+          <div class="register-progress" aria-label="Registration progress" data-register-progress>
+            <span class="is-active" data-register-progress-step="profile">1 · Details</span>
+            <span data-register-progress-step="verify">2 · Verify</span>
+            <span data-register-progress-step="done">3 · Done</span>
+          </div>
 
           <form class="auth-form auth-register-form admin-form" data-account-form>
-            <label>Email<input name="email" type="email" placeholder="Verified email loading…" autocomplete="email" required readonly aria-describedby="verified-email-help" data-account-email-input></label>
-            <p class="full admin-helper" id="verified-email-help">This email is verified by your secure LuxeRoutes login session and cannot be changed here.</p>
+            <label>Email<input name="email" type="email" placeholder="you@example.com" autocomplete="email" required aria-describedby="verified-email-help" data-account-email-input data-register-otp-email-input></label>
+            <p class="full admin-helper" id="verified-email-help" data-register-otp-message>Fill the form first. We will email a 6-digit code before the profile is saved.</p>
             <label>Full name<input name="name" type="text" placeholder="Your name" autocomplete="name" required></label>
             <label>Password<input name="password" type="password" placeholder="At least 8 characters" autocomplete="new-password" minlength="8" required></label>
             <p class="full admin-helper">You can use this password for future logins. The email code remains available as an optional backup.</p>
+            <label class="full" data-register-otp-code-wrap hidden>6-digit email code<input name="otp" type="text" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" placeholder="123456" data-register-otp-code-input></label>
             <label>Account type
               <select name="requested_role">
                 <option value="customer">Customer / Traveler</option>
@@ -113,11 +108,15 @@
                 <option value="manager">Regional Manager</option>
               </select>
             </label>
-            <label>Company name<input name="company_name" type="text" placeholder="Company or property group" autocomplete="organization"></label>
-            <label>Company website<input name="company_website" type="url" placeholder="https://example.com"></label>
-            <label class="full">Business context<textarea name="business_context" rows="4" placeholder="Tell us about your properties, region, portfolio, or partnership context."></textarea></label>
-            <label class="full">Notes<textarea name="notes" rows="4" placeholder="Anything else the LuxeRoutes team should know?"></textarea></label>
-            <button class="btn btn-primary" type="submit">Create Account</button>
+            <details class="full register-optional-details">
+              <summary>Optional partner details</summary>
+              <p class="admin-helper">Only add these if you are requesting owner or manager access. Travelers can skip this.</p>
+              <label>Company name<input name="company_name" type="text" placeholder="Company or property group" autocomplete="organization"></label>
+              <label>Company website<input name="company_website" type="url" placeholder="https://example.com"></label>
+              <label>Business context<textarea name="business_context" rows="3" placeholder="Properties, region, portfolio, or partnership context."></textarea></label>
+              <label>Notes<textarea name="notes" rows="3" placeholder="Anything else the LuxeRoutes team should know?"></textarea></label>
+            </details>
+            <button class="btn btn-primary" type="submit" data-account-submit>Create Account</button>
           </form>
 
           <div class="auth-status-card register-status-card" aria-label="Registration status">
