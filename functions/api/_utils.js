@@ -216,6 +216,10 @@ const authSchemaStatements = [
     company_name TEXT,
     company_website TEXT,
     business_context TEXT,
+    password_hash TEXT,
+    password_salt TEXT,
+    password_iterations INTEGER,
+    password_enabled INTEGER NOT NULL DEFAULT 0,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
   )`,
@@ -249,6 +253,51 @@ export const ensureAuthSchema = async (db) => {
   await ensureOptionalColumn(db, 'profiles', 'company_name', 'TEXT');
   await ensureOptionalColumn(db, 'profiles', 'company_website', 'TEXT');
   await ensureOptionalColumn(db, 'profiles', 'business_context', 'TEXT');
+  await ensureOptionalColumn(db, 'profiles', 'password_hash', 'TEXT');
+  await ensureOptionalColumn(db, 'profiles', 'password_salt', 'TEXT');
+  await ensureOptionalColumn(db, 'profiles', 'password_iterations', 'INTEGER');
+  await ensureOptionalColumn(db, 'profiles', 'password_enabled', 'INTEGER NOT NULL DEFAULT 0');
+};
+
+
+const PASSWORD_ITERATIONS = 210000;
+const PASSWORD_SALT_BYTES = 16;
+
+const bytesToHex = (bytes) => Array.from(bytes).map((byte) => byte.toString(16).padStart(2, '0')).join('');
+
+const hexToBytes = (hex) => {
+  const pairs = String(hex || '').match(/.{1,2}/g) || [];
+  return new Uint8Array(pairs.map((pair) => Number.parseInt(pair, 16)));
+};
+
+const derivePasswordHash = async (password, saltHex, iterations = PASSWORD_ITERATIONS) => {
+  const key = await crypto.subtle.importKey(
+    'raw',
+    textEncoder.encode(password),
+    'PBKDF2',
+    false,
+    ['deriveBits'],
+  );
+  const bits = await crypto.subtle.deriveBits(
+    { name: 'PBKDF2', salt: hexToBytes(saltHex), iterations, hash: 'SHA-256' },
+    key,
+    256,
+  );
+  return bytesToHex(new Uint8Array(bits));
+};
+
+export const hashAccountPassword = async (password) => {
+  const salt = new Uint8Array(PASSWORD_SALT_BYTES);
+  crypto.getRandomValues(salt);
+  const saltHex = bytesToHex(salt);
+  const passwordHash = await derivePasswordHash(password, saltHex, PASSWORD_ITERATIONS);
+  return { passwordHash, passwordSalt: saltHex, passwordIterations: PASSWORD_ITERATIONS, passwordEnabled: 1 };
+};
+
+export const verifyAccountPassword = async (password, profile = {}) => {
+  if (!profile?.passwordEnabled || !profile?.passwordHash || !profile?.passwordSalt || !profile?.passwordIterations) return false;
+  const passwordHash = await derivePasswordHash(password, profile.passwordSalt, Number(profile.passwordIterations));
+  return timingSafeEqual(passwordHash, profile.passwordHash);
 };
 
 export const makeId = (prefix) => `${prefix}-${crypto.randomUUID()}`;

@@ -20,7 +20,7 @@ assert.doesNotMatch(
 assert.match(loginSource, /data-login-otp-form/, 'Public login should show the Resend OTP account form.');
 assert.match(loginSource, /action="\/api\/auth\/otp"/, 'Public login should post OTP requests to the Resend-backed API.');
 assert.match(loginSource, /data-admin-access-link[\s\S]*Continue with Cloudflare Access/, 'Public login should keep a separate Cloudflare Access entry for admins.');
-assert.match(loginSource, /href="register\.html"[^>]*>Create an account<\/a>/, 'Public login should link to registration.');
+assert.match(loginSource, /href="register\.html"[^>]*>Don\'t have an account\? Register here<\/a>/, 'Public login should link to registration.');
 assert.match(accountSource, /fetchAccountAuth\('\/.cloudflare\/access\/get-identity',[\s\S]*?redirect: 'manual'/, 'Cloudflare Access identity checks must not follow Access redirects into a browser redirect loop.');
 assert.match(accountSource, /const accountAuthFetchTimeoutMs = 8000;/, 'Account auth fetches should use a defined timeout instead of throwing before session checks.');
 assert.match(accountSource, /const isLoginRedirectTarget = \(path\) =>/, 'Login redirect sanitizing should define the login-target helper used after OTP verification.');
@@ -111,6 +111,7 @@ cpSync('functions', join(tempRoot, 'functions'), { recursive: true });
 writeFileSync(join(tempRoot, 'package.json'), '{"type":"module"}\n');
 
 const accountModule = await import(pathToFileURL(join(tempRoot, 'functions/api/account.js')));
+const otpModule = await import(pathToFileURL(join(tempRoot, 'functions/api/auth/otp.js')));
 const grantsModule = await import(pathToFileURL(join(tempRoot, 'functions/api/admin/grants.js')));
 const adminSessionModule = await import(pathToFileURL(join(tempRoot, 'functions/api/admin/session.js')));
 const adminInquiriesModule = await import(pathToFileURL(join(tempRoot, 'functions/api/admin/inquiries.js')));
@@ -253,7 +254,7 @@ class FakeStatement {
     }
 
     if (sql.includes('INSERT INTO profiles') && sql.includes('company_name')) {
-      const [id, email, name, requestedRole, companyName, companyWebsite, businessContext, notes, status, createdAt, updatedAt] = this.params;
+      const [id, email, name, requestedRole, companyName, companyWebsite, businessContext, notes, status, passwordHash, passwordSalt, passwordIterations, passwordEnabled, createdAt, updatedAt] = this.params;
       const existing = this.db.profiles.find((profile) => profile.email === email);
       const next = {
         id: existing?.id || id,
@@ -266,6 +267,10 @@ class FakeStatement {
         businessContext,
         notes,
         status: requestedRole === 'customer' ? 'active' : status,
+        passwordHash,
+        passwordSalt,
+        passwordIterations,
+        passwordEnabled,
         createdAt: existing?.createdAt || createdAt,
         updatedAt,
       };
@@ -393,7 +398,7 @@ const makeRequest = (email, body = null) => new Request('https://luxeroutes.test
 });
 
 const db = new FakeDb();
-const env = { DB: db };
+const env = { DB: db, AUTH_SESSION_SECRET: 'test-secret' };
 
 const noIdentityResponse = await accountModule.onRequestGet({ request: makeRequest(''), env });
 assert.equal(noIdentityResponse.status, 401, 'Account API should require a verified identity email.');
@@ -443,7 +448,44 @@ assert.equal(registrationResponse.status, 201, 'Owner registration should save s
 assert.equal(registrationResponse.headers.get('Cache-Control'), 'no-store', 'Sensitive account responses must not be cached.');
 const registrationPayload = await registrationResponse.json();
 assert.equal(registrationPayload.profile.status, 'pending_admin_grant', 'Owner registration should wait for admin approval.');
+assert.equal(registrationPayload.grant.role, 'customer', 'Owner registration should create the default customer grant shown in admin members.');
+assert.equal(registrationPayload.grant.status, 'active', 'Default registration grants should be active immediately.');
 assert.equal(registrationPayload.role, 'customer', 'Owner registration should keep customer access until approval.');
+
+const customerRegistrationResponse = await accountModule.onRequestPost({
+  request: makeRequest('traveler@example.com', {
+    name: 'Traveler Example',
+    requestedRole: 'customer',
+  }),
+  env,
+});
+assert.equal(customerRegistrationResponse.status, 201, 'Customer registration should save successfully.');
+const customerRegistrationPayload = await customerRegistrationResponse.json();
+assert.equal(customerRegistrationPayload.profile.status, 'active', 'Customer registration should be approved automatically.');
+assert.equal(customerRegistrationPayload.grant.role, 'customer', 'Customer registration should appear as an active customer grant in admin members.');
+assert.equal(customerRegistrationPayload.role, 'customer', 'Customer registration should resolve to customer access.');
+
+const passwordRegistrationResponse = await accountModule.onRequestPost({
+  request: makeRequest('password@example.com', {
+    name: 'Password Customer',
+    requestedRole: 'customer',
+    password: 'secure-password-123',
+  }),
+  env,
+});
+assert.equal(passwordRegistrationResponse.status, 201, 'Registration should accept a customer password.');
+const passwordLoginResponse = await otpModule.onRequestPost({
+  request: new Request('https://luxeroutes.test/api/auth/otp?action=password', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    body: JSON.stringify({ email: 'password@example.com', password: 'secure-password-123', remember: true }),
+  }),
+  env,
+});
+assert.equal(passwordLoginResponse.status, 200, 'Existing users should be able to login with email and password.');
+assert.match(passwordLoginResponse.headers.get('Set-Cookie') || '', /luxeroutes_account_session=/, 'Password login should create the same signed account session cookie.');
+const passwordLoginPayload = await passwordLoginResponse.json();
+assert.equal(passwordLoginPayload.role, 'customer', 'Password login should resolve the customer role.');
 
 const sessionCookie = await utilsModule.createAccountSessionCookie({ AUTH_SESSION_SECRET: 'test-secret' }, 'OWNER@example.com');
 assert.match(sessionCookie, /luxeroutes_account_session=.*Max-Age=14400; HttpOnly; Secure; SameSite=Lax/, 'OTP login should create a secure four-hour account session cookie by default.');

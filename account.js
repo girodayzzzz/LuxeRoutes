@@ -26,6 +26,21 @@ const loginCodeStep = document.querySelector('[data-login-code-step]');
 const loginEmailInput = document.querySelector('[data-login-email-input]');
 const loginCodeInput = document.querySelector('[data-login-code-input]');
 const loginRememberInput = document.querySelector('[data-login-remember-input]');
+const loginPasswordInput = document.querySelector('[data-login-password-input]');
+const passwordResetForm = document.querySelector('[data-password-reset-form]');
+const forgotPasswordToggle = document.querySelector('[data-forgot-password-toggle]');
+const resetCancel = document.querySelector('[data-reset-cancel]');
+const resetEmailInput = document.querySelector('[data-reset-email-input]');
+const resetCodeInput = document.querySelector('[data-reset-code-input]');
+const resetPasswordInput = document.querySelector('[data-reset-password-input]');
+const resetSubmit = document.querySelector('[data-reset-submit]');
+const resetMessage = document.querySelector('[data-reset-message]');
+const registerOtpForm = document.querySelector('[data-register-otp-form]');
+const registerOtpEmailInput = document.querySelector('[data-register-otp-email-input]');
+const registerOtpCodeInput = document.querySelector('[data-register-otp-code-input]');
+const registerOtpCodeGroup = document.querySelector('[data-register-otp-code-group]');
+const registerOtpSubmit = document.querySelector('[data-register-otp-submit]');
+const registerOtpMessage = document.querySelector('[data-register-otp-message]');
 const loginOtpEmail = document.querySelector('[data-login-otp-email]');
 const loginOtpMessage = document.querySelector('[data-login-otp-message]');
 const loginOtpBack = document.querySelector('[data-login-otp-back]');
@@ -381,6 +396,39 @@ const verifyLoginOtp = async (email, otp, remember = false) => {
     body: JSON.stringify({ email, otp, remember }),
   });
   return readJsonOrAuthError(response, 'Unable to verify the login code right now.');
+};
+
+const loginWithPassword = async (email, password, remember = false) => {
+  const response = await fetch('/api/auth/otp?action=password', {
+    method: 'POST',
+    headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+    credentials: 'same-origin',
+    redirect: 'manual',
+    body: JSON.stringify({ email, password, remember }),
+  });
+  return readJsonOrAuthError(response, 'Unable to sign in with that password right now.');
+};
+
+const requestPasswordReset = async (email) => {
+  const response = await fetch('/api/auth/otp?action=reset-request', {
+    method: 'POST',
+    headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+    credentials: 'same-origin',
+    redirect: 'manual',
+    body: JSON.stringify({ email }),
+  });
+  return readJsonOrAuthError(response, 'Unable to send the password reset code right now.');
+};
+
+const confirmPasswordReset = async (email, otp, password) => {
+  const response = await fetch('/api/auth/otp?action=reset', {
+    method: 'POST',
+    headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+    credentials: 'same-origin',
+    redirect: 'manual',
+    body: JSON.stringify({ email, otp, password }),
+  });
+  return readJsonOrAuthError(response, 'Unable to reset your password right now.');
 };
 
 const logoutRemoteAccountSession = async () => {
@@ -744,6 +792,8 @@ const setAccountStatus = ({ heading, status, email, role, approved }) => {
     accountEmailInput.value = email;
     if (isRegisterPage()) accountEmailInput.readOnly = true;
   }
+  if (registerOtpForm) registerOtpForm.hidden = Boolean(email && email.includes('@') && approved);
+  if (accountForm && isRegisterPage()) accountForm.hidden = !Boolean(email && email.includes('@') && approved);
   if (accountRole) {
     accountRole.textContent = role;
     accountRole.classList.toggle('status-approved', Boolean(approved));
@@ -872,6 +922,7 @@ accountForm?.addEventListener('submit', async (event) => {
     companyWebsite: String(formData.get('company_website') || '').trim(),
     businessContext: String(formData.get('business_context') || '').trim(),
     notes: String(formData.get('notes') || '').trim(),
+    password: String(formData.get('password') || ''),
     status: String(formData.get('requested_role') || 'customer') === 'customer' ? 'active' : 'pending_admin_grant',
     updatedAt: new Date().toISOString(),
   };
@@ -939,6 +990,120 @@ document.addEventListener('submit', async (event) => {
   }
 });
 
+
+const setResetMessage = (message = '', tone = 'pending') => {
+  if (!resetMessage) return;
+  resetMessage.textContent = message;
+  resetMessage.classList.toggle('status-approved', tone === 'success');
+  resetMessage.classList.toggle('status-warning', tone === 'error');
+  resetMessage.classList.toggle('status-pending', tone !== 'success' && tone !== 'error');
+};
+
+const setRegisterOtpMessage = (message = '', tone = 'pending') => {
+  if (!registerOtpMessage) return;
+  registerOtpMessage.textContent = message;
+  registerOtpMessage.classList.toggle('status-approved', tone === 'success');
+  registerOtpMessage.classList.toggle('status-warning', tone === 'error');
+  registerOtpMessage.classList.toggle('status-pending', tone !== 'success' && tone !== 'error');
+};
+
+forgotPasswordToggle?.addEventListener('click', () => {
+  if (loginActions) loginActions.hidden = true;
+  if (passwordResetForm) passwordResetForm.hidden = false;
+  resetEmailInput.value = loginEmailInput?.value || '';
+  resetEmailInput?.focus();
+});
+
+resetCancel?.addEventListener('click', () => {
+  if (passwordResetForm) passwordResetForm.hidden = true;
+  if (loginActions) loginActions.hidden = false;
+  setResetMessage('Password reset uses the same Resend OTP email verification.');
+});
+
+passwordResetForm?.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const email = String(resetEmailInput?.value || '').trim().toLowerCase();
+  const otp = String(resetCodeInput?.value || '').trim();
+  const password = String(resetPasswordInput?.value || '');
+  const hasCode = /^\d{6}$/.test(otp);
+
+  if (!email || !email.includes('@')) {
+    setResetMessage('Enter a valid account email.', 'error');
+    return;
+  }
+
+  try {
+    resetSubmit.disabled = true;
+    if (!hasCode) {
+      setResetMessage('Sending password reset code…');
+      await requestPasswordReset(email);
+      setResetMessage('Check your email for the 6-digit reset code, then enter it with your new password.', 'success');
+      resetSubmit.textContent = 'Reset password';
+      resetCodeInput.required = true;
+      resetPasswordInput.required = true;
+      resetCodeInput?.focus();
+      return;
+    }
+
+    if (password.length < 8) {
+      setResetMessage('Enter a new password with at least 8 characters.', 'error');
+      return;
+    }
+
+    setResetMessage('Updating your password…');
+    await confirmPasswordReset(email, otp, password);
+    setResetMessage('Password updated. You can now sign in with your new password.', 'success');
+    loginEmailInput.value = email;
+    loginPasswordInput.value = '';
+    if (passwordResetForm) passwordResetForm.hidden = true;
+    if (loginActions) loginActions.hidden = false;
+  } catch (error) {
+    setResetMessage(error.message || 'Unable to reset your password right now.', 'error');
+  } finally {
+    resetSubmit.disabled = false;
+  }
+});
+
+registerOtpForm?.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const email = String(registerOtpEmailInput?.value || '').trim().toLowerCase();
+  const otp = String(registerOtpCodeInput?.value || '').trim();
+  const hasCode = /^\d{6}$/.test(otp);
+
+  if (!email || !email.includes('@')) {
+    setRegisterOtpMessage('Enter a valid email address.', 'error');
+    return;
+  }
+
+  try {
+    registerOtpSubmit.disabled = true;
+    if (!hasCode) {
+      setRegisterOtpMessage('Sending your registration verification code…');
+      await requestLoginOtp(email);
+      setRegisterOtpMessage('Check your email for the 6-digit verification code.', 'success');
+      registerOtpSubmit.textContent = 'Verify email';
+      if (registerOtpCodeGroup) registerOtpCodeGroup.hidden = false;
+      registerOtpCodeInput.required = true;
+      registerOtpCodeInput?.focus();
+      return;
+    }
+
+    setRegisterOtpMessage('Verifying your email…');
+    const account = await verifyLoginOtp(email, otp, true);
+    const identity = account.identity || { email };
+    accountIdentity = identity;
+    saveAccountSession({ identity, profile: account.profile || null, grant: account.grant, role: account.role, remember: true });
+    setAccountStatus({ heading: 'Email verified', status: 'Create your profile and password to finish registration.', email, role: account.role || 'customer', approved: true });
+    if (registerOtpForm) registerOtpForm.hidden = true;
+    setRegisterOtpMessage('Email verified. Complete the registration form below.', 'success');
+    accountForm?.querySelector('[name="name"]')?.focus();
+  } catch (error) {
+    setRegisterOtpMessage(error.message || 'Unable to verify your email right now.', 'error');
+  } finally {
+    registerOtpSubmit.disabled = false;
+  }
+});
+
 loginOtpBack?.addEventListener('click', () => {
   showLoginEmailStep();
   setLoginOtpMessage('Enter your email and we will send a fresh 6-digit login code.');
@@ -958,6 +1123,32 @@ loginOtpForm?.addEventListener('submit', async (event) => {
   try {
     setLoginOtpBusy(true);
     if (!isCodeStep) {
+      const usePassword = Boolean(event.submitter?.matches('[data-login-password-submit]'));
+      const remember = Boolean(loginRememberInput?.checked);
+
+      if (usePassword) {
+        const password = String(loginPasswordInput?.value || '');
+        if (!password) {
+          setLoginOtpMessage('Enter your password, or request a one-time email code instead.', 'error');
+          return;
+        }
+
+        setLoginOtpMessage('Signing in with your password…');
+        const account = await loginWithPassword(email, password, remember);
+        const identity = account.identity || { email };
+        const profile = account.profile || null;
+        accountIdentity = identity;
+        try {
+          saveAccountSession({ identity, profile, grant: account.grant, role: account.role, remember });
+        } catch (storageError) {
+          // The server has already set the HttpOnly account cookie, so continue even
+          // when a browser blocks sessionStorage/localStorage for this page.
+        }
+        setLoginOtpMessage('Signed in successfully. Opening your account…', 'success');
+        window.location.assign(getLoginRedirectTarget(account));
+        return;
+      }
+
       setLoginOtpMessage('Sending your secure login code…');
       const response = await requestLoginOtp(email);
       if (response?.adminAccess && response?.redirect) {
