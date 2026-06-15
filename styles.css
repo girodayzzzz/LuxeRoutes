@@ -6469,13 +6469,6 @@ body:not(.auth-page) .page-hero h1 {
   background: rgba(241, 215, 150, .06);
 }
 
-
-.register-complete-card {
-  border-color: rgba(88, 214, 141, .28);
-  background: linear-gradient(145deg, rgba(88, 214, 141, .12), rgba(241, 215, 150, .07));
-}
-
-
 .register-optional-details {
   border: 1px solid rgba(241, 215, 150, .14);
   border-radius: 22px;

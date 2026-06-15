@@ -805,23 +805,6 @@ const setRegisterProgressStep = (step = 'profile') => {
   });
 };
 
-
-const showRegisterComplete = ({ role = 'customer', requestedRole = 'customer' } = {}) => {
-  if (!registerComplete) return;
-  const normalizedRole = normalizeAccountRole(role);
-  const requested = normalizeAccountRole(requestedRole);
-  const awaitingReview = ['owner', 'manager'].includes(requested) && normalizedRole === 'customer';
-  registerComplete.hidden = false;
-  if (accountForm) accountForm.hidden = true;
-  if (registerCompleteHeading) registerCompleteHeading.textContent = awaitingReview ? 'Registration complete — review pending' : 'Registration complete';
-  if (registerCompleteMessage) {
-    registerCompleteMessage.textContent = awaitingReview
-      ? 'Your profile is saved. LuxeRoutes will review your owner or manager access request.'
-      : 'Your LuxeRoutes account is ready. You can open your private account dashboard now.';
-  }
-  if (registerCompleteLink) registerCompleteLink.href = getRoleHomePath(role);
-};
-
 const setAccountFormBusy = (busy = false) => {
   if (!accountForm) return;
   accountForm.setAttribute('aria-busy', busy ? 'true' : 'false');
@@ -1030,7 +1013,6 @@ accountForm?.addEventListener('submit', async (event) => {
     setRegisterProgressStep('done');
     if (registerOtpCodeWrap) registerOtpCodeWrap.hidden = true;
     if (registerOtpCodeInput) registerOtpCodeInput.required = false;
-    showRegisterComplete({ role: remoteAccount.role || savedProfile.defaultRole || savedProfile.requestedRole, requestedRole: savedProfile.requestedRole });
   } catch (error) {
     if (isAccountLocalPreview()) {
       saveAccountProfile(profile);
