@@ -40,6 +40,10 @@ const resetMessage = document.querySelector('[data-reset-message]');
 const registerOtpCodeInput = document.querySelector('[data-register-otp-code-input]');
 const registerOtpCodeWrap = document.querySelector('[data-register-otp-code-wrap]');
 const registerOtpMessage = document.querySelector('[data-register-otp-message]');
+const registerComplete = document.querySelector('[data-register-complete]');
+const registerCompleteHeading = document.querySelector('[data-register-complete-heading]');
+const registerCompleteMessage = document.querySelector('[data-register-complete-message]');
+const registerCompleteLink = document.querySelector('[data-register-complete-link]');
 const loginOtpEmail = document.querySelector('[data-login-otp-email]');
 const loginOtpMessage = document.querySelector('[data-login-otp-message]');
 const loginOtpBack = document.querySelector('[data-login-otp-back]');
@@ -130,6 +134,16 @@ const normalizeAccountRole = (role) => (accountDashboardRoles.includes(role) ? r
 const getRoleHomePath = (role) => accountRoleHomePaths[normalizeAccountRole(role)] || accountRoleHomePaths.customer;
 
 const getRequiredAccountRole = () => document.body.dataset.requiredAccountRole || '';
+
+
+const getAccountRoleLabel = (role) => ({
+  owner: 'Owner',
+  manager: 'Manager',
+  admin: 'Admin',
+  customer: 'Customer',
+  partner: 'Partner',
+}[normalizeAccountRole(role)] || 'Customer');
+
 
 const getDashboardWorkspaceHash = () => {
   const requiredRole = getRequiredAccountRole();
@@ -818,7 +832,7 @@ const setAccountStatus = ({ heading, status, email, role, approved }) => {
   if (accountForm && isRegisterPage()) accountForm.hidden = false;
   if (isRegisterPage()) setRegisterProgressStep(email && approved ? 'verify' : 'profile');
   if (accountRole) {
-    accountRole.textContent = role;
+    accountRole.textContent = getAccountRoleLabel(role);
     accountRole.classList.toggle('status-approved', Boolean(approved));
     accountRole.classList.toggle('status-warning', !approved);
     accountRole.classList.toggle('status-pending', false);
@@ -852,7 +866,7 @@ const getVerifiedRoleLabel = (role) => ({
   owner: 'Owner access confirmed',
   manager: 'Manager access confirmed',
   admin: 'Admin access confirmed',
-  customer: 'Email verified',
+  customer: 'Customer access confirmed',
 }[normalizeAccountRole(role)] || 'Email verified');
 
 const getAccountStatusCopy = (remoteAccount = {}, profile = null) => {
@@ -860,9 +874,10 @@ const getAccountStatusCopy = (remoteAccount = {}, profile = null) => {
   if (remoteAccount.accessStatus === 'pending_admin_grant' || remoteAccount.accessStatus === 'pending_review') {
     return 'Your profile is saved. Owner or manager dashboard access is pending LuxeRoutes review.';
   }
-  if (role === 'owner') return 'Your verified email has active owner access. This owner workspace is ready.';
-  if (role === 'manager') return 'Your verified email has active manager access. This manager workspace is ready.';
-  if (role === 'admin') return 'Your verified email has admin access. Admin and role dashboards are available.';
+  if (role === 'owner') return 'Your verified email is assigned the Owner role. This owner workspace is ready.';
+  if (role === 'manager') return 'Your verified email is assigned the Manager role. This manager workspace is ready.';
+  if (role === 'admin') return 'Your verified email is assigned the Admin role. Admin and role dashboards are available.';
+  if (role === 'customer' && profile) return 'Your verified email is assigned the Customer role. Your LuxeRoutes account dashboard is ready.';
 
   if (!profile) {
     return isLoginPage()
