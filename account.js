@@ -38,7 +38,6 @@ const resetMessage = document.querySelector('[data-reset-message]');
 const registerOtpForm = document.querySelector('[data-register-otp-form]');
 const registerOtpEmailInput = document.querySelector('[data-register-otp-email-input]');
 const registerOtpCodeInput = document.querySelector('[data-register-otp-code-input]');
-const registerOtpCodeGroup = document.querySelector('[data-register-otp-code-group]');
 const registerOtpSubmit = document.querySelector('[data-register-otp-submit]');
 const registerOtpMessage = document.querySelector('[data-register-otp-message]');
 const loginOtpEmail = document.querySelector('[data-login-otp-email]');
@@ -1082,7 +1081,6 @@ registerOtpForm?.addEventListener('submit', async (event) => {
       await requestLoginOtp(email);
       setRegisterOtpMessage('Check your email for the 6-digit verification code.', 'success');
       registerOtpSubmit.textContent = 'Verify email';
-      if (registerOtpCodeGroup) registerOtpCodeGroup.hidden = false;
       registerOtpCodeInput.required = true;
       registerOtpCodeInput?.focus();
       return;
@@ -1094,7 +1092,6 @@ registerOtpForm?.addEventListener('submit', async (event) => {
     accountIdentity = identity;
     saveAccountSession({ identity, profile: account.profile || null, grant: account.grant, role: account.role, remember: true });
     setAccountStatus({ heading: 'Email verified', status: 'Create your profile and password to finish registration.', email, role: account.role || 'customer', approved: true });
-    if (registerOtpForm) registerOtpForm.hidden = true;
     setRegisterOtpMessage('Email verified. Complete the registration form below.', 'success');
     accountForm?.querySelector('[name="name"]')?.focus();
   } catch (error) {

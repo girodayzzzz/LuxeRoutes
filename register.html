@@ -87,36 +87,20 @@
             <p>Start with email verification. After the code is confirmed, the profile form unlocks with your verified email already protected.</p>
           </div>
 
-          <div class="register-progress" aria-label="Registration progress">
-            <span class="is-active">Verify email</span>
-            <span>Create profile</span>
-            <span>Open account</span>
-          </div>
 
-          <form class="auth-form register-otp-form admin-form register-step-card" data-register-otp-form>
-            <div class="register-step-heading">
-              <span class="register-step-number">1</span>
-              <div>
-                <p class="eyebrow">Email verification</p>
-                <h3>Confirm your email address</h3>
-                <p>We send a 6-digit Resend code so your account is attached to a verified inbox.</p>
-              </div>
+          <form class="auth-form register-otp-form admin-form" data-register-otp-form>
+            <div class="auth-card-head compact-head">
+              <p class="eyebrow">Step 1 · Verify email</p>
+              <h3>Confirm your email before registering</h3>
+              <p>We will send a one-time code with Resend. After verification, you can create your LuxeRoutes password and profile.</p>
             </div>
             <label>Email<input name="email" type="email" placeholder="you@example.com" autocomplete="email" required data-register-otp-email-input></label>
-            <label data-register-otp-code-group hidden>Verification code<input name="otp" type="text" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" placeholder="123456" data-register-otp-code-input></label>
+            <label>6-digit code<input name="otp" type="text" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" placeholder="123456" data-register-otp-code-input></label>
             <button class="btn btn-primary" type="submit" data-register-otp-submit>Send verification code</button>
             <p class="full admin-helper" data-register-otp-message>Already verified? Your email will appear in the account form below.</p>
           </form>
 
-          <form class="auth-form auth-register-form admin-form register-step-card" data-account-form hidden>
-            <div class="register-step-heading full">
-              <span class="register-step-number">2</span>
-              <div>
-                <p class="eyebrow">Profile details</p>
-                <h3>Create your login and access request</h3>
-                <p>Customers are approved automatically. Owner and manager access is reviewed by LuxeRoutes.</p>
-              </div>
-            </div>
+          <form class="auth-form auth-register-form admin-form" data-account-form>
             <label>Email<input name="email" type="email" placeholder="Verified email loading…" autocomplete="email" required readonly aria-describedby="verified-email-help" data-account-email-input></label>
             <p class="full admin-helper" id="verified-email-help">This email is verified by your secure LuxeRoutes login session and cannot be changed here.</p>
             <label>Full name<input name="name" type="text" placeholder="Your name" autocomplete="name" required></label>
