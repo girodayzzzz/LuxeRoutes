@@ -1,4 +1,4 @@
-import { createAccountSessionCookie, ensureAuthSchema, errorJson, getAccountSessionEmail, getActiveGrant, json, makeId, normalizeEmail, nowIso, privateErrorJson, privateJson, requireDb, resolveAccountRole } from '../_utils.js';
+import { createAccountSessionCookie, ensureAuthSchema, errorJson, getAccountSessionEmail, getActiveGrant, json, makeId, normalizeEmail, nowIso, privateErrorJson, privateJson, requireDb, resolveAccountRole, hashAccountPassword, verifyAccountPassword } from '../_utils.js';
 
 const OTP_TTL_MINUTES = 10;
 const OTP_LENGTH = 6;
@@ -121,11 +121,18 @@ const ensureOtpSchema = async (db) => {
 const getProfile = async (db, email) => db.prepare(`
   SELECT id, email, full_name AS name, default_role AS defaultRole, requested_role AS requestedRole,
     company_name AS companyName, company_website AS companyWebsite, business_context AS businessContext,
-    notes, status, created_at AS createdAt, updated_at AS updatedAt
+    notes, status, password_hash AS passwordHash, password_salt AS passwordSalt, password_iterations AS passwordIterations, password_enabled AS passwordEnabled, created_at AS createdAt, updated_at AS updatedAt
   FROM profiles
   WHERE email = ?
   LIMIT 1
 `).bind(email).first();
+
+
+const publicProfile = (profile) => {
+  if (!profile) return null;
+  const { passwordHash, passwordSalt, passwordIterations, ...safeProfile } = profile;
+  return safeProfile;
+};
 
 const getEnvValue = (env = {}, keys = []) => keys
   .map((key) => String(env[key] || '').trim())
@@ -202,7 +209,7 @@ const getSessionAccount = async ({ request, env }) => {
   const role = resolveAccountRole({ grant, profile });
   return privateJson({
     identityEmail: email,
-    profile,
+    profile: publicProfile(profile),
     grant,
     role,
     accessStatus: getAccessStatus(profile, grant),
@@ -263,11 +270,138 @@ const requestOtp = async ({ request, env }) => {
   return json({ ok: true, email, expiresAt });
 };
 
+
+const createOtpChallenge = async (db, env, email) => {
+  const timestamp = nowIso();
+  await db.prepare(`
+    UPDATE login_otps
+    SET status = 'expired', updated_at = ?
+    WHERE email = ? AND status = 'pending' AND expires_at <= ?
+  `).bind(timestamp, email, timestamp).run();
+  await db.prepare(`
+    DELETE FROM login_otps
+    WHERE email = ? AND status IN ('verified', 'expired', 'locked') AND updated_at < datetime('now', '-7 days')
+  `).bind(email).run();
+
+  const otp = generateOtp();
+  const otpHash = await hashOtp(otp);
+  const otpId = makeId('otp');
+  const expiresAt = minutesFromNow(OTP_TTL_MINUTES);
+
+  await db.prepare(`
+    INSERT INTO login_otps (id, email, otp_hash, attempts, status, expires_at, created_at, updated_at)
+    VALUES (?, ?, ?, 0, 'pending', ?, ?, ?)
+  `).bind(otpId, email, otpHash, expiresAt, timestamp, timestamp).run();
+
+  try {
+    await sendOtpEmail(env, email, otp);
+  } catch (error) {
+    await db.prepare('DELETE FROM login_otps WHERE id = ?').bind(otpId).run();
+    throw error;
+  }
+
+  return { expiresAt };
+};
+
+const requestPasswordReset = async ({ request, env }) => {
+  const db = requireDb(env);
+  const body = await parseRequestBody(request);
+  const email = normalizeEmail(body.email);
+  if (!email || !email.includes('@')) return errorJson('Valid email is required.', 400);
+
+  await ensureOtpSchema(db);
+  await ensureAuthSchema(db);
+  const profile = await getProfile(db, email);
+  if (!profile) return json({ ok: true, email, message: 'If this email has a LuxeRoutes account, a reset code has been sent.' });
+
+  const { expiresAt } = await createOtpChallenge(db, env, email);
+  return json({ ok: true, email, expiresAt, message: 'Check your email for the password reset code.' });
+};
+
+const resetPassword = async ({ request, env }) => {
+  const db = requireDb(env);
+  const body = await parseRequestBody(request);
+  const email = normalizeEmail(body.email);
+  const otp = String(body.otp || '').trim();
+  const password = String(body.password || '');
+
+  if (!email || !/^\d{6}$/.test(otp)) return errorJson('Valid email and 6-digit reset code are required.', 400);
+  if (password.length < 8) return errorJson('Password must be at least 8 characters.', 400);
+
+  await ensureOtpSchema(db);
+  await ensureAuthSchema(db);
+
+  const challenge = await db.prepare(`
+    SELECT id, email, otp_hash AS otpHash, attempts, status, expires_at AS expiresAt
+    FROM login_otps
+    WHERE email = ? AND status = 'pending'
+    ORDER BY created_at DESC
+    LIMIT 1
+  `).bind(email).first();
+
+  if (!challenge) return errorJson('Reset code was not found. Request a new code.', 404);
+  if (new Date(challenge.expiresAt).getTime() < Date.now()) {
+    await db.prepare("UPDATE login_otps SET status = 'expired', updated_at = ? WHERE id = ?").bind(nowIso(), challenge.id).run();
+    return errorJson('Reset code has expired. Request a new code.', 410);
+  }
+  if (challenge.attempts >= 5) {
+    await db.prepare("UPDATE login_otps SET status = 'locked', updated_at = ? WHERE id = ?").bind(nowIso(), challenge.id).run();
+    return errorJson('Too many reset attempts. Request a new code.', 429);
+  }
+
+  const otpHash = await hashOtp(otp);
+  if (otpHash !== challenge.otpHash) {
+    await db.prepare('UPDATE login_otps SET attempts = attempts + 1, updated_at = ? WHERE id = ?').bind(nowIso(), challenge.id).run();
+    return errorJson('Reset code is not correct.', 401);
+  }
+
+  const passwordFields = await hashAccountPassword(password);
+  const timestamp = nowIso();
+  await db.prepare(`
+    UPDATE profiles
+    SET password_hash = ?, password_salt = ?, password_iterations = ?, password_enabled = 1, updated_at = ?
+    WHERE lower(trim(email)) = ?
+  `).bind(passwordFields.passwordHash, passwordFields.passwordSalt, passwordFields.passwordIterations, timestamp, email).run();
+  await db.prepare("UPDATE login_otps SET status = 'verified', updated_at = ? WHERE id = ?").bind(timestamp, challenge.id).run();
+
+  return json({ ok: true, email, message: 'Password updated. You can now sign in with your new password.' });
+};
+
 const clearAccountSession = () => json({ ok: true }, {
   headers: {
     'Set-Cookie': 'luxeroutes_account_session=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Lax',
   },
 });
+
+
+const buildLoginAccountResponse = async ({ request, env, db, email, remember = false }) => {
+  const [profile, grant] = await Promise.all([
+    getProfile(db, email),
+    getActiveGrant(db, email),
+  ]);
+
+  const sessionCookie = await createAccountSessionCookie(env, email, { remember });
+  const role = grant?.role || profile?.defaultRole || 'customer';
+  const redirect = {
+    customer: '/account.html',
+    owner: '/owner-panel.html',
+    manager: '/manager-panel.html',
+    admin: '/admin/index.html',
+  }[role] || '/account.html';
+
+  if (!wantsJsonResponse(request)) {
+    return redirectResponse(redirect, sessionCookie ? { headers: { 'Set-Cookie': sessionCookie } } : {});
+  }
+
+  return json({
+    ok: true,
+    identity: { email },
+    profile: publicProfile(profile),
+    grant,
+    role,
+    redirect,
+  }, sessionCookie ? { headers: { 'Set-Cookie': sessionCookie } } : {});
+};
 
 const verifyOtp = async ({ request, env }) => {
   const db = requireDb(env);
@@ -306,33 +440,24 @@ const verifyOtp = async ({ request, env }) => {
 
   await db.prepare("UPDATE login_otps SET status = 'verified', updated_at = ? WHERE id = ?").bind(nowIso(), challenge.id).run();
 
-  const [profile, grant] = await Promise.all([
-    getProfile(db, email),
-    getActiveGrant(db, email),
-  ]);
+  return buildLoginAccountResponse({ request, env, db, email, remember });
+};
 
-  const sessionCookie = await createAccountSessionCookie(env, email, { remember });
+const loginWithPassword = async ({ request, env }) => {
+  const db = requireDb(env);
+  const body = await parseRequestBody(request);
+  const email = normalizeEmail(body.email);
+  const password = String(body.password || '');
+  const remember = body.remember === true || ['1', 'true', 'on', 'yes'].includes(String(body.remember || '').toLowerCase());
 
-  const role = grant?.role || profile?.defaultRole || 'customer';
-  const redirect = {
-    customer: '/account.html',
-    owner: '/owner-panel.html',
-    manager: '/manager-panel.html',
-    admin: '/admin/index.html',
-  }[role] || '/account.html';
+  if (!email || !password) return errorJson('Valid email and password are required.', 400);
 
-  if (!wantsJsonResponse(request)) {
-    return redirectResponse(redirect, sessionCookie ? { headers: { 'Set-Cookie': sessionCookie } } : {});
-  }
+  await ensureAuthSchema(db);
+  const profile = await getProfile(db, email);
+  const passwordMatches = await verifyAccountPassword(password, profile);
+  if (!passwordMatches) return errorJson('Email or password is not correct. You can still request a one-time code.', 401);
 
-  return json({
-    ok: true,
-    identity: { email },
-    profile,
-    grant,
-    role,
-    redirect,
-  }, sessionCookie ? { headers: { 'Set-Cookie': sessionCookie } } : {});
+  return buildLoginAccountResponse({ request, env, db, email, remember });
 };
 
 export const onRequestGet = async (context) => {
@@ -349,6 +474,9 @@ export const onRequestPost = async (context) => {
   try {
     const action = new URL(context.request.url).searchParams.get('action');
     if (action === 'verify') return await verifyOtp(context);
+    if (action === 'password') return await loginWithPassword(context);
+    if (action === 'reset-request') return await requestPasswordReset(context);
+    if (action === 'reset') return await resetPassword(context);
     if (action === 'logout') return clearAccountSession();
     return await requestOtp(context);
   } catch (error) {
