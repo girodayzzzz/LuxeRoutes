@@ -83,7 +83,7 @@ const updateRoleBasedNavigation = () => {
   const session = readAccountSession();
   const isLoggedIn = Boolean(session?.identity?.email || session?.profile?.email);
   const prefix = getPathPrefix();
-  const visibleLabels = new Set(['Home', 'Destinations', 'Stays', 'Experiences', 'Partners', 'Journal', isLoggedIn ? 'Account' : 'Login', 'Plan a Trip']);
+  const visibleLabels = new Set(['Home', 'Destinations', 'Stays', 'Experiences', 'Partners', 'Journal', 'Contact', 'Travel Deals', 'Private Offers', isLoggedIn ? 'Account' : 'Login', 'Plan a Trip', 'Plan My Trip']);
 
   document.querySelectorAll('[data-nav-login]').forEach((link) => {
     link.hidden = isLoggedIn;
@@ -238,7 +238,7 @@ if (customerFacingPage) {
     assist.setAttribute('aria-label', 'Quick LuxeRoutes actions');
     assist.innerHTML = `
       <a class="assist-primary" href="plan-trip.html#trip-brief">
-        <span>Plan trip</span>
+        <span>Plan My Trip</span>
         <small>Private brief</small>
       </a>
       <a href="offers.html#stay-finder" aria-label="Browse curated stays">Stays</a>
