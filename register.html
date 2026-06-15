@@ -48,34 +48,43 @@
   <main id="main-content">
     <section class="auth-section auth-register-section">
       <div class="container auth-shell auth-shell-wide">
-        <div class="auth-copy">
-          <p class="eyebrow">Create private access</p>
-          <h1>Create your LuxeRoutes private access.</h1>
-          <p class="admin-lead">Create a traveler profile or request owner or manager access so the LuxeRoutes team can review the right role.</p>
-          <div class="auth-benefits" aria-label="Registration benefits">
+        <div class="auth-copy register-hero-panel">
+          <p class="eyebrow">Private LuxeRoutes access</p>
+          <h1>Register once. Travel privately.</h1>
+          <p class="admin-lead">Verify your email, create a password, and choose the access type that fits your relationship with LuxeRoutes.</p>
+          <div class="register-flow-preview" aria-label="Registration steps">
+            <div class="register-flow-step is-active">
+              <span>1</span>
+              <div><strong>Verify email</strong><small>Secure Resend OTP</small></div>
+            </div>
+            <div class="register-flow-step">
+              <span>2</span>
+              <div><strong>Create profile</strong><small>Password + access type</small></div>
+            </div>
+            <div class="register-flow-step">
+              <span>3</span>
+              <div><strong>Start using LuxeRoutes</strong><small>Customers active immediately</small></div>
+            </div>
+          </div>
+          <div class="auth-benefits compact-benefits" aria-label="Registration benefits">
             <article>
-              <span>01</span>
-              <strong>Customers are active immediately</strong>
-              <p>Traveler accounts can continue to the dashboard after saving a verified profile.</p>
+              <span>✓</span>
+              <strong>Customers are approved automatically</strong>
+              <p>Traveler accounts can open the private dashboard after registration.</p>
             </article>
             <article>
-              <span>02</span>
-              <strong>Partner roles stay curated</strong>
-              <p>Owner and manager requests are reviewed before partner access is opened.</p>
-            </article>
-            <article>
-              <span>03</span>
-              <strong>Built for luxury operations</strong>
-              <p>Business context helps the team review properties, regions, and partnership fit faster.</p>
+              <span>↗</span>
+              <strong>Owner and manager access is reviewed</strong>
+              <p>Partner requests stay curated until the LuxeRoutes team approves the role.</p>
             </article>
           </div>
         </div>
 
         <aside class="auth-card auth-register-card" aria-label="LuxeRoutes registration form" id="account-workspace">
-          <div class="auth-card-head">
+          <div class="auth-card-head register-card-head">
             <p class="eyebrow">Account registration</p>
-            <h2>Create your profile</h2>
-            <p>Your verified LuxeRoutes login email is locked to this profile. Business fields are optional for travelers and helpful for partner access.</p>
+            <h2>Create your private profile</h2>
+            <p>Start with email verification. After the code is confirmed, the profile form unlocks with your verified email already protected.</p>
           </div>
 
 
@@ -111,7 +120,7 @@
             <button class="btn btn-primary" type="submit">Create Account</button>
           </form>
 
-          <div class="auth-status-card" aria-label="Registration status">
+          <div class="auth-status-card register-status-card" aria-label="Registration status">
             <div class="card-head compact-head">
               <p class="eyebrow">Verified email</p>
               <span class="status-pill status-pending" data-account-role>Verifying</span>

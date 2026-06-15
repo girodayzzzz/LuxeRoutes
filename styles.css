@@ -6317,3 +6317,164 @@ body:not(.auth-page) .page-hero h1 {
     min-height: auto;
   }
 }
+
+/* Refined register page */
+.register-page .auth-register-section {
+  position: relative;
+  overflow: hidden;
+}
+
+.register-page .auth-register-section::after {
+  content: "";
+  position: absolute;
+  inset: 8% auto auto 4%;
+  width: min(26rem, 45vw);
+  height: min(26rem, 45vw);
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(198, 161, 91, .18), transparent 66%);
+  pointer-events: none;
+}
+
+.register-hero-panel {
+  position: relative;
+  z-index: 1;
+}
+
+.register-flow-preview {
+  display: grid;
+  gap: .85rem;
+  margin: 2rem 0;
+}
+
+.register-flow-step {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: .85rem;
+  align-items: center;
+  padding: .9rem 1rem;
+  border: 1px solid rgba(241, 215, 150, .13);
+  border-radius: 22px;
+  background: rgba(6, 8, 13, .42);
+}
+
+.register-flow-step span,
+.register-step-number {
+  display: grid;
+  place-items: center;
+  width: 2.35rem;
+  height: 2.35rem;
+  border-radius: 999px;
+  background: rgba(241, 215, 150, .12);
+  color: var(--color-gold);
+  font-weight: 900;
+}
+
+.register-flow-step.is-active {
+  border-color: rgba(241, 215, 150, .36);
+  background: linear-gradient(135deg, rgba(198, 161, 91, .18), rgba(6, 8, 13, .5));
+}
+
+.register-flow-step strong,
+.register-flow-step small {
+  display: block;
+}
+
+.register-flow-step small {
+  margin-top: .15rem;
+  color: var(--color-muted);
+  font-weight: 700;
+}
+
+.compact-benefits {
+  grid-template-columns: 1fr;
+}
+
+.auth-register-card {
+  position: relative;
+  z-index: 1;
+  overflow: hidden;
+}
+
+.auth-register-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 6px;
+  background: linear-gradient(90deg, var(--color-gold), rgba(241, 215, 150, .2), var(--color-gold));
+}
+
+.register-card-head {
+  padding-top: .35rem;
+}
+
+.register-progress {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: .45rem;
+  margin: 1.25rem 0;
+}
+
+.register-progress span {
+  padding: .55rem .65rem;
+  border: 1px solid rgba(241, 215, 150, .14);
+  border-radius: 999px;
+  color: var(--color-muted);
+  font-size: .78rem;
+  font-weight: 900;
+  text-align: center;
+}
+
+.register-progress span.is-active {
+  border-color: rgba(241, 215, 150, .48);
+  background: rgba(198, 161, 91, .16);
+  color: var(--color-text);
+}
+
+.register-step-card {
+  padding: 1rem;
+  border: 1px solid rgba(241, 215, 150, .14);
+  border-radius: 24px;
+  background: rgba(6, 8, 13, .38);
+}
+
+.register-step-heading {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: .85rem;
+  align-items: start;
+  margin-bottom: .25rem;
+}
+
+.register-step-heading h3,
+.register-step-heading p {
+  margin: 0;
+}
+
+.register-step-heading .eyebrow {
+  margin-bottom: .25rem;
+}
+
+.register-step-heading h3 {
+  font-size: 1.1rem;
+}
+
+.register-step-heading p:not(.eyebrow) {
+  color: var(--color-muted-strong);
+  font-size: .92rem;
+  line-height: 1.5;
+}
+
+.register-status-card {
+  border-color: rgba(241, 215, 150, .2);
+  background: rgba(241, 215, 150, .06);
+}
+
+@media (max-width: 640px) {
+  .register-progress {
+    grid-template-columns: 1fr;
+  }
+
+  .register-step-card {
+    padding: .85rem;
+  }
+}
