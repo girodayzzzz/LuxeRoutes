@@ -6469,6 +6469,24 @@ body:not(.auth-page) .page-hero h1 {
   background: rgba(241, 215, 150, .06);
 }
 
+.register-optional-details {
+  border: 1px solid rgba(241, 215, 150, .14);
+  border-radius: 22px;
+  padding: .95rem 1rem;
+  background: rgba(6, 8, 13, .32);
+}
+
+.register-optional-details summary {
+  cursor: pointer;
+  color: var(--color-gold-light);
+  font-weight: 900;
+}
+
+.register-optional-details label {
+  margin-top: .9rem;
+}
+
+
 @media (max-width: 640px) {
   .register-progress {
     grid-template-columns: 1fr;

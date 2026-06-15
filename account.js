@@ -4,6 +4,8 @@ const accountEmail = document.querySelector('[data-account-email]');
 const accountRole = document.querySelector('[data-account-role]');
 const accountForm = document.querySelector('[data-account-form]');
 const accountEmailInput = document.querySelector('[data-account-email-input]');
+const accountSubmit = document.querySelector('[data-account-submit]');
+const registerProgress = document.querySelector('[data-register-progress]');
 const accountProfile = document.querySelector('[data-account-profile]');
 const accountLoginLink = document.querySelector('[data-account-login-link]');
 const loginAccountState = document.querySelector('[data-login-account-state]');
@@ -35,15 +37,13 @@ const resetCodeInput = document.querySelector('[data-reset-code-input]');
 const resetPasswordInput = document.querySelector('[data-reset-password-input]');
 const resetSubmit = document.querySelector('[data-reset-submit]');
 const resetMessage = document.querySelector('[data-reset-message]');
-const registerOtpForm = document.querySelector('[data-register-otp-form]');
-const registerOtpEmailInput = document.querySelector('[data-register-otp-email-input]');
 const registerOtpCodeInput = document.querySelector('[data-register-otp-code-input]');
-const registerOtpSubmit = document.querySelector('[data-register-otp-submit]');
+const registerOtpCodeWrap = document.querySelector('[data-register-otp-code-wrap]');
 const registerOtpMessage = document.querySelector('[data-register-otp-message]');
 const loginOtpEmail = document.querySelector('[data-login-otp-email]');
 const loginOtpMessage = document.querySelector('[data-login-otp-message]');
 const loginOtpBack = document.querySelector('[data-login-otp-back]');
-const isRegisterPage = () => document.body.classList.contains('account-page') && Boolean(accountForm);
+const isRegisterPage = () => document.body.classList.contains('register-page') && Boolean(accountForm);
 const isDashboardPage = () => document.body.classList.contains('account-dashboard-page');
 const isProtectedAccountPage = () => isDashboardPage();
 const isLoginPage = () => document.body.classList.contains('login-page');
@@ -780,6 +780,30 @@ const restoreCachedAccountSession = (cachedSession, status = 'Your verified brow
   return true;
 };
 
+
+const setRegisterProgressStep = (step = 'profile') => {
+  if (!registerProgress) return;
+  const order = { profile: 1, verify: 2, done: 3 };
+  const activeIndex = order[step] || order.verify;
+  registerProgress.querySelectorAll('[data-register-progress-step]').forEach((item) => {
+    const itemStep = item.dataset.registerProgressStep || 'verify';
+    item.classList.toggle('is-active', (order[itemStep] || 0) <= activeIndex);
+  });
+};
+
+const setAccountFormBusy = (busy = false) => {
+  if (!accountForm) return;
+  accountForm.setAttribute('aria-busy', busy ? 'true' : 'false');
+  if (accountSubmit) accountSubmit.disabled = busy;
+};
+
+const getRegisterValidationMessage = (profile = {}) => {
+  if (!profile.email || !profile.email.includes('@')) return 'Enter a valid email address.';
+  if (!profile.name) return 'Enter your full name.';
+  if (!profile.password || profile.password.length < 8) return 'Create a password with at least 8 characters.';
+  return '';
+};
+
 const setAccountStatus = ({ heading, status, email, role, approved }) => {
   const canPrefillEmailInput = email && email.includes('@');
   const accountHref = getRoleHomePath(role);
@@ -789,10 +813,10 @@ const setAccountStatus = ({ heading, status, email, role, approved }) => {
   if (accountEmail) accountEmail.textContent = email || 'Email pending';
   if (accountEmailInput && canPrefillEmailInput) {
     accountEmailInput.value = email;
-    if (isRegisterPage()) accountEmailInput.readOnly = true;
   }
-  if (registerOtpForm) registerOtpForm.hidden = Boolean(email && email.includes('@') && approved);
-  if (accountForm && isRegisterPage()) accountForm.hidden = !Boolean(email && email.includes('@') && approved);
+  if (accountEmailInput && isRegisterPage()) accountEmailInput.readOnly = Boolean(canPrefillEmailInput && approved);
+  if (accountForm && isRegisterPage()) accountForm.hidden = false;
+  if (isRegisterPage()) setRegisterProgressStep(email && approved ? 'verify' : 'profile');
   if (accountRole) {
     accountRole.textContent = role;
     accountRole.classList.toggle('status-approved', Boolean(approved));
@@ -895,7 +919,7 @@ const initialiseAccount = async () => {
     if (restored) return;
   }
 
-  if (localPreview && isRegisterPage() && accountEmailInput) accountEmailInput.readOnly = false;
+  if (isRegisterPage() && accountEmailInput) accountEmailInput.readOnly = false;
   setAccountStatus({
     heading: loggedOut ? 'Signed out' : 'Account access',
     status: loggedOut
@@ -914,7 +938,7 @@ accountForm?.addEventListener('submit', async (event) => {
   event.preventDefault();
   const formData = new FormData(accountForm);
   const profile = {
-    email: String(accountIdentity?.email || (isAccountLocalPreview() ? formData.get('email') : '') || '').trim().toLowerCase(),
+    email: String((isRegisterPage() ? formData.get('email') : accountIdentity?.email) || (isAccountLocalPreview() ? formData.get('email') : '') || '').trim().toLowerCase(),
     name: String(formData.get('name') || '').trim(),
     requestedRole: String(formData.get('requested_role') || 'customer'),
     companyName: String(formData.get('company_name') || '').trim(),
@@ -926,9 +950,35 @@ accountForm?.addEventListener('submit', async (event) => {
     updatedAt: new Date().toISOString(),
   };
 
-  if ((!accountIdentity?.email && !isAccountLocalPreview()) || !profile.email || !profile.name) return;
+  const validationMessage = getRegisterValidationMessage(profile);
+  if (validationMessage) {
+    setAccountStatus({ heading: 'Check registration details', status: validationMessage, email: profile.email || accountIdentity?.email || 'Email pending', role: 'Registration', approved: false });
+    return;
+  }
 
   try {
+    setAccountFormBusy(true);
+    const verifiedEmail = String(accountIdentity?.email || '').trim().toLowerCase();
+    const needsRegistrationOtp = isRegisterPage() && !isAccountLocalPreview() && verifiedEmail !== profile.email;
+    if (needsRegistrationOtp) {
+      const otp = String(formData.get('otp') || '').trim();
+      if (!/^\d{6}$/.test(otp)) {
+        setRegisterProgressStep('verify');
+        setRegisterOtpMessage('Details saved on this page. Check your email for the 6-digit code, enter it here, then press Create Account again.', 'success');
+        await requestLoginOtp(profile.email);
+        if (registerOtpCodeWrap) registerOtpCodeWrap.hidden = false;
+        if (registerOtpCodeInput) registerOtpCodeInput.required = true;
+        registerOtpCodeInput?.focus();
+        return;
+      }
+
+      setRegisterOtpMessage('Verifying your email and creating your account…');
+      const account = await verifyLoginOtp(profile.email, otp, true);
+      const identity = account.identity || { email: profile.email };
+      accountIdentity = identity;
+      saveAccountSession({ identity, profile: account.profile || null, grant: account.grant, role: account.role, remember: true });
+    }
+
     const remoteAccount = await saveRemoteAccountProfile(profile);
     const savedProfile = remoteAccount.profile || profile;
     saveAccountProfile(savedProfile);
@@ -945,6 +995,9 @@ accountForm?.addEventListener('submit', async (event) => {
       role: remoteAccount.role || 'Pending grant',
       approved: true,
     });
+    setRegisterProgressStep('done');
+    if (registerOtpCodeWrap) registerOtpCodeWrap.hidden = true;
+    if (registerOtpCodeInput) registerOtpCodeInput.required = false;
   } catch (error) {
     if (isAccountLocalPreview()) {
       saveAccountProfile(profile);
@@ -958,6 +1011,8 @@ accountForm?.addEventListener('submit', async (event) => {
       role: 'Profile notice',
       approved: false,
     });
+  } finally {
+    setAccountFormBusy(false);
   }
 });
 
@@ -1060,44 +1115,6 @@ passwordResetForm?.addEventListener('submit', async (event) => {
     setResetMessage(error.message || 'Unable to reset your password right now.', 'error');
   } finally {
     resetSubmit.disabled = false;
-  }
-});
-
-registerOtpForm?.addEventListener('submit', async (event) => {
-  event.preventDefault();
-  const email = String(registerOtpEmailInput?.value || '').trim().toLowerCase();
-  const otp = String(registerOtpCodeInput?.value || '').trim();
-  const hasCode = /^\d{6}$/.test(otp);
-
-  if (!email || !email.includes('@')) {
-    setRegisterOtpMessage('Enter a valid email address.', 'error');
-    return;
-  }
-
-  try {
-    registerOtpSubmit.disabled = true;
-    if (!hasCode) {
-      setRegisterOtpMessage('Sending your registration verification code…');
-      await requestLoginOtp(email);
-      setRegisterOtpMessage('Check your email for the 6-digit verification code.', 'success');
-      registerOtpSubmit.textContent = 'Verify email';
-      registerOtpCodeInput.required = true;
-      registerOtpCodeInput?.focus();
-      return;
-    }
-
-    setRegisterOtpMessage('Verifying your email…');
-    const account = await verifyLoginOtp(email, otp, true);
-    const identity = account.identity || { email };
-    accountIdentity = identity;
-    saveAccountSession({ identity, profile: account.profile || null, grant: account.grant, role: account.role, remember: true });
-    setAccountStatus({ heading: 'Email verified', status: 'Create your profile and password to finish registration.', email, role: account.role || 'customer', approved: true });
-    setRegisterOtpMessage('Email verified. Complete the registration form below.', 'success');
-    accountForm?.querySelector('[name="name"]')?.focus();
-  } catch (error) {
-    setRegisterOtpMessage(error.message || 'Unable to verify your email right now.', 'error');
-  } finally {
-    registerOtpSubmit.disabled = false;
   }
 });
 
