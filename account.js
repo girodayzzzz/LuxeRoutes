@@ -1362,11 +1362,12 @@ loginOtpForm?.addEventListener('submit', async (event) => {
   try {
     setLoginOtpBusy(true);
     if (!isCodeStep) {
-      const usePassword = Boolean(event.submitter?.matches('[data-login-password-submit]'));
+      const password = String(loginPasswordInput?.value || '');
+      const submittedWithOtpButton = Boolean(event.submitter?.matches('[data-login-otp-submit]'));
+      const usePassword = Boolean(event.submitter?.matches('[data-login-password-submit]')) || (Boolean(password) && !submittedWithOtpButton);
       const remember = Boolean(loginRememberInput?.checked);
 
       if (usePassword) {
-        const password = String(loginPasswordInput?.value || '');
         if (!password) {
           setLoginOtpMessage('Enter your password, or request a one-time email code instead.', 'error');
           return;
