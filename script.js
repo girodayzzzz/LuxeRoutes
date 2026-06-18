@@ -83,7 +83,7 @@ const updateRoleBasedNavigation = () => {
   const session = readAccountSession();
   const isLoggedIn = Boolean(session?.identity?.email || session?.profile?.email);
   const prefix = getPathPrefix();
-  const visibleLabels = new Set(['Home', 'Destinations', 'Stays', 'Experiences', 'Partners', 'Journal', 'Contact', 'Travel Deals', 'Private Offers', isLoggedIn ? 'Account' : 'Login', 'Plan a Trip', 'Plan My Trip']);
+  const visibleLabels = new Set(['Home', 'Destinations', 'Stays', 'Experiences', 'Partners', 'Journal', 'Contact', 'Partner Offers', 'Private Offers', isLoggedIn ? 'Account' : 'Login', 'Plan a Trip', 'Plan My Trip']);
 
   document.querySelectorAll('[data-nav-login]').forEach((link) => {
     link.hidden = isLoggedIn;
@@ -191,7 +191,7 @@ const customerMarketingPages = new Set([
   'plan-trip.html',
   'contact.html',
   'partner-signup.html',
-  'travel-deals.html',
+  'partner-offers.html',
   'hotels.html',
   'apartments.html',
   'chalets.html',
@@ -231,7 +231,7 @@ if (customerFacingPage) {
   window.addEventListener('scroll', updatePageProgress, { passive: true });
   window.addEventListener('resize', updatePageProgress);
 
-  const quickAssistPages = new Set(['index.html', 'destinations.html', 'stays.html', 'offers.html', 'routes.html', 'experiences.html', 'travel-deals.html']);
+  const quickAssistPages = new Set(['index.html', 'destinations.html', 'stays.html', 'offers.html', 'routes.html', 'experiences.html', 'partner-offers.html']);
   if (quickAssistPages.has(currentPage)) {
     const assist = document.createElement('aside');
     assist.className = 'customer-assist';

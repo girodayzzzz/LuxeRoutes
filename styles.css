@@ -5832,7 +5832,7 @@ body:not(.auth-page) .page-hero h1 {
   }
 }
 
-/* Travel deals affiliate marketplace */
+/* Partner offers affiliate marketplace */
 .travel-deals-directory {
   background:
     radial-gradient(circle at 8% 8%, rgba(217, 188, 122, .12), transparent 28rem),
@@ -6118,7 +6118,7 @@ body:not(.auth-page) .page-hero h1 {
   }
 }
 
-/* Travel Deals premium affiliate page refinements */
+/* Partner Offers premium affiliate page refinements */
 .travel-deals-directory {
   padding-top: clamp(2.5rem, 5vw, 4.5rem);
 }
