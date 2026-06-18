@@ -28,6 +28,7 @@ class FakeStatement {
       let results = this.db.inquiries;
       if (this.sql.includes('WHERE lower(trim(owner_email))')) results = results.filter((inquiry) => inquiry.ownerEmail === this.params[0]);
       if (this.sql.includes('WHERE lower(trim(manager_email))')) results = results.filter((inquiry) => inquiry.managerEmail === this.params[0]);
+      if (this.sql.includes('forwarded_to_owner_at IS NOT NULL')) results = results.filter((inquiry) => inquiry.forwardedToOwnerAt);
       return { results };
     }
     throw new Error(`Unhandled all SQL: ${this.sql}`);
@@ -40,13 +41,13 @@ class FakeStatement {
   }
   run() {
     if (this.sql.includes('INSERT INTO stay_offers') && this.sql.includes('available_from')) {
-      const [id, title, slug, country, region, stayType, options, locationLabel, guestLabel, priceLabel, availableFrom, availableTo, discountLabel, availabilityNotes, description, imageUrl, imageAlt, createdByEmail, ownerEmail, ownerNotes, createdAt, updatedAt] = this.params;
-      this.db.offers.unshift({ id, sourceInquiryId: null, title, slug, country, region, stayType, options, locationLabel, guestLabel, priceLabel, availableFrom, availableTo, discountLabel, availabilityNotes, description, imageUrl, imageAlt, status: 'unpublished', publishedAt: null, createdByEmail, ownerEmail, managerEmail: null, partnerStatus: 'pending_review', ownerNotes, managerNotes: '', createdAt, updatedAt });
+      const [id, title, slug, country, region, stayType, options, locationLabel, guestLabel, priceLabel, availableFrom, availableTo, discountLabel, availabilityNotes, accommodationDetails, pricingDetails, galleryUrls, externalAvailabilityUrl, description, imageUrl, imageAlt, createdByEmail, ownerEmail, ownerNotes, createdAt, updatedAt] = this.params;
+      this.db.offers.unshift({ id, sourceInquiryId: null, title, slug, country, region, stayType, options, locationLabel, guestLabel, priceLabel, availableFrom, availableTo, discountLabel, availabilityNotes, accommodationDetails, pricingDetails, galleryUrls, externalAvailabilityUrl, description, imageUrl, imageAlt, status: 'unpublished', publishedAt: null, createdByEmail, ownerEmail, managerEmail: null, partnerStatus: 'pending_review', ownerNotes, managerNotes: '', createdAt, updatedAt });
       return { success: true };
     }
     if (this.sql.includes('INSERT INTO stay_offers')) {
-      const [id, sourceInquiryId, title, slug, country, region, stayType, options, locationLabel, guestLabel, priceLabel, description, imageUrl, imageAlt, status, publishedAt, createdByEmail, ownerEmail, managerEmail, partnerStatus, ownerNotes, managerNotes, createdAt, updatedAt] = this.params;
-      this.db.offers.unshift({ id, sourceInquiryId, title, slug, country, region, stayType, options, locationLabel, guestLabel, priceLabel, availableFrom: null, availableTo: null, discountLabel: '', availabilityNotes: '', description, imageUrl, imageAlt, status, publishedAt, createdByEmail, ownerEmail, managerEmail, partnerStatus, ownerNotes, managerNotes, createdAt, updatedAt });
+      const [id, sourceInquiryId, title, slug, country, region, stayType, options, locationLabel, guestLabel, priceLabel, accommodationDetails, pricingDetails, galleryUrls, externalAvailabilityUrl, description, imageUrl, imageAlt, status, publishedAt, createdByEmail, ownerEmail, managerEmail, partnerStatus, ownerNotes, managerNotes, createdAt, updatedAt] = this.params;
+      this.db.offers.unshift({ id, sourceInquiryId, title, slug, country, region, stayType, options, locationLabel, guestLabel, priceLabel, availableFrom: null, availableTo: null, discountLabel: '', availabilityNotes: '', accommodationDetails, pricingDetails, galleryUrls, externalAvailabilityUrl, description, imageUrl, imageAlt, status, publishedAt, createdByEmail, ownerEmail, managerEmail, partnerStatus, ownerNotes, managerNotes, createdAt, updatedAt });
       return { success: true };
     }
     if (this.sql.includes('UPDATE inquiries') && this.sql.includes('offer_id = ?')) {
@@ -58,9 +59,9 @@ class FakeStatement {
     }
     if (this.sql.includes('UPDATE inquiries SET status')) { this.db.resolvedInquiry = this.params[1]; return { success: true }; }
     if (this.sql.includes('UPDATE stay_offers') && this.sql.includes('available_from')) {
-      const [availableFrom, availableTo, priceLabel, discountLabel, availabilityNotes, updatedAt, id] = this.params;
+      const [availableFrom, availableTo, priceLabel, discountLabel, availabilityNotes, accommodationDetails, pricingDetails, galleryUrls, externalAvailabilityUrl, updatedAt, id] = this.params;
       const offer = this.db.offers.find((item) => item.id === id);
-      if (offer) Object.assign(offer, { availableFrom, availableTo, priceLabel, discountLabel, availabilityNotes, updatedAt });
+      if (offer) Object.assign(offer, { availableFrom, availableTo, priceLabel, discountLabel, availabilityNotes, accommodationDetails, pricingDetails, galleryUrls, externalAvailabilityUrl, updatedAt });
       return { success: true };
     }
     if (this.sql.includes('UPDATE stay_offers SET status')) {
@@ -128,7 +129,7 @@ assert.equal(db.offers.find((offer) => offer.id === 'offer-existing').discountLa
 const ownerInquiryResponse = await ownerInquiries.onRequestGet({ request: new Request('https://luxeroutes.test/api/owner/inquiries', { headers: { 'CF-Access-Authenticated-User-Email': 'owner@example.com' } }), env: { DB: db } });
 assert.equal(ownerInquiryResponse.status, 200, 'Approved owners should read customer requests for their offers.');
 const ownerInquiryPayload = await ownerInquiryResponse.json();
-assert.equal(ownerInquiryPayload.inquiries.length, 2, 'Owner inquiry API should return owner-assigned requests and linked source submissions.');
+assert.equal(ownerInquiryPayload.inquiries.length, 0, 'Owner inquiry API should only return admin-approved, forwarded requests.');
 
 const managerResponse = await managerOffers.onRequestGet({ request: new Request('https://luxeroutes.test/api/manager/offers', { headers: { 'CF-Access-Authenticated-User-Email': 'manager@example.com' } }), env: { DB: db } });
 assert.equal(managerResponse.status, 200, 'Approved managers should read their assigned offers.');
@@ -139,7 +140,7 @@ assert.equal(managerPayload.offers.every((offer) => offer.managerEmail === 'mana
 const managerInquiryResponse = await managerInquiries.onRequestGet({ request: new Request('https://luxeroutes.test/api/manager/inquiries', { headers: { 'CF-Access-Authenticated-User-Email': 'manager@example.com' } }), env: { DB: db } });
 assert.equal(managerInquiryResponse.status, 200, 'Approved managers should read customer requests for assigned properties.');
 const managerInquiryPayload = await managerInquiryResponse.json();
-assert.equal(managerInquiryPayload.inquiries.length, 2, 'Manager inquiry API should return manager-assigned requests and linked source submissions.');
+assert.equal(managerInquiryPayload.inquiries.length, 0, 'Manager inquiry API should only return admin-approved, forwarded requests.');
 
 const invalidResponse = await adminOffers.onRequestPost({ request: adminRequest('POST', { title: 'Bad', country: 'unknown', region: 'lakes', stayType: 'villa', locationLabel: 'Bad', description: 'Bad country' }), env: { DB: db } });
 assert.equal(invalidResponse.status, 400, 'Invalid taxonomy values should be rejected.');

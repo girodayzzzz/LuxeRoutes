@@ -647,6 +647,7 @@ if (offerFilterRoot) {
     const offerTitle = card.querySelector('h3')?.textContent.trim();
     addOfferGuidance(card);
     if (!requestLink || !offerTitle) return;
+    const slug = card.dataset.slug || card.dataset.offerSlug || '';
     const query = new URLSearchParams({
       offer: offerTitle,
       request_type: 'Specific accommodation',
@@ -654,8 +655,13 @@ if (offerFilterRoot) {
       region: [formatLabel(card.dataset.country || ''), formatLabel(card.dataset.region || '')].filter(Boolean).join(' · '),
       source_url: `${window.location.origin}${window.location.pathname}#stay-finder`,
     });
-    requestLink.href = `plan-trip.html?${query.toString()}#trip-brief`;
-    requestLink.textContent = 'Request this stay';
+    requestLink.href = slug ? `offer/${encodeURIComponent(slug)}` : `plan-trip.html?${query.toString()}#trip-brief`;
+    requestLink.textContent = slug ? 'View full offer' : 'Request this stay';
+    card.addEventListener('click', (event) => {
+      if (event.target.closest('a, button, input, select, textarea')) return;
+      if (slug) window.location.href = `offer/${encodeURIComponent(slug)}`;
+    });
+    if (slug) card.setAttribute('tabindex', '0');
   };
 
   offerCards.forEach(wireRequestLink);
@@ -692,9 +698,10 @@ if (offerFilterRoot) {
         card.dataset.region = offer.region;
         card.dataset.type = offer.stayType;
         card.dataset.options = offer.options || '';
+        card.dataset.slug = offer.slug || '';
         card.dataset.search = [offer.title, offer.locationLabel, offer.description, offer.country, offer.region, offer.stayType, offer.options].join(' ').toLowerCase();
         const imageUrl = offer.imageUrl || 'https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?auto=format&fit=crop&w=900&q=80';
-        card.innerHTML = `<div class="offer-image-wrap"><img src="${escapeOfferHtml(imageUrl)}" alt="${escapeOfferHtml(offer.imageAlt || offer.title)}" loading="lazy" width="900" height="600" decoding="async" /><span class="offer-badge">${escapeOfferHtml(offer.locationLabel)}</span></div><div class="stay-offer-body"><div class="offer-meta"><span>${escapeOfferHtml(typeLabels[offer.stayType] || formatLabel(offer.stayType))}</span><span>${escapeOfferHtml(offer.guestLabel || 'By private request')}</span></div><h3>${escapeOfferHtml(offer.title)}</h3><p>${escapeOfferHtml(offer.description)}</p><div class="offer-footer"><span>${escapeOfferHtml(offer.priceLabel || 'Price by private request')}</span><a class="text-link" href="plan-trip.html">Request stay</a></div></div>`;
+        card.innerHTML = `<div class="offer-image-wrap"><img src="${escapeOfferHtml(imageUrl)}" alt="${escapeOfferHtml(offer.imageAlt || offer.title)}" loading="lazy" width="900" height="600" decoding="async" /><span class="offer-badge">${escapeOfferHtml(offer.locationLabel)}</span></div><div class="stay-offer-body"><div class="offer-meta"><span>${escapeOfferHtml(typeLabels[offer.stayType] || formatLabel(offer.stayType))}</span><span>${escapeOfferHtml(offer.guestLabel || 'By private request')}</span></div><h3>${escapeOfferHtml(offer.title)}</h3><p>${escapeOfferHtml(offer.description)}</p><div class="offer-footer"><span>${escapeOfferHtml(offer.priceLabel || 'Price by private request')}</span><a class="text-link" href="offer/${encodeURIComponent(offer.slug || '')}">View full offer</a></div></div>`;
         resultsTarget.prepend(card);
         wireRequestLink(card);
       });
@@ -716,4 +723,52 @@ if (offerFilterRoot) {
   });
   updateOffers();
   renderDatabaseOffers();
+}
+
+
+const offerDetailRoot = document.querySelector('[data-offer-detail]');
+if (offerDetailRoot) {
+  const escapeOfferDetailHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[character]));
+  const detailParams = new URLSearchParams(window.location.search);
+  const pathParts = window.location.pathname.split('/').filter(Boolean);
+  const pathSlug = pathParts[0] === 'offer' ? pathParts.slice(1).join('/') : pathParts[0] === 'offer.html' ? pathParts.slice(1).join('/') : '';
+  const slug = detailParams.get('slug') || decodeURIComponent(pathSlug || '');
+  const titleTarget = offerDetailRoot.querySelector('[data-offer-title]');
+  const descriptionTarget = offerDetailRoot.querySelector('[data-offer-description]');
+  const heroImage = offerDetailRoot.querySelector('[data-offer-hero-image]');
+  const factsTarget = offerDetailRoot.querySelector('[data-offer-facts]');
+  const availabilityTarget = offerDetailRoot.querySelector('[data-offer-availability]');
+  const galleryTarget = offerDetailRoot.querySelector('[data-offer-gallery]');
+  const setField = (name, value) => offerDetailRoot.querySelectorAll(`[data-offer-field="${name}"]`).forEach((field) => { field.value = value || ''; });
+  const renderLines = (text) => String(text || '').split(/\n+/).map((line) => line.trim()).filter(Boolean).map((line) => `<span>${escapeOfferDetailHtml(line)}</span>`).join('');
+  const renderOfferDetail = (offer) => {
+    document.title = `${offer.title} | LuxeRoutes`;
+    if (titleTarget) titleTarget.textContent = offer.title || 'Curated stay offer';
+    if (descriptionTarget) descriptionTarget.textContent = offer.description || 'Request confirmed availability from LuxeRoutes.';
+    if (heroImage && offer.imageUrl) heroImage.src = offer.imageUrl;
+    setField('title', offer.title);
+    setField('slug', offer.slug);
+    const sourceUrl = offerDetailRoot.querySelector('[data-offer-source-url]');
+    if (sourceUrl) sourceUrl.value = window.location.href;
+    if (factsTarget) factsTarget.innerHTML = `
+      <div class="stack-item"><strong>${escapeOfferDetailHtml(offer.locationLabel || 'Location by request')}</strong><span>${escapeOfferDetailHtml([formatLabel(offer.country), formatLabel(offer.region)].filter(Boolean).join(' · '))}</span></div>
+      <div class="stack-item"><strong>${escapeOfferDetailHtml(formatLabel(offer.stayType || 'Stay'))}</strong><span>${escapeOfferDetailHtml(offer.guestLabel || 'Capacity by request')}</span></div>
+      ${offer.accommodationDetails ? `<div class="stack-item stack-item-vertical"><strong>Accommodation details</strong>${renderLines(offer.accommodationDetails)}</div>` : ''}`;
+    if (availabilityTarget) availabilityTarget.innerHTML = `
+      <div class="stack-item"><strong>${escapeOfferDetailHtml(offer.priceLabel || 'Price by private request')}</strong><span>${escapeOfferDetailHtml(offer.discountLabel || 'Final quote confirmed after inquiry')}</span></div>
+      <div class="stack-item"><strong>${escapeOfferDetailHtml([offer.availableFrom, offer.availableTo].filter(Boolean).join(' → ') || 'Availability on request')}</strong><span>${escapeOfferDetailHtml(offer.availabilityNotes || 'Owner can update availability from the owner panel.')}</span></div>
+      ${offer.pricingDetails ? `<div class="stack-item stack-item-vertical"><strong>Pricing details</strong>${renderLines(offer.pricingDetails)}</div>` : ''}`;
+    if (galleryTarget) {
+      const urls = [offer.imageUrl, ...String(offer.galleryUrls || '').split(/\n+/)].filter(Boolean).slice(0, 9);
+      galleryTarget.innerHTML = urls.map((url) => `<img src="${escapeOfferDetailHtml(url)}" alt="${escapeOfferDetailHtml(offer.title || 'LuxeRoutes offer')}" loading="lazy" decoding="async" />`).join('');
+    }
+  };
+  if (!slug) {
+    if (titleTarget) titleTarget.textContent = 'Offer not selected';
+  } else {
+    fetch(`/api/offers?slug=${encodeURIComponent(slug)}`, { headers: { Accept: 'application/json' } })
+      .then((response) => response.ok ? response.json() : Promise.reject(new Error('Offer not found.')))
+      .then((data) => renderOfferDetail(data.offer || {}))
+      .catch(() => { if (titleTarget) titleTarget.textContent = 'This offer is not available yet'; if (descriptionTarget) descriptionTarget.textContent = 'It may still be waiting for admin approval or may have been unpublished.'; });
+  }
 }

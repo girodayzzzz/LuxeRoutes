@@ -6497,3 +6497,23 @@ body:not(.auth-page) .page-hero h1 {
     padding: .85rem;
   }
 }
+
+.offer-detail-page .offer-detail-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: .8rem;
+  margin-top: 1rem;
+}
+
+.offer-detail-page .offer-detail-gallery img {
+  width: 100%;
+  height: 130px;
+  object-fit: cover;
+  border-radius: 18px;
+  border: 1px solid rgba(217, 188, 122, .18);
+}
+
+.stay-offer-card[data-slug],
+.stay-offer-card[data-database-offer] {
+  cursor: pointer;
+}

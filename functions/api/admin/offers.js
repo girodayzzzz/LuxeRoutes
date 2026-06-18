@@ -29,7 +29,9 @@ const offerSelect = `
   SELECT id, source_inquiry_id AS sourceInquiryId, title, slug, country, region,
     stay_type AS stayType, options, location_label AS locationLabel, guest_label AS guestLabel,
     price_label AS priceLabel, available_from AS availableFrom, available_to AS availableTo,
-    discount_label AS discountLabel, availability_notes AS availabilityNotes, description, image_url AS imageUrl, image_alt AS imageAlt,
+    discount_label AS discountLabel, availability_notes AS availabilityNotes,
+    accommodation_details AS accommodationDetails, pricing_details AS pricingDetails, gallery_urls AS galleryUrls,
+    external_availability_url AS externalAvailabilityUrl, description, image_url AS imageUrl, image_alt AS imageAlt,
     status, published_at AS publishedAt, created_by_email AS createdByEmail,
     owner_email AS ownerEmail, manager_email AS managerEmail, partner_status AS partnerStatus,
     owner_notes AS ownerNotes, manager_notes AS managerNotes, created_at AS createdAt, updated_at AS updatedAt
@@ -47,7 +49,11 @@ const normalizeOffer = (body) => ({
   locationLabel: cleanString(body.locationLabel, 180),
   guestLabel: cleanString(body.guestLabel, 120),
   priceLabel: cleanString(body.priceLabel, 180),
-  description: cleanString(body.description, 1200),
+  accommodationDetails: cleanString(body.accommodationDetails, 5000),
+  pricingDetails: cleanString(body.pricingDetails, 5000),
+  galleryUrls: (Array.isArray(body.galleryUrls) ? body.galleryUrls : cleanString(body.galleryUrls, 4000).split(/[\n,]+/)).map(safeImageUrl).filter(Boolean).slice(0, 12).join('\n'),
+  externalAvailabilityUrl: safeImageUrl(body.externalAvailabilityUrl),
+  description: cleanString(body.description, 4000),
   imageUrl: safeImageUrl(body.imageUrl),
   imageAlt: cleanString(body.imageAlt, 240),
   status: cleanString(body.status, 30).toLowerCase() || 'published',
@@ -96,12 +102,14 @@ export const onRequestPost = async ({ request, env }) => {
     await auth.db.prepare(`
       INSERT INTO stay_offers (
         id, source_inquiry_id, title, slug, country, region, stay_type, options,
-        location_label, guest_label, price_label, description, image_url, image_alt,
+        location_label, guest_label, price_label, accommodation_details, pricing_details, gallery_urls, external_availability_url,
+        description, image_url, image_alt,
         status, published_at, created_by_email, owner_email, manager_email, partner_status,
         owner_notes, manager_notes, created_at, updated_at
-      ) VALUES (?, NULLIF(?, ''), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULLIF(?, ''), NULLIF(?, ''), ?, ?, ?, ?, ?)
+      ) VALUES (?, NULLIF(?, ''), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULLIF(?, ''), NULLIF(?, ''), ?, ?, ?, ?, ?)
     `).bind(id, offer.sourceInquiryId, offer.title, offer.slug, offer.country, offer.region, offer.stayType,
-      offer.options, offer.locationLabel, offer.guestLabel, offer.priceLabel, offer.description, offer.imageUrl,
+      offer.options, offer.locationLabel, offer.guestLabel, offer.priceLabel, offer.accommodationDetails, offer.pricingDetails,
+      offer.galleryUrls, offer.externalAvailabilityUrl, offer.description, offer.imageUrl,
       offer.imageAlt || offer.title, offer.status, publishedAt, auth.email, offer.ownerEmail, offer.managerEmail,
       offer.partnerStatus, offer.ownerNotes, offer.managerNotes, timestamp, timestamp).run();
 
