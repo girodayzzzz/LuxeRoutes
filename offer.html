@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <base href="/" />
+  <title>Stay Offer | LuxeRoutes</title>
+  <meta name="description" content="View a LuxeRoutes curated stay, service, or travel offer and request confirmed availability from the concierge team." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@600;700;800&display=swap" rel="stylesheet" />
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <link rel="manifest" href="site.webmanifest" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body class="offer-detail-page">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+  <header class="site-header" data-header>
+    <div class="header-top"><div class="container header-top-inner"><span>Clean offer detail URL</span><a href="mailto:info@luxeroutes.eu">info@luxeroutes.eu</a><span>Published owner offers open at /offer/the-offer-slug</span></div></div>
+    <div class="container nav-shell">
+      <a class="brand" href="index.html" aria-label="LuxeRoutes home"><img src="logo.svg" alt="LuxeRoutes wordmark" width="620" height="160" loading="eager" decoding="async" /></a>
+      <button class="menu-toggle" type="button" aria-label="Open navigation" aria-controls="primary-navigation" aria-expanded="false"><span></span><span></span><span></span></button>
+      <nav id="primary-navigation" class="primary-nav"><a href="offers.html" class="nav-link">Private Offers</a><a href="partners.html" class="nav-link">List Your Property</a><a href="login.html" class="nav-link" data-nav-login>Login</a><a href="account.html" class="nav-link" data-nav-account hidden>Account</a><a class="btn btn-primary nav-cta" href="#offer-inquiry">Request Availability</a></nav>
+    </div>
+  </header>
+
+  <main id="main-content" data-offer-detail>
+    <section class="page-hero page-hero-image offers-hero">
+      <div class="hero-media" aria-hidden="true"><img data-offer-hero-image src="https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?auto=format&fit=crop&w=2200&q=82" alt="" width="2200" height="1467" loading="eager" decoding="async" /></div>
+      <div class="container offers-hero-grid">
+        <div><p class="eyebrow" data-offer-kicker>Curated LuxeRoutes stay</p><h1 data-offer-title>Loading stay offer…</h1><p data-offer-description>We are loading the latest approved details from LuxeRoutes.</p><div class="button-row"><a class="btn btn-primary" href="#offer-inquiry">Request this stay</a><a class="btn btn-secondary" href="offers.html">Back to offers</a></div></div>
+        <aside class="marketplace-note"><span>Proposal-first booking</span><p>Submit your dates and preferences. Admin reviews the request first; once approved it is forwarded to the provider as a billable lead.</p></aside>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container admin-grid two">
+        <article class="admin-card"><p class="eyebrow">Stay overview</p><div class="stack-list" data-offer-facts></div><div class="offer-detail-gallery" data-offer-gallery></div></article>
+        <article class="admin-card"><p class="eyebrow">Availability & pricing</p><div class="stack-list" data-offer-availability></div><p class="admin-helper">Availability can be updated by the owner panel. Final dates, terms, and pricing are confirmed after admin review.</p></article>
+      </div>
+    </section>
+
+    <section class="section" id="offer-inquiry">
+      <div class="container contact-layout">
+        <div class="section-heading"><p class="eyebrow">Request availability</p><h2>Send a private request for this offer.</h2><p>LuxeRoutes receives the inquiry first. After admin approval, the request is automatically visible to the connected provider/owner.</p></div>
+        <form class="luxury-form trip-brief-form" data-inquiry-form data-endpoint="/api/inquiries" data-form-type="Specific accommodation request" data-recipient="info@luxeroutes.eu">
+          <label class="honeypot" aria-hidden="true">Leave this field empty<input name="website" type="text" tabindex="-1" autocomplete="off"></label>
+          <input type="hidden" name="offer" data-offer-field="title" />
+          <input type="hidden" name="stay_offer" data-offer-field="title" />
+          <input type="hidden" name="offer_slug" data-offer-field="slug" />
+          <input type="hidden" name="source_offer_url" data-offer-source-url />
+          <div class="form-grid two"><label>Name<input name="name" autocomplete="name" required /></label><label>Email<input name="email" type="email" autocomplete="email" required /></label></div>
+          <div class="form-grid two"><label>Phone / WhatsApp<input name="phone" autocomplete="tel" /></label><label>Guests<input name="guests" placeholder="2 adults, 2 children" /></label></div>
+          <div class="form-grid two"><label>Check-in<input name="check_in" type="date" /></label><label>Check-out<input name="check_out" type="date" /></label></div>
+          <label>Budget or preferred price range<input name="budget" placeholder="Approx. € / night or total trip budget" /></label>
+          <label>How can we make this stay special?<textarea name="message" rows="5" placeholder="Chef, transfers, wellness, yacht day, wine tasting, celebration, pets, accessibility, arrival time…"></textarea></label>
+          <button class="btn btn-primary" type="submit">Send request to LuxeRoutes</button>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer"><div class="container footer-bottom"><p>© <span data-current-year>2026</span> LuxeRoutes.</p><p>Curated private stays.</p></div></footer>
+  <script src="script.js"></script>
+</body>
+</html>

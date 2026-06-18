@@ -124,6 +124,7 @@
               <label>Available from <input type="date" name="availableFrom" /></label>
               <label>Available to <input type="date" name="availableTo" /></label>
               <label>Price label <input type="text" name="priceLabel" placeholder="From €650/night" /></label>
+              <label>Pricing details <textarea name="pricingDetails" rows="3" placeholder="Seasonal prices, minimum stay, cleaning fee, tourist tax, deposit, payment terms, and LuxeRoutes inquiry/commission notes."></textarea></label>
               <label>Discount <input type="text" name="discountLabel" placeholder="10% for 7+ nights" /></label>
               <fieldset class="account-checkbox-group">
                 <legend>Highlights</legend>
@@ -134,10 +135,13 @@
                 <label><input type="checkbox" name="options" value="pet-friendly" /> Pet friendly</label>
                 <label><input type="checkbox" name="options" value="private-chef" /> Private chef</label>
               </fieldset>
-              <label>Image URL <input type="url" name="imageUrl" placeholder="https://…" /></label>
+              <label>Main image URL <input type="url" name="imageUrl" placeholder="https://…" /></label>
+              <label>Gallery image URLs <textarea name="galleryUrls" rows="3" placeholder="One image URL per line for location, rooms, pool, view, and details."></textarea></label>
               <label>Description <textarea name="description" rows="4" placeholder="Describe the stay, layout, view, amenities, and ideal guest." required></textarea></label>
+              <label>Accommodation details <textarea name="accommodationDetails" rows="4" placeholder="Bedrooms, bathrooms, capacity, size, amenities, services, house rules, cancellation terms, and special experiences."></textarea></label>
               <label>Availability notes <textarea name="availabilityNotes" rows="3" placeholder="Peak dates, blocked dates, check-in rules, seasonal notes"></textarea></label>
-              <p class="status-pill status-pending" data-owner-new-offer-status>New owner offers are submitted to admin for approval before publishing.</p>
+              <label>External availability URL <input type="url" name="externalAvailabilityUrl" placeholder="Optional calendar or owner availability page URL" /></label>
+              <p class="status-pill status-pending" data-owner-new-offer-status>Each option you submit is saved under your owner profile and stays unpublished until admin approves it.</p>
               <button class="btn btn-primary" type="submit">Submit offer for admin approval</button>
             </form>
             <div class="stack-list" data-owner-offers><p class="empty-state">Loading owner offers…</p></div>

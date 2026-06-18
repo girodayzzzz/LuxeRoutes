@@ -3,3 +3,5 @@
 /admin/users.html /admin/index.html 200
 /admin/partners.html /admin/index.html 200
 /admin/offers.html /admin/index.html 200
+/offer/* /offer.html 200
+/offer.html/* /offer.html 200

@@ -17,7 +17,7 @@ export const onRequestGet = async ({ request, env }) => {
 
     const statement = auth.role === 'admin'
       ? auth.db.prepare(`${inquirySelect} ORDER BY created_at DESC LIMIT 200`)
-      : auth.db.prepare(`${inquirySelect} WHERE lower(trim(manager_email)) = ? ORDER BY created_at DESC LIMIT 100`).bind(auth.email);
+      : auth.db.prepare(`${inquirySelect} WHERE lower(trim(manager_email)) = ? AND forwarded_to_owner_at IS NOT NULL ORDER BY created_at DESC LIMIT 100`).bind(auth.email);
     const inquiries = await statement.all();
     return privateJson({ email: auth.email, role: auth.role, inquiries: inquiries.results || [] });
   } catch (error) {
