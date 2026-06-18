@@ -372,6 +372,51 @@ if (offerContext) {
   }
 }
 
+
+const inquiryDatePairs = [
+  ['arrival_date', 'departure_date', 'Departure date must be after the arrival date.'],
+  ['check_in', 'check_out', 'Check-out must be after check-in.'],
+];
+
+const getNamedFormField = (form, name) => Array.from(form.elements).find((field) => field.name === name);
+
+const parseDateOnly = (value) => {
+  if (!value) return null;
+  const timestamp = Date.parse(`${value}T00:00:00Z`);
+  return Number.isNaN(timestamp) ? null : timestamp;
+};
+
+const validateInquiryDates = (form) => {
+  for (const [startName, endName, message] of inquiryDatePairs) {
+    const startField = getNamedFormField(form, startName);
+    const endField = getNamedFormField(form, endName);
+    const startTime = parseDateOnly(startField?.value);
+    const endTime = parseDateOnly(endField?.value);
+    if (startTime !== null && endTime !== null && endTime <= startTime) {
+      endField?.setCustomValidity(message);
+      endField?.reportValidity();
+      return message;
+    }
+    endField?.setCustomValidity('');
+  }
+  return '';
+};
+
+const syncInquiryDateMinimums = (form) => {
+  inquiryDatePairs.forEach(([startName, endName]) => {
+    const startField = getNamedFormField(form, startName);
+    const endField = getNamedFormField(form, endName);
+    if (!startField || !endField) return;
+    const updateMinimum = () => {
+      endField.min = startField.value || '';
+      if (endField.value) validateInquiryDates(form);
+    };
+    startField.addEventListener('change', updateMinimum);
+    endField.addEventListener('change', () => validateInquiryDates(form));
+    updateMinimum();
+  });
+};
+
 const collectInquiryPayload = (form, formData) => {
   const payload = {
     inquiry_type: form.dataset.formType || 'LuxeRoutes inquiry',
@@ -556,6 +601,7 @@ document.querySelectorAll('[data-inquiry-form]').forEach((form, formIndex) => {
   };
 
   restoreDraft();
+  syncInquiryDateMinimums(form);
   form.addEventListener('input', saveDraft);
   form.addEventListener('change', saveDraft);
 
@@ -572,6 +618,14 @@ document.querySelectorAll('[data-inquiry-form]').forEach((form, formIndex) => {
     const submitButton = form.querySelector('button[type="submit"]');
     const actionEndpoint = form.getAttribute('action');
     const endpoint = actionEndpoint?.includes('formspree.io') ? actionEndpoint : (form.dataset.endpoint || actionEndpoint);
+    const dateError = validateInquiryDates(form);
+    if (dateError) {
+      status.classList.add('is-error');
+      status.textContent = dateError;
+      status.focus({ preventScroll: true });
+      return;
+    }
+
     const payload = collectInquiryPayload(form, formData);
 
     if (submitButton) submitButton.disabled = true;
