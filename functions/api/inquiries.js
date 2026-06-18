@@ -10,7 +10,21 @@ const getSubmittedOfferTitle = (body) => cleanString(
   220,
 );
 
-const findSubmittedOffer = async (db, offerTitle) => {
+const getSubmittedOfferSlug = (body) => cleanString(body.offer_slug || body.slug || body.stay_offer_slug, 180);
+
+const findSubmittedOffer = async (db, { offerTitle, offerSlug }) => {
+  if (!offerTitle && !offerSlug) return null;
+
+  if (offerSlug) {
+    const offerBySlug = await db.prepare(`
+      SELECT id, title, owner_email AS ownerEmail, manager_email AS managerEmail
+      FROM stay_offers
+      WHERE lower(trim(slug)) = lower(trim(?))
+      LIMIT 1
+    `).bind(offerSlug).first();
+    if (offerBySlug) return offerBySlug;
+  }
+
   if (!offerTitle) return null;
   return db.prepare(`
     SELECT id, title, owner_email AS ownerEmail, manager_email AS managerEmail
@@ -86,7 +100,8 @@ export const onRequestPost = async ({ request, env }) => {
     const affiliate = inquiry.affiliateReferralCode ? await getAffiliateByCode(db, inquiry.affiliateReferralCode) : null;
 
     const submittedOfferTitle = getSubmittedOfferTitle(body);
-    const submittedOffer = await findSubmittedOffer(db, submittedOfferTitle);
+    const submittedOfferSlug = getSubmittedOfferSlug(body);
+    const submittedOffer = await findSubmittedOffer(db, { offerTitle: submittedOfferTitle, offerSlug: submittedOfferSlug });
     const id = makeId('inquiry');
     const timestamp = nowIso();
 

@@ -610,6 +610,30 @@ const offerStatusLabel = (offer = {}) => {
   return accountEscapeHtml(partnerStatus || offer.status || 'pending_review').replaceAll('_', ' ');
 };
 
+const ownerAvailabilityRangeError = (formData) => {
+  const availableFrom = String(formData.get('availableFrom') || '').trim();
+  const availableTo = String(formData.get('availableTo') || '').trim();
+  if (availableFrom && availableTo && availableFrom > availableTo) {
+    return 'Available from must be before or the same as available to.';
+  }
+  return '';
+};
+
+const syncOwnerAvailabilityMinimums = (form) => {
+  const fromField = form?.elements?.availableFrom;
+  const toField = form?.elements?.availableTo;
+  if (!fromField || !toField) return;
+  toField.min = fromField.value || '';
+  fromField.addEventListener('change', () => {
+    toField.min = fromField.value || '';
+    toField.setCustomValidity(ownerAvailabilityRangeError(new FormData(form)));
+  });
+  toField.addEventListener('change', () => {
+    toField.setCustomValidity(ownerAvailabilityRangeError(new FormData(form)));
+  });
+  toField.setCustomValidity(ownerAvailabilityRangeError(new FormData(form)));
+};
+
 const dateRangeLabel = (offer = {}) => {
   const from = offer.availableFrom || '';
   const to = offer.availableTo || '';
@@ -701,6 +725,7 @@ const renderRoleOffers = (target, offers = [], emptyMessage = 'No assigned offer
       ${role === 'owner' ? renderOwnerOfferForm(offer) : ''}
     </div>
   `).join('');
+  target.querySelectorAll('[data-owner-offer-form]').forEach(syncOwnerAvailabilityMinimums);
 };
 
 const fetchRoleCollection = async (endpoint, key) => {
@@ -767,10 +792,17 @@ const loadRolePanelOffers = async (role) => {
 };
 
 
+if (ownerNewOfferForm) syncOwnerAvailabilityMinimums(ownerNewOfferForm);
+
 ownerNewOfferForm?.addEventListener('submit', async (event) => {
   event.preventDefault();
   const submitButton = ownerNewOfferForm.querySelector('[type="submit"]');
   const formData = new FormData(ownerNewOfferForm);
+  const availabilityError = ownerAvailabilityRangeError(formData);
+  if (availabilityError) {
+    setOwnerNewOfferStatus(availabilityError, 'error');
+    return;
+  }
   const payload = Object.fromEntries(formData.entries());
   payload.options = formData.getAll('options');
   submitButton.disabled = true;
@@ -1161,6 +1193,11 @@ document.addEventListener('submit', async (event) => {
   if (button) button.disabled = true;
   try {
     const formData = new FormData(form);
+    const availabilityError = ownerAvailabilityRangeError(formData);
+    if (availabilityError) {
+      window.alert(availabilityError);
+      return;
+    }
     const payload = Object.fromEntries(formData.entries());
     payload.id = form.dataset.offerId || '';
     const response = await fetch('/api/owner/offers', {
