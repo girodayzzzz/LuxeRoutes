@@ -27,6 +27,8 @@ const ownerOfferSelect = `
     location_label AS locationLabel, guest_label AS guestLabel, price_label AS priceLabel,
     available_from AS availableFrom, available_to AS availableTo,
     discount_label AS discountLabel, availability_notes AS availabilityNotes,
+    accommodation_details AS accommodationDetails, pricing_details AS pricingDetails,
+    gallery_urls AS galleryUrls, external_availability_url AS externalAvailabilityUrl,
     description, image_url AS imageUrl, image_alt AS imageAlt, status, published_at AS publishedAt,
     owner_email AS ownerEmail, manager_email AS managerEmail, partner_status AS partnerStatus,
     owner_notes AS ownerNotes, manager_notes AS managerNotes, updated_at AS updatedAt
@@ -59,6 +61,10 @@ const normalizeOwnerOffer = (body = {}, authEmail = '', id = makeId('offer')) =>
     availableTo,
     discountLabel: cleanString(body.discountLabel, 180),
     availabilityNotes: cleanString(body.availabilityNotes, 2000),
+    accommodationDetails: cleanString(body.accommodationDetails, 5000),
+    pricingDetails: cleanString(body.pricingDetails, 5000),
+    galleryUrls: (Array.isArray(body.galleryUrls) ? body.galleryUrls : cleanString(body.galleryUrls, 4000).split(/[\n,]+/)).map(safeImageUrl).filter(Boolean).slice(0, 12).join('\n'),
+    externalAvailabilityUrl: safeImageUrl(body.externalAvailabilityUrl),
     description: cleanString(body.description, 4000),
     imageUrl: safeImageUrl(body.imageUrl),
     imageAlt: cleanString(body.imageAlt, 220) || title,
@@ -74,6 +80,7 @@ const validateOwnerOffer = (offer, body = {}) => {
   if (!offer.locationLabel) return 'Location label is required.';
   if (!offer.description) return 'Offer description is required.';
   if (body.imageUrl && !offer.imageUrl) return 'Image URL must start with http:// or https://.';
+  if (body.externalAvailabilityUrl && !offer.externalAvailabilityUrl) return 'External availability URL must start with http:// or https://.';
   if (body.availableFrom && !offer.availableFrom) return 'Available from must use YYYY-MM-DD.';
   if (body.availableTo && !offer.availableTo) return 'Available to must use YYYY-MM-DD.';
   if (offer.availableFrom && offer.availableTo && offer.availableFrom > offer.availableTo) return 'Available from must be before available to.';
@@ -111,10 +118,10 @@ export const onRequestPost = async ({ request, env }) => {
       INSERT INTO stay_offers (
         id, source_inquiry_id, title, slug, country, region, stay_type, options,
         location_label, guest_label, price_label, available_from, available_to,
-        discount_label, availability_notes, description, image_url, image_alt,
-        status, published_at, created_by_email, owner_email, manager_email, partner_status,
+        discount_label, availability_notes, accommodation_details, pricing_details, gallery_urls, external_availability_url,
+        description, image_url, image_alt, status, published_at, created_by_email, owner_email, manager_email, partner_status,
         owner_notes, manager_notes, created_at, updated_at
-      ) VALUES (?, NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'unpublished', NULL, ?, ?, NULL, 'pending_review', ?, '', ?, ?)
+      ) VALUES (?, NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'unpublished', NULL, ?, ?, NULL, 'pending_review', ?, '', ?, ?)
     `).bind(
       offer.id,
       offer.title,
@@ -130,6 +137,10 @@ export const onRequestPost = async ({ request, env }) => {
       offer.availableTo || null,
       offer.discountLabel,
       offer.availabilityNotes,
+      offer.accommodationDetails,
+      offer.pricingDetails,
+      offer.galleryUrls,
+      offer.externalAvailabilityUrl,
       offer.description,
       offer.imageUrl,
       offer.imageAlt,
@@ -172,13 +183,20 @@ export const onRequestPatch = async ({ request, env }) => {
     const priceLabel = cleanString(body.priceLabel, 180);
     const discountLabel = cleanString(body.discountLabel, 180);
     const availabilityNotes = cleanString(body.availabilityNotes, 2000);
+    const accommodationDetails = cleanString(body.accommodationDetails, 5000);
+    const pricingDetails = cleanString(body.pricingDetails, 5000);
+    const galleryUrls = (Array.isArray(body.galleryUrls) ? body.galleryUrls : cleanString(body.galleryUrls, 4000).split(/[\n,]+/)).map(safeImageUrl).filter(Boolean).slice(0, 12).join('\n');
+    const externalAvailabilityUrl = safeImageUrl(body.externalAvailabilityUrl);
+    if (body.externalAvailabilityUrl && !externalAvailabilityUrl) return privateErrorJson('External availability URL must start with http:// or https://.', 400);
     const timestamp = nowIso();
 
     await auth.db.prepare(`
       UPDATE stay_offers
-      SET available_from = ?, available_to = ?, price_label = ?, discount_label = ?, availability_notes = ?, updated_at = ?
+      SET available_from = ?, available_to = ?, price_label = ?, discount_label = ?, availability_notes = ?,
+        accommodation_details = ?, pricing_details = ?, gallery_urls = ?, external_availability_url = ?,
+        partner_status = CASE WHEN status = 'published' THEN partner_status ELSE 'pending_review' END, updated_at = ?
       WHERE id = ?
-    `).bind(availableFrom || null, availableTo || null, priceLabel, discountLabel, availabilityNotes, timestamp, id).run();
+    `).bind(availableFrom || null, availableTo || null, priceLabel, discountLabel, availabilityNotes, accommodationDetails, pricingDetails, galleryUrls, externalAvailabilityUrl, timestamp, id).run();
 
     const updated = await auth.db.prepare(`${ownerOfferSelect} WHERE id = ? LIMIT 1`).bind(id).first();
     return privateJson({ offer: updated });

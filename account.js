@@ -664,9 +664,13 @@ const renderOwnerOfferForm = (offer = {}) => `
     <label>Available from <input type="date" name="availableFrom" value="${accountEscapeHtml(offer.availableFrom || '')}" /></label>
     <label>Available to <input type="date" name="availableTo" value="${accountEscapeHtml(offer.availableTo || '')}" /></label>
     <label>Price label <input type="text" name="priceLabel" value="${accountEscapeHtml(offer.priceLabel || '')}" placeholder="From €650/night" /></label>
+    <label>Pricing details <textarea name="pricingDetails" rows="3" placeholder="Seasonal prices, fees, deposit, payment terms">${accountEscapeHtml(offer.pricingDetails || '')}</textarea></label>
     <label>Discount <input type="text" name="discountLabel" value="${accountEscapeHtml(offer.discountLabel || '')}" placeholder="10% for 7+ nights" /></label>
     <label>Availability notes <textarea name="availabilityNotes" rows="3" placeholder="Peak dates, blocked dates, seasonal notes">${accountEscapeHtml(offer.availabilityNotes || '')}</textarea></label>
-    <button class="btn btn-secondary" type="submit">Save availability, price, and discount</button>
+    <label>External availability URL <input type="url" name="externalAvailabilityUrl" value="${accountEscapeHtml(offer.externalAvailabilityUrl || '')}" placeholder="https://calendar.example.com" /></label>
+    <label>Accommodation details <textarea name="accommodationDetails" rows="3" placeholder="Rooms, amenities, rules, services">${accountEscapeHtml(offer.accommodationDetails || '')}</textarea></label>
+    <label>Gallery URLs <textarea name="galleryUrls" rows="3" placeholder="One image URL per line">${accountEscapeHtml(offer.galleryUrls || '')}</textarea></label>
+    <button class="btn btn-secondary" type="submit">Save offer option updates</button>
   </form>
 `;
 
@@ -686,6 +690,8 @@ const renderRoleOffers = (target, offers = [], emptyMessage = 'No assigned offer
         ${offer.priceLabel ? `<span>Price: ${accountEscapeHtml(offer.priceLabel)}</span>` : ''}
         ${offer.discountLabel ? `<span>Discount: ${accountEscapeHtml(offer.discountLabel)}</span>` : ''}
         ${offer.availabilityNotes ? `<span>Availability note: ${accountEscapeHtml(offer.availabilityNotes)}</span>` : ''}
+        ${offer.externalAvailabilityUrl ? `<span>Availability sync: ${accountEscapeHtml(offer.externalAvailabilityUrl)}</span>` : ''}
+        ${offer.pricingDetails ? `<span>Pricing details: ${accountEscapeHtml(offer.pricingDetails)}</span>` : ''}
         ${offer.ownerEmail ? `<span>Owner: ${accountEscapeHtml(offer.ownerEmail)}</span>` : ''}
         ${offer.managerEmail ? `<span>Manager: ${accountEscapeHtml(offer.managerEmail)}</span>` : ''}
         ${offer.ownerNotes ? `<span>Owner note: ${accountEscapeHtml(offer.ownerNotes)}</span>` : ''}
