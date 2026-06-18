@@ -655,11 +655,11 @@ if (offerFilterRoot) {
       region: [formatLabel(card.dataset.country || ''), formatLabel(card.dataset.region || '')].filter(Boolean).join(' · '),
       source_url: `${window.location.origin}${window.location.pathname}#stay-finder`,
     });
-    requestLink.href = slug ? `/offer/${encodeURIComponent(slug)}` : `plan-trip.html?${query.toString()}#trip-brief`;
+    requestLink.href = slug ? `offer/${encodeURIComponent(slug)}` : `plan-trip.html?${query.toString()}#trip-brief`;
     requestLink.textContent = slug ? 'View full offer' : 'Request this stay';
     card.addEventListener('click', (event) => {
       if (event.target.closest('a, button, input, select, textarea')) return;
-      if (slug) window.location.href = `/offer/${encodeURIComponent(slug)}`;
+      if (slug) window.location.href = `offer/${encodeURIComponent(slug)}`;
     });
     if (slug) card.setAttribute('tabindex', '0');
   };
@@ -701,7 +701,7 @@ if (offerFilterRoot) {
         card.dataset.slug = offer.slug || '';
         card.dataset.search = [offer.title, offer.locationLabel, offer.description, offer.country, offer.region, offer.stayType, offer.options].join(' ').toLowerCase();
         const imageUrl = offer.imageUrl || 'https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?auto=format&fit=crop&w=900&q=80';
-        card.innerHTML = `<div class="offer-image-wrap"><img src="${escapeOfferHtml(imageUrl)}" alt="${escapeOfferHtml(offer.imageAlt || offer.title)}" loading="lazy" width="900" height="600" decoding="async" /><span class="offer-badge">${escapeOfferHtml(offer.locationLabel)}</span></div><div class="stay-offer-body"><div class="offer-meta"><span>${escapeOfferHtml(typeLabels[offer.stayType] || formatLabel(offer.stayType))}</span><span>${escapeOfferHtml(offer.guestLabel || 'By private request')}</span></div><h3>${escapeOfferHtml(offer.title)}</h3><p>${escapeOfferHtml(offer.description)}</p><div class="offer-footer"><span>${escapeOfferHtml(offer.priceLabel || 'Price by private request')}</span><a class="text-link" href="/offer/${encodeURIComponent(offer.slug || '')}">View full offer</a></div></div>`;
+        card.innerHTML = `<div class="offer-image-wrap"><img src="${escapeOfferHtml(imageUrl)}" alt="${escapeOfferHtml(offer.imageAlt || offer.title)}" loading="lazy" width="900" height="600" decoding="async" /><span class="offer-badge">${escapeOfferHtml(offer.locationLabel)}</span></div><div class="stay-offer-body"><div class="offer-meta"><span>${escapeOfferHtml(typeLabels[offer.stayType] || formatLabel(offer.stayType))}</span><span>${escapeOfferHtml(offer.guestLabel || 'By private request')}</span></div><h3>${escapeOfferHtml(offer.title)}</h3><p>${escapeOfferHtml(offer.description)}</p><div class="offer-footer"><span>${escapeOfferHtml(offer.priceLabel || 'Price by private request')}</span><a class="text-link" href="offer/${encodeURIComponent(offer.slug || '')}">View full offer</a></div></div>`;
         resultsTarget.prepend(card);
         wireRequestLink(card);
       });
