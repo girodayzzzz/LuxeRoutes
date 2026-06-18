@@ -367,6 +367,35 @@ const resetPassword = async ({ request, env }) => {
   return json({ ok: true, email, message: 'Password updated. You can now sign in with your new password.' });
 };
 
+const changePassword = async ({ request, env }) => {
+  const db = requireDb(env);
+  const email = await getAccountSessionEmail(request, env);
+  const body = await parseRequestBody(request);
+  const currentPassword = String(body.currentPassword || '');
+  const newPassword = String(body.newPassword || '');
+  const newPasswordConfirm = String(body.newPasswordConfirm || '');
+
+  if (!email) return privateErrorJson('Verified account session is required.', 401);
+  if (!currentPassword || !newPassword) return errorJson('Current password and new password are required.', 400);
+  if (newPassword.length < 8) return errorJson('New password must be at least 8 characters.', 400);
+  if (newPassword !== newPasswordConfirm) return errorJson('New password confirmation does not match.', 400);
+
+  await ensureAuthSchema(db);
+  const profile = await getProfile(db, email);
+  const passwordMatches = await verifyAccountPassword(currentPassword, profile);
+  if (!passwordMatches) return errorJson('Current password is not correct.', 401);
+
+  const passwordFields = await hashAccountPassword(newPassword);
+  const timestamp = nowIso();
+  await db.prepare(`
+    UPDATE profiles
+    SET password_hash = ?, password_salt = ?, password_iterations = ?, password_enabled = 1, updated_at = ?
+    WHERE lower(trim(email)) = ?
+  `).bind(passwordFields.passwordHash, passwordFields.passwordSalt, passwordFields.passwordIterations, timestamp, email).run();
+
+  return privateJson({ ok: true, email, message: 'Password updated.' });
+};
+
 const clearAccountSession = () => json({ ok: true }, {
   headers: {
     'Set-Cookie': 'luxeroutes_account_session=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Lax',
@@ -477,6 +506,7 @@ export const onRequestPost = async (context) => {
     if (action === 'password') return await loginWithPassword(context);
     if (action === 'reset-request') return await requestPasswordReset(context);
     if (action === 'reset') return await resetPassword(context);
+    if (action === 'change-password') return await changePassword(context);
     if (action === 'logout') return clearAccountSession();
     return await requestOtp(context);
   } catch (error) {

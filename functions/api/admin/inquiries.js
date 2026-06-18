@@ -6,6 +6,7 @@ const inquirySelect = `
   SELECT id, inquiry_type AS inquiryType, name, email, phone, source_page AS sourcePage,
     submitted_from AS submittedFrom, payload_json AS payloadJson,
     offer_id AS offerId, offer_title AS offerTitle, owner_email AS ownerEmail, manager_email AS managerEmail,
+    affiliate_referral_code AS affiliateReferralCode, affiliate_partner_id AS affiliatePartnerId,
     status, created_at AS createdAt, updated_at AS updatedAt
   FROM inquiries
 `;

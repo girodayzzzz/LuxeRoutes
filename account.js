@@ -16,6 +16,23 @@ const loginBoxHead = document.querySelector('.login-box-head');
 const loginSecurityList = document.querySelector('.login-security-list');
 const accountSwitchLink = document.querySelector('.account-switch-link');
 const accountLogoutButtons = document.querySelectorAll('[data-account-logout]');
+const accountSettingsForm = document.querySelector('[data-account-settings-form]');
+const accountSettingsSubmit = document.querySelector('[data-account-settings-submit]');
+const accountSettingsMessage = document.querySelector('[data-account-settings-message]');
+const settingsNameInput = document.querySelector('[data-settings-name]');
+const settingsCompanyInput = document.querySelector('[data-settings-company]');
+const settingsNotesInput = document.querySelector('[data-settings-notes]');
+const accountPasswordForm = document.querySelector('[data-account-password-form]');
+const accountPasswordSubmit = document.querySelector('[data-account-password-submit]');
+const accountPasswordMessage = document.querySelector('[data-account-password-message]');
+const affiliateHeading = document.querySelector('[data-affiliate-heading]');
+const affiliateMessage = document.querySelector('[data-affiliate-message]');
+const affiliateStatus = document.querySelector('[data-affiliate-status]');
+const affiliateVisits = document.querySelector('[data-affiliate-visits]');
+const affiliateInquiries = document.querySelector('[data-affiliate-inquiries]');
+const affiliateTotal = document.querySelector('[data-affiliate-total]');
+const affiliateLinkForm = document.querySelector('[data-affiliate-link-form]');
+const affiliateLinkOutput = document.querySelector('[data-affiliate-link-output]');
 const ownerOffersTarget = document.querySelector('[data-owner-offers]');
 const managerOffersTarget = document.querySelector('[data-manager-offers]');
 const ownerRequestsTarget = document.querySelector('[data-owner-requests]');
@@ -51,6 +68,7 @@ const isRegisterPage = () => document.body.classList.contains('register-page') &
 const isDashboardPage = () => document.body.classList.contains('account-dashboard-page');
 const isProtectedAccountPage = () => isDashboardPage();
 const isLoginPage = () => document.body.classList.contains('login-page');
+const isAffiliatePage = () => document.body.classList.contains('affiliate-dashboard-page');
 
 if (document.body.classList.contains('account-dashboard-page')) {
   document.body.classList.remove('admin-page');
@@ -66,6 +84,7 @@ const accountRoleHomePaths = {
   owner: 'owner-panel.html',
   manager: 'manager-panel.html',
   admin: 'admin/index.html',
+  partner: 'affiliate-panel.html',
 };
 let accountIdentity = null;
 let accountApiEnabled = false;
@@ -316,6 +335,14 @@ const loadRemoteAccountProfile = async () => {
   }
 };
 
+const setInlineMessage = (target, message = '', tone = 'pending') => {
+  if (!target) return;
+  target.textContent = message;
+  target.classList.toggle('status-approved', tone === 'success');
+  target.classList.toggle('status-warning', tone === 'error');
+  target.classList.toggle('status-pending', tone !== 'success' && tone !== 'error');
+};
+
 const saveRemoteAccountProfile = async (profile) => {
   const response = await fetchAccountAuth('/api/account', {
     method: 'POST',
@@ -334,6 +361,37 @@ const saveRemoteAccountProfile = async (profile) => {
 
   accountApiEnabled = true;
   return response.json();
+};
+
+const changeAccountPassword = async (currentPassword, newPassword, newPasswordConfirm) => {
+  const response = await fetch('/api/auth/otp?action=change-password', {
+    method: 'POST',
+    headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+    credentials: 'same-origin',
+    redirect: 'manual',
+    body: JSON.stringify({ currentPassword, newPassword, newPasswordConfirm }),
+  });
+  return readJsonOrAuthError(response, 'Unable to update your password right now.');
+};
+
+const populateAccountSettings = (profile = {}) => {
+  if (!profile) return;
+  if (settingsNameInput) settingsNameInput.value = profile.name || '';
+  if (settingsCompanyInput) settingsCompanyInput.value = profile.companyName || '';
+  if (settingsNotesInput) settingsNotesInput.value = profile.notes || '';
+};
+
+const getSettingsProfilePayload = () => {
+  const cached = loadAccountProfile() || {};
+  return {
+    email: accountIdentity?.email || cached.email || '',
+    name: String(settingsNameInput?.value || '').trim(),
+    requestedRole: cached.requestedRole || cached.defaultRole || getRequiredAccountRole() || 'customer',
+    companyName: String(settingsCompanyInput?.value || '').trim(),
+    companyWebsite: cached.companyWebsite || '',
+    businessContext: cached.businessContext || '',
+    notes: String(settingsNotesInput?.value || '').trim(),
+  };
 };
 
 
@@ -764,6 +822,7 @@ const renderAccountProfile = (profile, grant = null) => {
     profile.companyWebsite ? `Website: <a href="${accountEscapeHtml(profile.companyWebsite)}" target="_blank" rel="noopener">${accountEscapeHtml(profile.companyWebsite)}</a>` : '',
   ].filter(Boolean).map((item) => `<span>${item}</span>`).join('');
 
+  populateAccountSettings(profile);
   accountProfile.innerHTML = `
     <div class="stack-item">
       <div>
@@ -815,6 +874,7 @@ const getRegisterValidationMessage = (profile = {}) => {
   if (!profile.email || !profile.email.includes('@')) return 'Enter a valid email address.';
   if (!profile.name) return 'Enter your full name.';
   if (!profile.password || profile.password.length < 8) return 'Create a password with at least 8 characters.';
+  if (profile.passwordConfirm !== undefined && profile.password !== profile.passwordConfirm) return 'Password confirmation must match.';
   return '';
 };
 
@@ -902,11 +962,64 @@ const applyRemoteAccount = (remoteAccount) => {
     role,
     approved: true,
   });
+  populateAccountSettings(profile);
   renderAccountProfile(profile, remoteAccount.grant);
+  renderAffiliateDashboard();
   setLoginAccountState(true);
   if (redirectToRoleHomeIfNeeded(remoteAccount.role || remoteAccount.grant?.role || profile?.defaultRole)) return true;
   return true;
 };
+
+const renderAffiliateDashboard = async () => {
+  if (!isAffiliatePage()) return;
+  try {
+    const response = await fetchAccountAuth('/api/affiliate/stats', {
+      headers: { Accept: 'application/json' },
+      credentials: 'same-origin',
+      redirect: 'manual',
+    });
+    const data = await readJsonOrAuthError(response, 'Unable to load affiliate dashboard.');
+    const affiliate = data.affiliate || null;
+    const stats = data.stats || {};
+    if (!affiliate) {
+      if (affiliateHeading) affiliateHeading.textContent = 'Affiliate application required';
+      if (affiliateMessage) affiliateMessage.innerHTML = 'Apply for affiliate access first. <a href="become-affiliate.html">Become an Affiliate</a>';
+      if (affiliateStatus) affiliateStatus.textContent = 'Not applied';
+      return;
+    }
+
+    if (affiliateHeading) affiliateHeading.textContent = affiliate.status === 'active' ? 'Affiliate access active' : 'Affiliate review status';
+    if (affiliateMessage) affiliateMessage.textContent = affiliate.status === 'active'
+      ? `Referral code: ${affiliate.referralCode}`
+      : `Your affiliate application is ${String(affiliate.status || 'pending_review').replaceAll('_', ' ')}.`;
+    if (affiliateStatus) affiliateStatus.textContent = String(affiliate.status || 'pending_review').replaceAll('_', ' ');
+    if (affiliateVisits) affiliateVisits.textContent = String(stats.visits || 0);
+    if (affiliateInquiries) affiliateInquiries.textContent = String(stats.inquiries || 0);
+    if (affiliateTotal) affiliateTotal.textContent = String(stats.totalEvents || 0);
+    document.body.dataset.affiliateCode = affiliate.referralCode || '';
+  } catch (error) {
+    if (affiliateHeading) affiliateHeading.textContent = 'Affiliate dashboard unavailable';
+    if (affiliateMessage) affiliateMessage.textContent = error.message || 'Unable to load affiliate dashboard right now.';
+  }
+};
+
+affiliateLinkForm?.addEventListener('submit', (event) => {
+  event.preventDefault();
+  const code = document.body.dataset.affiliateCode || '';
+  const formData = new FormData(affiliateLinkForm);
+  const target = String(formData.get('target') || window.location.origin || 'https://luxeroutes.eu').trim();
+  if (!code) {
+    if (affiliateLinkOutput) affiliateLinkOutput.textContent = 'Your referral code will be available after admin approval.';
+    return;
+  }
+  try {
+    const url = new URL(target, window.location.origin);
+    url.searchParams.set('ref', code);
+    if (affiliateLinkOutput) affiliateLinkOutput.innerHTML = `Referral link: <a href="${accountEscapeHtml(url.href)}" target="_blank" rel="noopener">${accountEscapeHtml(url.href)}</a>`;
+  } catch (error) {
+    if (affiliateLinkOutput) affiliateLinkOutput.textContent = 'Enter a valid LuxeRoutes destination URL.';
+  }
+});
 
 const initialiseAccount = async () => {
   const cachedSession = loadAccountSession();
@@ -961,6 +1074,7 @@ accountForm?.addEventListener('submit', async (event) => {
     businessContext: String(formData.get('business_context') || '').trim(),
     notes: String(formData.get('notes') || '').trim(),
     password: String(formData.get('password') || ''),
+    passwordConfirm: String(formData.get('password_confirm') || ''),
     status: String(formData.get('requested_role') || 'customer') === 'customer' ? 'active' : 'pending_admin_grant',
     updatedAt: new Date().toISOString(),
   };
@@ -1075,6 +1189,59 @@ const setRegisterOtpMessage = (message = '', tone = 'pending') => {
   registerOtpMessage.classList.toggle('status-warning', tone === 'error');
   registerOtpMessage.classList.toggle('status-pending', tone !== 'success' && tone !== 'error');
 };
+
+accountSettingsForm?.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const payload = getSettingsProfilePayload();
+  if (!payload.name) {
+    setInlineMessage(accountSettingsMessage, 'Full name is required before settings can be saved.', 'error');
+    return;
+  }
+
+  try {
+    if (accountSettingsSubmit) accountSettingsSubmit.disabled = true;
+    setInlineMessage(accountSettingsMessage, 'Saving account settings…');
+    const remoteAccount = await saveRemoteAccountProfile(payload);
+    const savedProfile = remoteAccount.profile || payload;
+    saveAccountProfile(savedProfile);
+    saveAccountSession({ identity: accountIdentity || { email: savedProfile.email }, profile: savedProfile, grant: remoteAccount.grant, role: remoteAccount.role });
+    renderAccountProfile(savedProfile, remoteAccount.grant);
+    setInlineMessage(accountSettingsMessage, 'Account settings saved.', 'success');
+  } catch (error) {
+    setInlineMessage(accountSettingsMessage, error.message || 'Unable to save account settings right now.', 'error');
+  } finally {
+    if (accountSettingsSubmit) accountSettingsSubmit.disabled = false;
+  }
+});
+
+accountPasswordForm?.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const formData = new FormData(accountPasswordForm);
+  const currentPassword = String(formData.get('current_password') || '');
+  const newPassword = String(formData.get('new_password') || '');
+  const newPasswordConfirm = String(formData.get('new_password_confirm') || '');
+
+  if (newPassword.length < 8) {
+    setInlineMessage(accountPasswordMessage, 'New password must be at least 8 characters.', 'error');
+    return;
+  }
+  if (newPassword !== newPasswordConfirm) {
+    setInlineMessage(accountPasswordMessage, 'New password confirmation does not match.', 'error');
+    return;
+  }
+
+  try {
+    if (accountPasswordSubmit) accountPasswordSubmit.disabled = true;
+    setInlineMessage(accountPasswordMessage, 'Updating password…');
+    await changeAccountPassword(currentPassword, newPassword, newPasswordConfirm);
+    accountPasswordForm.reset();
+    setInlineMessage(accountPasswordMessage, 'Password updated. You can keep logging in with password or OTP.', 'success');
+  } catch (error) {
+    setInlineMessage(accountPasswordMessage, error.message || 'Unable to update your password right now.', 'error');
+  } finally {
+    if (accountPasswordSubmit) accountPasswordSubmit.disabled = false;
+  }
+});
 
 forgotPasswordToggle?.addEventListener('click', () => {
   if (loginActions) loginActions.hidden = true;

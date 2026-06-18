@@ -56,6 +56,7 @@ export const onRequestPost = async ({ request, env }) => {
     const notes = String(body.notes || '').trim().slice(0, 4000);
     const profileStatus = requestedRole === 'customer' ? 'active' : 'pending_admin_grant';
     const password = String(body.password || '');
+    const passwordConfirm = String(body.passwordConfirm || body.password_confirm || '');
     const timestamp = nowIso();
 
     if (!email) return privateErrorJson('Verified email is required.', 401);
@@ -64,6 +65,7 @@ export const onRequestPost = async ({ request, env }) => {
     }
     if (!name) return privateErrorJson('Full name is required.', 400);
     if (password && password.length < 8) return privateErrorJson('Password must be at least 8 characters.', 400);
+    if (password && passwordConfirm && password !== passwordConfirm) return privateErrorJson('Password confirmation does not match.', 400);
     const passwordFields = password ? await hashAccountPassword(password) : null;
 
     const db = requireDb(env);
