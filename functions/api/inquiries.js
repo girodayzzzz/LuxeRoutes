@@ -1,4 +1,5 @@
 import { errorJson, json, makeId, normalizeEmail, nowIso, requireDb } from './_utils.js';
+import { cleanAffiliateCode, ensureAffiliateSchema, getAffiliateByCode, recordAffiliateEvent } from './affiliate/_utils.js';
 
 const CONTACT_FIELDS = ['email', 'phone', 'whatsapp'];
 
@@ -30,6 +31,7 @@ const normalizeInquiry = (body) => {
   const email = cleanString(body.email, 320).toLowerCase();
   const phone = cleanString(body.phone || body.whatsapp, 120);
   const sourcePage = cleanString(body.source_page, 220);
+  const affiliateReferralCode = cleanAffiliateCode(body.affiliate_referral_code || body.referral_code || body.ref);
 
   return {
     inquiryType,
@@ -38,6 +40,7 @@ const normalizeInquiry = (body) => {
     email,
     phone,
     sourcePage,
+    affiliateReferralCode,
     hasContact: Boolean(getContactValue(body)),
   };
 };
@@ -79,6 +82,9 @@ export const onRequestPost = async ({ request, env }) => {
       return errorJson('Email or phone is required.', 400);
     }
 
+    await ensureAffiliateSchema(db);
+    const affiliate = inquiry.affiliateReferralCode ? await getAffiliateByCode(db, inquiry.affiliateReferralCode) : null;
+
     const submittedOfferTitle = getSubmittedOfferTitle(body);
     const submittedOffer = await findSubmittedOffer(db, submittedOfferTitle);
     const id = makeId('inquiry');
@@ -98,11 +104,13 @@ export const onRequestPost = async ({ request, env }) => {
         offer_title,
         owner_email,
         manager_email,
+        affiliate_referral_code,
+        affiliate_partner_id,
         status,
         created_at,
         updated_at
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'new', ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'new', ?, ?)
     `).bind(
       id,
       inquiry.inquiryType,
@@ -116,9 +124,21 @@ export const onRequestPost = async ({ request, env }) => {
       submittedOffer?.title || submittedOfferTitle || null,
       normalizeEmail(submittedOffer?.ownerEmail) || null,
       normalizeEmail(submittedOffer?.managerEmail) || null,
+      inquiry.affiliateReferralCode || null,
+      affiliate?.id || null,
       timestamp,
       timestamp,
     ).run();
+
+    if (inquiry.affiliateReferralCode && affiliate?.status === 'active') {
+      await recordAffiliateEvent(db, {
+        affiliate,
+        eventType: 'inquiry',
+        targetUrl: inquiry.submittedFrom,
+        sourceUrl: inquiry.sourcePage,
+        inquiryId: id,
+      });
+    }
 
     return json({ ok: true, id }, { status: 201 });
   } catch (error) {

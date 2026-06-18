@@ -202,11 +202,23 @@
           <article class="admin-card" id="account-settings">
             <div class="card-head"><p class="eyebrow">Settings</p><span class="status-pill">Private profile</span></div>
             <h3>Account settings</h3>
-            <ul class="permission-list">
-              <li><strong>Change email</strong><span>Email changes will require re-verification before saved offers move to the new address.</span></li>
-              <li><strong>Travel preferences</strong><span>Save preferred regions, stay types, budget notes, and guest details for future briefs.</span></li>
-              <li><strong>Privacy controls</strong><span>Request profile updates or deletion from the LuxeRoutes team.</span></li>
-            </ul>
+            <p class="admin-helper">Update the profile details and travel preferences LuxeRoutes uses for future trip briefs.</p>
+            <form class="admin-form account-settings-form" data-account-settings-form>
+              <label>Full name<input name="name" type="text" placeholder="Your name" autocomplete="name" required data-settings-name></label>
+              <label>Company / group<input name="company_name" type="text" placeholder="Optional company or property group" autocomplete="organization" data-settings-company></label>
+              <label class="full">Travel preferences<textarea name="notes" rows="4" placeholder="Preferred regions, stay types, budget notes, guest details, and privacy requests." data-settings-notes></textarea></label>
+              <button class="btn btn-primary" type="submit" data-account-settings-submit>Save settings</button>
+              <p class="admin-helper full" data-account-settings-message>Saved settings stay connected to your verified email.</p>
+            </form>
+            <hr class="admin-divider" />
+            <form class="admin-form account-password-form" data-account-password-form>
+              <h4 class="full">Change password</h4>
+              <label>Current password<input name="current_password" type="password" autocomplete="current-password" required data-current-password></label>
+              <label>New password<input name="new_password" type="password" autocomplete="new-password" minlength="8" required data-new-password></label>
+              <label>Confirm new password<input name="new_password_confirm" type="password" autocomplete="new-password" minlength="8" required data-new-password-confirm></label>
+              <button class="btn btn-secondary" type="submit" data-account-password-submit>Update password</button>
+              <p class="admin-helper full" data-account-password-message>Use your current password; OTP login remains available as a backup.</p>
+            </form>
           </article>
 
           <article class="admin-card">

@@ -63,6 +63,17 @@ If `/login.html` itself is added to a Cloudflare Access app, visitors can see br
 
 Admins can then grant `customer`, `owner`, `manager`, or `admin` access by verified email after D1 is created, the `DB` binding is connected, and the first admin row is seeded. Offers can also be assigned to `owner_email` and `manager_email` in D1 so `/owner-panel.html` and `/manager-panel.html` show only the signed-in role's connected listings, connected stay requests, and owner-managed availability/pricing fields. See [`docs/cloudflare-admin-auth.md`](docs/cloudflare-admin-auth.md) for the full Cloudflare + D1 plan.
 
+## Affiliate referral program
+
+The affiliate program is separate from the core account roles (`customer`, `owner`, `manager`, `admin`). Affiliate applicants submit `become-affiliate.html`, admins review them in the admin console, and approved affiliates use `affiliate-panel.html` to build referral links to any LuxeRoutes page.
+
+Cloudflare setup for affiliates uses the same Pages/D1 project:
+
+1. Apply D1 migrations after deployment, including `migrations/0008_affiliate_partners.sql`, so `affiliate_partners`, `affiliate_events`, and affiliate attribution columns on `inquiries` exist.
+2. Keep `/become-affiliate.html`, `/affiliate-panel.html`, `/api/affiliate/apply`, `/api/affiliate/click`, and `/api/affiliate/stats` public at the Cloudflare Access layer. The stats endpoint still requires the normal LuxeRoutes signed account session before it returns private affiliate data.
+3. Keep `/api/admin/affiliates` protected by the existing admin Cloudflare Access application together with `/api/admin/*`.
+4. Approved affiliates should continue using the public LuxeRoutes login flow; do not add each affiliate to Cloudflare Zero Trust unless they are also internal admins.
+
 ## Content workflow
 
 Offer source content lives under `content/offers`. To regenerate offer cards locally, run:

@@ -5,6 +5,53 @@ document.querySelectorAll('[data-current-year]').forEach((year) => {
 });
 
 const navAccountSessionKey = 'luxeroutes-account-session-v1';
+const affiliateReferralStorageKey = 'luxeroutes-affiliate-referral-v1';
+
+const getStoredAffiliateReferral = () => {
+  try {
+    return JSON.parse(localStorage.getItem(affiliateReferralStorageKey) || 'null');
+  } catch (error) {
+    return null;
+  }
+};
+
+const storeAffiliateReferral = (referralCode) => {
+  const cleanCode = String(referralCode || '').trim().toLowerCase().replace(/[^a-z0-9-]/g, '').replace(/-/g, '');
+  if (!cleanCode) return null;
+  const referral = { code: cleanCode, capturedAt: new Date().toISOString(), landingPage: window.location.href };
+  try { localStorage.setItem(affiliateReferralStorageKey, JSON.stringify(referral)); } catch (error) {}
+  return referral;
+};
+
+const getAffiliateVisitorKey = () => {
+  const key = 'luxeroutes-affiliate-visitor-v1';
+  try {
+    const existing = localStorage.getItem(key);
+    if (existing) return existing;
+    const next = `visitor-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    localStorage.setItem(key, next);
+    return next;
+  } catch (error) {
+    return '';
+  }
+};
+
+const trackAffiliateReferralVisit = async () => {
+  const params = new URLSearchParams(window.location.search);
+  const referral = storeAffiliateReferral(params.get('ref') || params.get('affiliate') || params.get('referral')) || getStoredAffiliateReferral();
+  if (!referral?.code) return;
+  try {
+    await fetch('/api/affiliate/click', {
+      method: 'POST',
+      headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify({ referralCode: referral.code, targetUrl: window.location.href, sourceUrl: document.referrer, visitorKey: getAffiliateVisitorKey() }),
+    });
+  } catch (error) {}
+};
+
+trackAffiliateReferralVisit();
+
 
 const parseAccountSession = (stored) => {
   try {
@@ -332,6 +379,9 @@ const collectInquiryPayload = (form, formData) => {
     submitted_at: new Date().toISOString(),
   };
 
+  const affiliateReferral = getStoredAffiliateReferral();
+  if (affiliateReferral?.code) payload.affiliate_referral_code = affiliateReferral.code;
+
   formData.forEach((value, key) => {
     const cleanValue = String(value).trim();
     if (key === 'website' || !cleanValue) return;
@@ -393,6 +443,62 @@ const submitInquiryPayload = async (endpoint, payload, formData) => {
   if (!response.ok) throw new Error(`Inquiry endpoint returned ${response.status}`);
   return response;
 };
+
+document.querySelectorAll('[data-affiliate-application-form]').forEach((form) => {
+  const status = document.createElement('p');
+  status.className = 'form-status';
+  status.setAttribute('role', 'status');
+  form.append(status);
+
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const formData = new FormData(form);
+    if (String(formData.get('website') || '').trim()) {
+      status.textContent = 'Thank you. Your affiliate application has been received.';
+      form.reset();
+      return;
+    }
+
+    const payload = Object.fromEntries(formData.entries());
+    const submitButton = form.querySelector('button[type="submit"]');
+    if (submitButton) submitButton.disabled = true;
+    form.setAttribute('aria-busy', 'true');
+    status.classList.remove('is-error', 'is-success');
+    status.textContent = 'Sending your affiliate application to LuxeRoutes…';
+
+    try {
+      const response = await fetch(form.dataset.endpoint || '/api/affiliate/apply', {
+        method: 'POST',
+        headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify(payload),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || 'Unable to send your affiliate application.');
+      status.classList.add('is-success');
+      status.textContent = 'Thank you. Your affiliate application is pending admin review.';
+      form.reset();
+    } catch (error) {
+      status.classList.add('is-error');
+      status.textContent = error.message || 'Unable to send your affiliate application right now.';
+    } finally {
+      form.removeAttribute('aria-busy');
+      if (submitButton) submitButton.disabled = false;
+      status.focus();
+    }
+  });
+});
+
+
+document.querySelectorAll('.site-footer ul').forEach((list) => {
+  if (list.querySelector('a[href="become-affiliate.html"]')) return;
+  const item = document.createElement('li');
+  const link = document.createElement('a');
+  link.href = 'become-affiliate.html';
+  link.textContent = 'Become an Affiliate';
+  item.append(link);
+  list.append(item);
+});
 
 document.querySelectorAll('[data-inquiry-form]').forEach((form, formIndex) => {
   const status = document.createElement('p');

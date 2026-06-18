@@ -21,6 +21,7 @@ let profiles = [];
 let grants = [];
 let inquiries = [];
 let offers = [];
+let affiliates = [];
 
 const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (character) => ({
   '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;',
@@ -89,21 +90,28 @@ const renderInquiries = () => {
   if (!inquiriesTarget) return;
   inquiriesTarget.innerHTML = inquiries.map((inquiry) => `<tr><td><strong>${escapeHtml(inquiry.name || 'Unnamed')}</strong><br><small>${escapeHtml(inquiry.email || inquiry.phone || 'No contact')}</small></td><td>${escapeHtml(inquiry.inquiryType)}</td><td>${escapeHtml(formatDate(inquiry.createdAt))}</td><td><select data-inquiry-status data-id="${escapeHtml(inquiry.id)}" aria-label="Status for ${escapeHtml(inquiry.inquiryType)}">${['new', 'in_progress', 'waiting', 'approved', 'resolved', 'closed', 'declined'].map((status) => `<option value="${status}" ${inquiry.status === status ? 'selected' : ''}>${statusLabel(status)}</option>`).join('')}</select></td><td><button class="mini-action" type="button" data-inquiry-detail="${escapeHtml(inquiry.id)}">View details</button>${isPropertyInquiry(inquiry) && !offers.some((offer) => offer.sourceInquiryId === inquiry.id) ? ` <button class="mini-action" type="button" data-publish-inquiry="${escapeHtml(inquiry.id)}">Publish stay</button>` : ''}</td></tr>`).join('') || '<tr><td colspan="5" class="empty-state">No inquiries received yet.</td></tr>';
 };
+const renderAffiliates = () => {
+  if (!affiliatesTarget) return;
+  affiliatesTarget.innerHTML = affiliates.map((affiliate) => `<tr><td><strong>${escapeHtml(affiliate.name || affiliate.email)}</strong><br><small>${escapeHtml(affiliate.email || '')}${affiliate.website ? ` · <a href="${escapeHtml(affiliate.website)}" target="_blank" rel="noopener noreferrer">website</a>` : ''}</small><br><small>${escapeHtml(affiliate.audience || '')}</small></td><td>${escapeHtml(statusLabel(affiliate.status || 'pending_review'))}</td><td><code>${escapeHtml(affiliate.referralCode || '')}</code></td><td>${Number(affiliate.visits || 0)} visits<br>${Number(affiliate.inquiries || 0)} inquiries<br>${Number(affiliate.totalEvents || 0)} events</td><td><form class="inline-role-form" data-affiliate-form data-id="${escapeHtml(affiliate.id)}"><select name="status" aria-label="Affiliate status for ${escapeHtml(affiliate.email || '')}">${['pending_review', 'active', 'paused', 'rejected'].map((status) => `<option value="${status}" ${(affiliate.status || 'pending_review') === status ? 'selected' : ''}>${statusLabel(status)}</option>`).join('')}</select><input name="referralCode" value="${escapeHtml(affiliate.referralCode || '')}" placeholder="referralcode" /><textarea name="note" rows="2" placeholder="Admin note">${escapeHtml(affiliate.note || '')}</textarea><button class="mini-action" type="submit">Save</button></form></td></tr>`).join('') || '<tr><td colspan="5" class="empty-state">No affiliate applications yet.</td></tr>';
+};
+
 const renderOffers = () => {
   if (!offersTarget) return;
   const partnerStatuses = ['draft', 'pending_review', 'changes_requested', 'approved', 'published', 'archived'];
   offersTarget.innerHTML = offers.map((offer) => `<tr><td><strong>${escapeHtml(offer.title)}</strong><br><small>${escapeHtml(offer.locationLabel)}</small></td><td>${escapeHtml(roleLabel(offer.stayType))}<br><small>${escapeHtml(offer.country)} · ${escapeHtml(offer.region)}</small></td><td>${escapeHtml(statusLabel(offer.status))}<br><small>${escapeHtml(statusLabel(offer.partnerStatus || 'pending_review'))}</small></td><td><form class="inline-offer-form" data-offer-form data-id="${escapeHtml(offer.id)}"><label>Owner email<input type="email" name="ownerEmail" value="${escapeHtml(offer.ownerEmail || '')}" placeholder="owner@example.com" /></label><label>Manager email<input type="email" name="managerEmail" value="${escapeHtml(offer.managerEmail || '')}" placeholder="manager@example.com" /></label><label>Partner status<select name="partnerStatus">${partnerStatuses.map((status) => `<option value="${status}" ${(offer.partnerStatus || 'pending_review') === status ? 'selected' : ''}>${statusLabel(status)}</option>`).join('')}</select></label><label>Owner note<textarea name="ownerNotes" rows="2" placeholder="Message visible in owner panel">${escapeHtml(offer.ownerNotes || '')}</textarea></label><label>Manager note<textarea name="managerNotes" rows="2" placeholder="Message visible in manager panel">${escapeHtml(offer.managerNotes || '')}</textarea></label><button class="mini-action" type="submit">Save assignments</button></form></td><td>${escapeHtml(formatDate(offer.updatedAt))}</td><td><div class="admin-action-stack">${offer.status === 'published' ? `<button class="mini-action" type="button" data-offer-status="unpublished" data-partner-status="approved" data-id="${escapeHtml(offer.id)}">Unpublish</button>` : `<button class="mini-action" type="button" data-offer-status="published" data-partner-status="published" data-id="${escapeHtml(offer.id)}">Approve & publish</button>`}<button class="mini-action" type="button" data-offer-status="unpublished" data-partner-status="changes_requested" data-id="${escapeHtml(offer.id)}">Request changes</button><button class="mini-action" type="button" data-offer-status="unpublished" data-partner-status="archived" data-id="${escapeHtml(offer.id)}">Decline/archive</button></div></td></tr>`).join('') || '<tr><td colspan="6" class="empty-state">No database-backed stay offers yet.</td></tr>';
 };
-const renderAll = () => { renderStats(); renderApplications(); renderMembers(); renderInquiries(); renderOffers(); };
+const renderAll = () => { renderStats(); renderApplications(); renderMembers(); renderInquiries(); renderAffiliates();
+    renderOffers(); };
 const loadAdminData = async () => {
   showAlert('');
   if (refreshButton) refreshButton.disabled = true;
   try {
-    const [grantData, inquiryData, offerData] = await Promise.all([requestJson('/api/admin/grants'), requestJson('/api/admin/inquiries'), requestJson('/api/admin/offers')]);
+    const [grantData, inquiryData, offerData, affiliateData] = await Promise.all([requestJson('/api/admin/grants'), requestJson('/api/admin/inquiries'), requestJson('/api/admin/offers'), requestJson('/api/admin/affiliates')]);
     profiles = Array.isArray(grantData.profiles) ? grantData.profiles : [];
     grants = Array.isArray(grantData.grants) ? grantData.grants : [];
     inquiries = Array.isArray(inquiryData.inquiries) ? inquiryData.inquiries : [];
     offers = Array.isArray(offerData.offers) ? offerData.offers : [];
+    affiliates = Array.isArray(affiliateData.affiliates) ? affiliateData.affiliates : [];
     renderAll();
   } catch (error) { showAlert(error.message); } finally { if (refreshButton) refreshButton.disabled = false; }
 };
@@ -170,6 +178,20 @@ document.addEventListener('submit', async (event) => {
     }
     return;
   }
+  const affiliateForm = event.target.closest('[data-affiliate-form]');
+  if (affiliateForm) {
+    event.preventDefault();
+    const formData = new FormData(affiliateForm);
+    try {
+      await requestJson('/api/admin/affiliates', { method: 'PATCH', body: JSON.stringify({ id: affiliateForm.dataset.id, status: formData.get('status'), referralCode: formData.get('referralCode'), note: formData.get('note') }) });
+      showAlert('Affiliate partner saved.', 'success');
+      await loadAdminData();
+    } catch (error) {
+      showAlert(error.message);
+    }
+    return;
+  }
+
   const memberForm = event.target.closest('[data-member-form]');
   if (memberForm) { event.preventDefault(); try { await saveGrant({ email: memberForm.dataset.email, role: new FormData(memberForm).get('role'), note: 'Role updated from admin console' }); } catch (error) { showAlert(error.message); } return; }
   if (event.target === grantForm) { event.preventDefault(); const data = new FormData(grantForm); try { await saveGrant({ email: data.get('email'), role: data.get('role'), note: data.get('note') }); grantForm.reset(); } catch (error) { showAlert(error.message); } return; }

@@ -267,10 +267,10 @@ class FakeStatement {
         businessContext,
         notes,
         status: requestedRole === 'customer' ? 'active' : status,
-        passwordHash,
-        passwordSalt,
-        passwordIterations,
-        passwordEnabled,
+        passwordHash: passwordHash || existing?.passwordHash || null,
+        passwordSalt: passwordSalt || existing?.passwordSalt || null,
+        passwordIterations: passwordIterations || existing?.passwordIterations || null,
+        passwordEnabled: passwordEnabled || existing?.passwordEnabled || 0,
         createdAt: existing?.createdAt || createdAt,
         updatedAt,
       };
@@ -283,6 +283,13 @@ class FakeStatement {
       if (!this.db.grants.some((grant) => grant.email === email)) {
         this.db.grants.unshift({ id, email, role: 'customer', note: 'Default customer role from account registration', grantedByEmail: null, status: 'active', createdAt, updatedAt });
       }
+      return { success: true };
+    }
+
+    if (sql.includes('UPDATE profiles') && sql.includes('password_hash')) {
+      const [passwordHash, passwordSalt, passwordIterations, updatedAt, email] = this.params;
+      const profile = this.db.profiles.find((item) => item.email.trim().toLowerCase() === email);
+      if (profile) Object.assign(profile, { passwordHash, passwordSalt, passwordIterations, passwordEnabled: 1, updatedAt });
       return { success: true };
     }
 
@@ -487,11 +494,57 @@ assert.match(passwordLoginResponse.headers.get('Set-Cookie') || '', /luxeroutes_
 const passwordLoginPayload = await passwordLoginResponse.json();
 assert.equal(passwordLoginPayload.role, 'customer', 'Password login should resolve the customer role.');
 
+const wrongPasswordResponse = await otpModule.onRequestPost({
+  request: new Request('https://luxeroutes.test/api/auth/otp?action=password', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    body: JSON.stringify({ email: 'password@example.com', password: 'wrong-password' }),
+  }),
+  env,
+});
+assert.equal(wrongPasswordResponse.status, 401, 'Wrong password must not create a logged-in account session.');
+assert.match((await wrongPasswordResponse.json()).error, /password is not correct/, 'Wrong password should return an actionable password error.');
+assert.equal(wrongPasswordResponse.headers.get('Set-Cookie'), null, 'Wrong password must not set an account session cookie.');
+
+const mismatchedPasswordRegistrationResponse = await accountModule.onRequestPost({
+  request: makeRequest('confirm@example.com', {
+    name: 'Confirm Example',
+    requestedRole: 'customer',
+    password: 'secure-password-123',
+    passwordConfirm: 'different-password-123',
+  }),
+  env,
+});
+assert.equal(mismatchedPasswordRegistrationResponse.status, 400, 'Registration should reject mismatched password confirmation.');
+
 const sessionCookie = await utilsModule.createAccountSessionCookie({ AUTH_SESSION_SECRET: 'test-secret' }, 'OWNER@example.com');
 assert.match(sessionCookie, /luxeroutes_account_session=.*Max-Age=14400; HttpOnly; Secure; SameSite=Lax/, 'OTP login should create a secure four-hour account session cookie by default.');
 const rememberedSessionCookie = await utilsModule.createAccountSessionCookie({ AUTH_SESSION_SECRET: 'test-secret' }, 'OWNER@example.com', { remember: true });
 assert.match(rememberedSessionCookie, /Max-Age=2592000; HttpOnly; Secure; SameSite=Lax/, 'Remembered OTP login should create a 30-day account session cookie.');
 const sessionCookieHeader = sessionCookie.split(';')[0];
+const passwordSessionCookie = await utilsModule.createAccountSessionCookie({ AUTH_SESSION_SECRET: 'test-secret' }, 'password@example.com');
+const passwordSessionCookieHeader = passwordSessionCookie.split(';')[0];
+const wrongCurrentPasswordChangeResponse = await otpModule.onRequestPost({
+  request: new Request('https://luxeroutes.test/api/auth/otp?action=change-password', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json', Cookie: passwordSessionCookieHeader },
+    body: JSON.stringify({ currentPassword: 'wrong-password', newPassword: 'changed-password-123', newPasswordConfirm: 'changed-password-123' }),
+  }),
+  env,
+});
+assert.equal(wrongCurrentPasswordChangeResponse.status, 401, 'Changing password should require the current password.');
+assert.match((await wrongCurrentPasswordChangeResponse.json()).error, /Current password is not correct/, 'Wrong current password should return a clear account settings error.');
+
+const changePasswordResponse = await otpModule.onRequestPost({
+  request: new Request('https://luxeroutes.test/api/auth/otp?action=change-password', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json', Cookie: passwordSessionCookieHeader },
+    body: JSON.stringify({ currentPassword: 'secure-password-123', newPassword: 'changed-password-123', newPasswordConfirm: 'changed-password-123' }),
+  }),
+  env,
+});
+assert.equal(changePasswordResponse.status, 200, 'Signed-in users should be able to change their password from account settings.');
+
 const cookieEmail = await utilsModule.getAccountSessionEmail(new Request('https://luxeroutes.test/api/account', {
   headers: { Cookie: 'luxeroutes_account_session=legacy' },
 }), { AUTH_SESSION_SECRET: 'test-secret' });

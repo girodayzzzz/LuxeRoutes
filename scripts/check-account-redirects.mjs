@@ -220,8 +220,8 @@ assert.deepEqual(ownerOnOwnerPanel.redirects, [], 'Approved owners should stay o
 assert.equal(ownerOnOwnerPanel.body.dataset.accountLocked, 'false', 'Approved owners should unlock the owner workspace.');
 assert.equal(ownerOnOwnerPanel.elements['[data-account-heading]'].textContent, 'Owner access confirmed', 'Owner panel status heading should confirm owner access.');
 assert.equal(ownerOnOwnerPanel.elements['[data-account-email]'].textContent, 'owner@example.com', 'Owner panel should display the verified owner email.');
-assert.equal(ownerOnOwnerPanel.elements['[data-account-role]'].textContent, 'owner', 'Owner panel should display the resolved owner role.');
-assert.match(ownerOnOwnerPanel.elements['[data-account-status]'].textContent, /active owner access/, 'Owner panel status should explain active owner access.');
+assert.equal(ownerOnOwnerPanel.elements['[data-account-role]'].textContent, 'Owner', 'Owner panel should display the resolved owner role.');
+assert.match(ownerOnOwnerPanel.elements['[data-account-status]'].textContent, /Owner role/, 'Owner panel status should explain active owner access.');
 
 const customerAccountResponse = new Response(JSON.stringify({
   identityEmail: 'customer@example.com',

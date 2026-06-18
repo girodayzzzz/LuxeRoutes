@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Affiliate Dashboard | LuxeRoutes</title>
+  <meta name="description" content="Track LuxeRoutes affiliate referral links, visits, and inquiries." />
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@600;700;800&display=swap" rel="stylesheet" />
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <link rel="manifest" href="site.webmanifest" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body class="admin-page account-page account-dashboard-page affiliate-dashboard-page" data-account-locked="true">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+  <header class="site-header" data-header><div class="header-top"><div class="container header-top-inner"><span>Affiliate dashboard</span><a href="mailto:info@luxeroutes.eu">info@luxeroutes.eu</a><span>Referral links · Visits · Inquiries</span></div></div><div class="container nav-shell"><a class="brand" href="index.html"><img src="logo.svg" alt="LuxeRoutes" width="620" height="160" /></a><nav id="primary-navigation" class="primary-nav"><a href="account.html" class="nav-link">Account</a><a href="login.html" class="nav-link" data-nav-login>Login</a><a href="account.html" class="nav-link" data-nav-account hidden>Account</a></nav></div></header>
+  <main id="main-content"><section class="admin-hero"><div class="container admin-hero-grid"><div><p class="eyebrow">LuxeRoutes affiliate</p><h1>Your referral workspace.</h1><p class="admin-lead">Create referral links to any LuxeRoutes page and review tracked visits and inquiries.</p><div class="button-row"><a class="btn btn-primary" href="#affiliate-links">Create referral link</a><button class="btn btn-secondary" type="button" data-account-logout hidden>Logout</button></div></div><aside class="admin-login-card"><p class="eyebrow">Affiliate access</p><h2 data-account-heading>Checking session</h2><p data-account-status>Checking affiliate access.</p><div class="admin-auth-meta"><span class="status-pill status-pending" data-account-role>Verifying</span><span data-account-email>Email pending</span></div></aside></div></section>
+  <section class="section admin-workspace" id="affiliate-workspace"><div class="container admin-grid two"><article class="admin-card" data-affiliate-panel><div class="card-head"><p class="eyebrow">Referral stats</p><span class="status-pill" data-affiliate-status>Pending</span></div><h3 data-affiliate-heading>Loading affiliate dashboard</h3><p class="admin-helper" data-affiliate-message>Approved affiliate partners can track visits and inquiries here.</p><div class="admin-stats"><article><span data-affiliate-visits>0</span><small>Tracked visits</small></article><article><span data-affiliate-inquiries>0</span><small>Tracked inquiries</small></article><article><span data-affiliate-total>0</span><small>Total events</small></article></div></article><article class="admin-card" id="affiliate-links"><div class="card-head"><p class="eyebrow">Link builder</p><span class="status-pill status-approved">Referral</span></div><h3>Create a tracked link</h3><form class="admin-form" data-affiliate-link-form><label class="full">Destination URL<input name="target" type="url" placeholder="https://luxeroutes.eu/plan-trip.html" data-affiliate-target /></label><button class="btn btn-primary" type="submit">Generate referral link</button><p class="admin-helper full" data-affiliate-link-output>Your referral link will appear here after affiliate approval.</p></form></article><article class="admin-card"><div class="card-head"><p class="eyebrow">Profile</p><span class="status-pill">Account</span></div><h3>Current access</h3><div class="stack-list" data-account-profile></div></article></div></section></main>
+  <footer class="site-footer"><div class="container footer-bottom"><p>© <span data-current-year>2026</span> LuxeRoutes.</p><p>Affiliate dashboard.</p></div></footer>
+  <script src="script.js"></script><script src="account.js"></script>
+</body>
+</html>
