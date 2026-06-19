@@ -21,6 +21,53 @@ export const normalizeEmail = (email) => String(email || '').trim().toLowerCase(
 
 export const isValidRole = (role, roles = ROLE_ORDER) => roles.includes(role);
 
+
+const RESEND_ENDPOINT = 'https://api.resend.com/emails';
+
+export const getEnvValue = (env = {}, keys = []) => keys
+  .map((key) => String(env[key] || '').trim())
+  .find(Boolean) || '';
+
+const normalizeEmailList = (value) => String(value || '')
+  .split(/[;,\n]+/)
+  .map(normalizeEmail)
+  .filter((email) => email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email));
+
+export const getNotificationRecipients = (env = {}, keys = []) => [...new Set(normalizeEmailList(getEnvValue(env, keys)))];
+
+export const sendTransactionalEmail = async (env = {}, { to, subject, text, html, from } = {}) => {
+  const apiKey = getEnvValue(env, ['RESEND_API_KEY', 'RESEND_API_TOKEN', 'RESEND_TOKEN']);
+  const recipients = Array.isArray(to) ? to.map(normalizeEmail).filter(Boolean) : normalizeEmailList(to);
+  const sender = String(from || getEnvValue(env, ['NOTIFICATION_EMAIL_FROM', 'OTP_EMAIL_FROM', 'RESEND_EMAIL_FROM', 'RESEND_FROM_EMAIL', 'EMAIL_FROM', 'FROM_EMAIL']) || 'LuxeRoutes <login@luxeroutes.eu>').trim();
+
+  if (!apiKey || recipients.length === 0 || !subject || (!text && !html)) {
+    return { sent: false, skipped: true };
+  }
+
+  const response = await fetch(RESEND_ENDPOINT, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      from: sender,
+      to: recipients.length === 1 ? recipients[0] : recipients,
+      subject,
+      ...(text ? { text } : {}),
+      ...(html ? { html } : {}),
+    }),
+  });
+
+  if (!response.ok) {
+    const details = await response.text().catch(() => '');
+    throw new Error(`Notification email delivery failed (${response.status}). ${details}`.trim());
+  }
+
+  return { sent: true };
+};
+
+
 const normalizeRole = (role) => (isValidRole(role) ? role : 'customer');
 
 const getCloudflareAccessJwt = (request) => {

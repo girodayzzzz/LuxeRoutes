@@ -1,4 +1,4 @@
-import { makeId, nowIso, privateErrorJson, privateJson, requireAccountRole } from '../_utils.js';
+import { getNotificationRecipients, makeId, nowIso, privateErrorJson, privateJson, requireAccountRole, sendTransactionalEmail } from '../_utils.js';
 
 const COUNTRIES = ['slovenia', 'croatia', 'italy', 'austria', 'switzerland', 'france'];
 const REGIONS = ['alps', 'adriatic', 'lakes', 'wine-country', 'city', 'countryside', 'riviera'];
@@ -20,6 +20,29 @@ const safeImageUrl = (value) => {
   } catch (error) {
     return '';
   }
+};
+
+
+const notifyAdminsOfOwnerOffer = async (env, offer, ownerEmail, origin) => {
+  const recipients = getNotificationRecipients(env, ['OWNER_OFFER_ADMIN_EMAILS', 'ADMIN_NOTIFICATION_EMAILS', 'ADMIN_EMAILS']);
+  if (recipients.length === 0) return;
+
+  const adminUrl = `${origin || 'https://luxeroutes.eu'}/admin/offers.html`;
+  await sendTransactionalEmail(env, {
+    to: recipients,
+    subject: `New owner offer waiting for review: ${offer.title}`,
+    text: [
+      'A LuxeRoutes owner submitted a new offer for admin review.',
+      '',
+      `Title: ${offer.title}`,
+      `Owner: ${ownerEmail}`,
+      `Category: ${offer.stayType}`,
+      `Location: ${offer.locationLabel}`,
+      `Status: ${String(offer.partnerStatus || 'pending_review').replaceAll('_', ' ')}`,
+      '',
+      `Review it here: ${adminUrl}`,
+    ].join('\n'),
+  });
 };
 
 const ownerOfferSelect = `
@@ -152,6 +175,12 @@ export const onRequestPost = async ({ request, env }) => {
     ).run();
 
     const saved = await auth.db.prepare(`${ownerOfferSelect} WHERE id = ? LIMIT 1`).bind(offer.id).first();
+    try {
+      const origin = new URL(request.url).origin;
+      await notifyAdminsOfOwnerOffer(env, saved || offer, auth.email, origin);
+    } catch (notificationError) {
+      console.warn('Owner offer admin notification failed:', notificationError.message || notificationError);
+    }
     return privateJson({ offer: saved }, { status: 201 });
   } catch (error) {
     if (String(error.message).includes('UNIQUE')) return privateErrorJson('An offer with this generated slug already exists. Please submit again.', 409);
