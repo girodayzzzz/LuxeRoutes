@@ -100,8 +100,8 @@
                 <input name="password" type="password" placeholder="Your password" autocomplete="current-password" data-login-password-input>
               </label>
               <label class="auth-checkbox"><input type="checkbox" data-login-remember-input> Keep me signed in on this device</label>
-              <button class="btn btn-primary" type="submit" data-login-password-submit>Sign in with password</button>
-              <button class="btn btn-secondary" type="submit" data-login-otp-submit>Email me a login code</button>
+              <button class="btn btn-primary" type="submit" formaction="/api/auth/otp?action=password" formmethod="post" data-login-password-submit>Sign in with password</button>
+              <button class="btn btn-secondary" type="submit" formaction="/api/auth/otp" formmethod="post" data-login-otp-submit>Email me a login code</button>
               <a class="btn btn-secondary" href="register.html">Don't have an account? Register here</a>
             </div>
             <div class="login-step" data-login-code-step hidden>
