@@ -50,6 +50,7 @@ If `/login.html` shows `Missing RESEND_API_KEY for OTP email delivery`, the depl
 - Verify the exact domain `luxeroutes.eu` in Resend before creating the API key. If Resend shows `luxeroues.eu`, delete/fix it because that typo will not verify the `login@luxeroutes.eu` sender. If Resend auto-configured the Cloudflare DNS records, do not add duplicate DKIM/SPF/MX records manually; confirm the records exist in Cloudflare DNS, then click **Verify DNS Records** in Resend. If auto-configuration did not create them, add Resend's generated DNS records in Cloudflare DNS: `TXT resend._domainkey`, `MX send` to `feedback-smtp.us-east-1.amazonses.com` with priority `10`, `TXT send` with `v=spf1 include:amazonses.com ~all`, and optional `TXT _dmarc` with `v=DMARC1; p=none;`.
 - Add one more **secret** named `AUTH_SESSION_SECRET`; this is the only missing item if Cloudflare already shows `CLOUDFLARE_ACCESS_AUD`, `CLOUDFLARE_ACCESS_TEAM_DOMAIN`, `OTP_EMAIL_FROM`, and encrypted `RESEND_API_KEY`. Its value must be your own random string, generated with `openssl rand -base64 32`; do not reuse the Resend API key.
 - Confirm `OTP_EMAIL_FROM` matches a verified Resend sender/domain, for example `LuxeRoutes <login@luxeroutes.eu>`.
+- Optional owner-offer notifications use the same Resend key. Set `OWNER_OFFER_ADMIN_EMAILS` (comma-separated) so admins are emailed when approved owners submit listings, and set `NOTIFICATION_EMAIL_FROM` if those emails should use a different verified sender than `OTP_EMAIL_FROM`. Owners are emailed automatically when admins approve, publish, or request changes on their offers.
 - Redeploy the Pages project after saving production runtime variables, then test `/login.html` again.
 
 For local Pages preview, copy `.dev.vars.example` to `.dev.vars` and fill in real secret values; `.dev.vars` is ignored by Git.
@@ -61,7 +62,7 @@ Use Cloudflare Access only for the admin surface:
 
 If `/login.html` itself is added to a Cloudflare Access app, visitors can see browser `ERR_TOO_MANY_REDIRECTS` errors before the branded login page loads.
 
-Admins can then grant `customer`, `owner`, `manager`, or `admin` access by verified email after D1 is created, the `DB` binding is connected, and the first admin row is seeded. Offers can also be assigned to `owner_email` and `manager_email` in D1 so `/owner-panel.html` and `/manager-panel.html` show only the signed-in role's connected listings, connected stay requests, and owner-managed availability/pricing fields. See [`docs/cloudflare-admin-auth.md`](docs/cloudflare-admin-auth.md) for the full Cloudflare + D1 plan.
+Admins can then grant `customer`, `owner`, `manager`, or `admin` access by verified email after D1 is created, the `DB` binding is connected, and the first admin row is seeded. Offers can also be assigned to `owner_email` and `manager_email` in D1 so `/owner-panel.html` and `/manager-panel.html` show only the signed-in role's connected listings, connected stay requests, and owner-managed availability/pricing fields. See [`docs/cloudflare-admin-auth.md`](docs/cloudflare-admin-auth.md) for the full Cloudflare + D1 plan. For an owner-specific registration, approval, login, and offer-submission checklist, see [`docs/owner-account-workflow.md`](docs/owner-account-workflow.md).
 
 ## Affiliate referral program
 

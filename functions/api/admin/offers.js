@@ -1,4 +1,4 @@
-import { makeId, nowIso, privateErrorJson, privateJson, requireAdmin } from '../_utils.js';
+import { makeId, nowIso, privateErrorJson, privateJson, requireAdmin, sendTransactionalEmail } from '../_utils.js';
 
 const COUNTRIES = ['slovenia', 'croatia', 'italy', 'austria', 'switzerland', 'france'];
 const REGIONS = ['alps', 'adriatic', 'lakes', 'wine-country', 'city', 'countryside', 'riviera'];
@@ -23,6 +23,51 @@ const safeImageUrl = (value) => {
 const normalizeOptions = (value) => {
   const values = Array.isArray(value) ? value : cleanString(value, 500).split(/[\s,]+/);
   return [...new Set(values.map((item) => cleanString(item, 80)).filter((item) => OPTIONS.includes(item)))].join(' ');
+};
+
+
+const getOwnerOfferDecision = (offer = {}) => {
+  const partnerStatus = String(offer.partnerStatus || '').toLowerCase();
+  if (offer.status === 'published' || partnerStatus === 'published') return 'published';
+  if (partnerStatus === 'approved') return 'approved';
+  if (partnerStatus === 'changes_requested') return 'changes_requested';
+  return '';
+};
+
+const notifyOwnerOfOfferDecision = async (env, offer = {}, origin = '') => {
+  if (!offer.ownerEmail) return;
+  const decision = getOwnerOfferDecision(offer);
+  if (!decision) return;
+
+  const ownerUrl = `${origin || 'https://luxeroutes.eu'}/owner-panel.html#owner-properties`;
+  const decisionCopy = {
+    published: 'published on LuxeRoutes',
+    approved: 'approved and waiting for final publishing',
+    changes_requested: 'reviewed with changes requested',
+  }[decision];
+
+  await sendTransactionalEmail(env, {
+    to: offer.ownerEmail,
+    subject: `Your LuxeRoutes offer was ${decisionCopy}: ${offer.title}`,
+    text: [
+      `Good news from LuxeRoutes — your offer "${offer.title}" was ${decisionCopy}.`,
+      '',
+      offer.ownerNotes ? `Owner note: ${offer.ownerNotes}` : '',
+      offer.managerEmail ? `Assigned manager: ${offer.managerEmail}` : '',
+      '',
+      `Open your owner panel for details: ${ownerUrl}`,
+    ].filter(Boolean).join('\n'),
+  });
+};
+
+const shouldNotifyOwner = (before = null, after = {}, body = {}) => {
+  if (!after?.ownerEmail) return false;
+  const beforeDecision = getOwnerOfferDecision(before || {});
+  const afterDecision = getOwnerOfferDecision(after);
+  if (!afterDecision) return false;
+  if (!before || before.ownerEmail !== after.ownerEmail) return true;
+  if (beforeDecision !== afterDecision) return true;
+  return body.ownerNotes !== undefined && ['approved', 'published', 'changes_requested'].includes(afterDecision);
 };
 
 const offerSelect = `
@@ -126,6 +171,13 @@ export const onRequestPost = async ({ request, env }) => {
       `).bind(offer.status, id, offer.title, offer.ownerEmail, offer.managerEmail, timestamp, offer.sourceInquiryId).run();
     }
     const saved = await auth.db.prepare(`${offerSelect} WHERE id = ? LIMIT 1`).bind(id).first();
+    if (shouldNotifyOwner(null, saved, body)) {
+      try {
+        await notifyOwnerOfOfferDecision(env, saved, new URL(request.url).origin);
+      } catch (notificationError) {
+        console.warn('Owner offer decision notification failed:', notificationError.message || notificationError);
+      }
+    }
     return privateJson({ offer: saved }, { status: 201 });
   } catch (error) {
     if (String(error.message).includes('UNIQUE')) return privateErrorJson('This inquiry or offer slug has already been published.', 409);
@@ -151,6 +203,9 @@ export const onRequestPatch = async ({ request, env }) => {
     if (partnerStatus && !PARTNER_STATUSES.includes(partnerStatus)) return privateErrorJson('Invalid partner status.', 400);
     if (ownerEmail && !ownerEmail.includes('@')) return privateErrorJson('Owner email must be a valid email address.', 400);
     if (managerEmail && !managerEmail.includes('@')) return privateErrorJson('Manager email must be a valid email address.', 400);
+    const existingOffer = await auth.db.prepare(`${offerSelect} WHERE id = ? LIMIT 1`).bind(id).first();
+    if (!existingOffer) return privateErrorJson('Offer not found.', 404);
+
     const timestamp = nowIso();
     await auth.db.prepare(`
       UPDATE stay_offers
@@ -169,6 +224,14 @@ export const onRequestPatch = async ({ request, env }) => {
       managerNotes, timestamp, id).run();
     const offer = await auth.db.prepare(`${offerSelect} WHERE id = ? LIMIT 1`).bind(id).first();
     if (!offer) return privateErrorJson('Offer not found.', 404);
+
+    if (shouldNotifyOwner(existingOffer, offer, body)) {
+      try {
+        await notifyOwnerOfOfferDecision(env, offer, new URL(request.url).origin);
+      } catch (notificationError) {
+        console.warn('Owner offer decision notification failed:', notificationError.message || notificationError);
+      }
+    }
 
     if (body.ownerEmail !== undefined || body.managerEmail !== undefined) {
       await auth.db.prepare(`

@@ -1163,6 +1163,7 @@ accountForm?.addEventListener('submit', async (event) => {
       approved: true,
     });
     setRegisterProgressStep('done');
+    showRegisterCompleteState(savedProfile, remoteAccount);
     if (registerOtpCodeWrap) registerOtpCodeWrap.hidden = true;
     if (registerOtpCodeInput) registerOtpCodeInput.required = false;
   } catch (error) {
@@ -1223,6 +1224,31 @@ const setResetMessage = (message = '', tone = 'pending') => {
   resetMessage.classList.toggle('status-approved', tone === 'success');
   resetMessage.classList.toggle('status-warning', tone === 'error');
   resetMessage.classList.toggle('status-pending', tone !== 'success' && tone !== 'error');
+};
+
+
+const showRegisterCompleteState = (profile = {}, remoteAccount = {}) => {
+  if (!isRegisterPage() || !registerComplete) return;
+
+  const requestedRole = String(profile.requestedRole || 'customer').toLowerCase();
+  const role = normalizeAccountRole(remoteAccount.role || remoteAccount.grant?.role || profile.defaultRole || 'customer');
+  const isPendingOwnerOrManager = ['owner', 'manager'].includes(requestedRole) && role === 'customer';
+
+  registerComplete.hidden = false;
+  if (registerCompleteHeading) {
+    registerCompleteHeading.textContent = isPendingOwnerOrManager
+      ? 'Registration received for review'
+      : 'Your account is ready';
+  }
+  if (registerCompleteMessage) {
+    registerCompleteMessage.textContent = isPendingOwnerOrManager
+      ? `Your email is verified and your ${requestedRole} request is waiting for LuxeRoutes approval. You can use your account dashboard while the team reviews it.`
+      : 'Your email is verified and your LuxeRoutes profile has been created.';
+  }
+  if (registerCompleteLink) {
+    registerCompleteLink.href = isPendingOwnerOrManager ? 'account.html' : getRoleHomePath(role);
+    registerCompleteLink.textContent = isPendingOwnerOrManager ? 'Open Account Dashboard' : 'Open Account';
+  }
 };
 
 const setRegisterOtpMessage = (message = '', tone = 'pending') => {

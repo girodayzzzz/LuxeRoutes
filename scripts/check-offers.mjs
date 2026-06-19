@@ -14,6 +14,15 @@ const managerOffers = await import(pathToFileURL(join(tempRoot, 'functions/api/m
 const ownerInquiries = await import(pathToFileURL(join(tempRoot, 'functions/api/owner/inquiries.js')));
 const managerInquiries = await import(pathToFileURL(join(tempRoot, 'functions/api/manager/inquiries.js')));
 
+const sentNotifications = [];
+globalThis.fetch = async (url, options = {}) => {
+  if (String(url).includes('api.resend.com/emails')) {
+    sentNotifications.push(JSON.parse(options.body || '{}'));
+    return new Response(JSON.stringify({ id: `email-${sentNotifications.length}` }), { status: 200 });
+  }
+  throw new Error(`Unexpected fetch during offer checks: ${url}`);
+};
+
 class FakeStatement {
   constructor(db, sql) { this.db = db; this.sql = sql; this.params = []; }
   bind(...params) { this.params = params; return this; }
@@ -64,7 +73,7 @@ class FakeStatement {
       if (offer) Object.assign(offer, { availableFrom, availableTo, priceLabel, discountLabel, availabilityNotes, accommodationDetails, pricingDetails, galleryUrls, externalAvailabilityUrl, updatedAt });
       return { success: true };
     }
-    if (this.sql.includes('UPDATE stay_offers SET status')) {
+    if (this.sql.includes('UPDATE stay_offers') && this.sql.includes('SET status')) {
       const [status, , publishedAt, , ownerEmail, , managerEmail, partnerStatus, , ownerNotes, , managerNotes, updatedAt, id] = this.params;
       const offer = this.db.offers.find((item) => item.id === id);
       if (offer) Object.assign(offer, { status: status || offer.status, publishedAt: offer.publishedAt || publishedAt, ownerEmail: ownerEmail || offer.ownerEmail, managerEmail: managerEmail || offer.managerEmail, partnerStatus: partnerStatus || offer.partnerStatus, ownerNotes, managerNotes, updatedAt });
@@ -108,13 +117,20 @@ assert.equal(sourceInquiry.offerTitle, 'Lake House', 'Publishing should copy the
 assert.equal(sourceInquiry.ownerEmail, 'owner@example.com', 'Publishing should copy the owner assignment back to the source inquiry.');
 assert.equal(sourceInquiry.managerEmail, 'manager@example.com', 'Publishing should copy the manager assignment back to the source inquiry.');
 
-const ownerSubmitResponse = await ownerOffers.onRequestPost({ request: new Request('https://luxeroutes.test/api/owner/offers', { method: 'POST', headers: { 'Content-Type': 'application/json', 'CF-Access-Authenticated-User-Email': 'owner@example.com' }, body: JSON.stringify({ title: 'Owner Submitted Chalet', country: 'austria', region: 'alps', stayType: 'chalet', locationLabel: 'Austria · Alps', guestLabel: 'Up to 10 guests', description: 'Owner submitted mountain chalet for LuxeRoutes review.', options: ['spa', 'pool', 'unknown'], availableFrom: '2026-09-01', availableTo: '2026-12-15', priceLabel: 'From €900/night' }) }), env: { DB: db } });
+const ownerSubmitResponse = await ownerOffers.onRequestPost({ request: new Request('https://luxeroutes.test/api/owner/offers', { method: 'POST', headers: { 'Content-Type': 'application/json', 'CF-Access-Authenticated-User-Email': 'owner@example.com' }, body: JSON.stringify({ title: 'Owner Submitted Chalet', country: 'austria', region: 'alps', stayType: 'chalet', locationLabel: 'Austria · Alps', guestLabel: 'Up to 10 guests', description: 'Owner submitted mountain chalet for LuxeRoutes review.', options: ['spa', 'pool', 'unknown'], availableFrom: '2026-09-01', availableTo: '2026-12-15', priceLabel: 'From €900/night' }) }), env: { DB: db, RESEND_API_KEY: 'resend-offer-key', OWNER_OFFER_ADMIN_EMAILS: 'admin-review@example.com' } });
 assert.equal(ownerSubmitResponse.status, 201, await ownerSubmitResponse.text());
 assert.equal(db.offers[0].ownerEmail, 'owner@example.com', 'Owner-submitted offers should be assigned to the submitting owner.');
 assert.equal(db.offers[0].status, 'unpublished', 'Owner-submitted offers should stay hidden until admin approval.');
 assert.equal(db.offers[0].partnerStatus, 'pending_review', 'Owner-submitted offers should enter the admin review queue.');
 assert.equal(db.offers[0].managerEmail, null, 'Owner-submitted offers should wait for admin manager assignment.');
 assert.equal(db.offers[0].options, 'spa pool', 'Owner-submitted offers should keep only supported taxonomy options.');
+assert.equal(sentNotifications.at(-1).to, 'admin-review@example.com', 'Owner submissions should notify configured admin reviewers.');
+assert.match(sentNotifications.at(-1).subject, /New owner offer waiting for review/, 'Admin notification should describe the review queue action.');
+
+const ownerApprovalResponse = await adminOffers.onRequestPatch({ request: adminRequest('PATCH', { id: db.offers[0].id, partnerStatus: 'approved', ownerNotes: 'Approved for publication after final image review.' }), env: { DB: db, RESEND_API_KEY: 'resend-offer-key' } });
+assert.equal(ownerApprovalResponse.status, 200, await ownerApprovalResponse.text());
+assert.equal(sentNotifications.at(-1).to, 'owner@example.com', 'Approving an owner offer should notify the submitting owner.');
+assert.match(sentNotifications.at(-1).subject, /Your LuxeRoutes offer was approved/, 'Owner notification should include the approved decision.');
 
 const ownerResponse = await ownerOffers.onRequestGet({ request: new Request('https://luxeroutes.test/api/owner/offers', { headers: { 'CF-Access-Authenticated-User-Email': 'owner@example.com' } }), env: { DB: db } });
 assert.equal(ownerResponse.status, 200, 'Approved owners should read their assigned offers.');
