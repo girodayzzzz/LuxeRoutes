@@ -2,8 +2,8 @@ import { makeId, nowIso, privateErrorJson, privateJson, requireAdmin } from '../
 
 const COUNTRIES = ['slovenia', 'croatia', 'italy', 'austria', 'switzerland', 'france'];
 const REGIONS = ['alps', 'adriatic', 'lakes', 'wine-country', 'city', 'countryside', 'riviera'];
-const STAY_TYPES = ['villa', 'chalet', 'boutique-hotel', 'apartment', 'cabin', 'retreat'];
-const OPTIONS = ['pool', 'spa', 'sea-view', 'family', 'pet-friendly', 'private-chef'];
+const STAY_TYPES = ['villa', 'chalet', 'boutique-hotel', 'apartment', 'cabin', 'retreat', 'wine-tasting', 'food-experience', 'private-transfer', 'yacht-experience', 'fishing-escape', 'wellness-experience', 'guided-route', 'event-service'];
+const OPTIONS = ['pool', 'spa', 'sea-view', 'family', 'pet-friendly', 'private-chef', 'wine', 'food', 'driver', 'yacht', 'adventure', 'romantic'];
 const STATUSES = ['draft', 'published', 'unpublished'];
 const PARTNER_STATUSES = ['draft', 'pending_review', 'changes_requested', 'approved', 'published', 'archived'];
 
@@ -68,7 +68,7 @@ const validateOffer = (offer) => {
   if (!offer.title || !offer.slug || !offer.locationLabel || !offer.description) return 'Title, location, and description are required.';
   if (!COUNTRIES.includes(offer.country)) return 'Invalid country.';
   if (!REGIONS.includes(offer.region)) return 'Invalid region.';
-  if (!STAY_TYPES.includes(offer.stayType)) return 'Invalid stay type.';
+  if (!STAY_TYPES.includes(offer.stayType)) return 'Invalid offer category.';
   if (!STATUSES.includes(offer.status)) return 'Invalid offer status.';
   if (!PARTNER_STATUSES.includes(offer.partnerStatus)) return 'Invalid partner status.';
   if (offer.ownerEmail && !offer.ownerEmail.includes('@')) return 'Owner email must be a valid email address.';

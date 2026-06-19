@@ -694,7 +694,7 @@ const renderOwnerOfferForm = (offer = {}) => `
     <label>External availability URL <input type="url" name="externalAvailabilityUrl" value="${accountEscapeHtml(offer.externalAvailabilityUrl || '')}" placeholder="https://calendar.example.com" /></label>
     <label>Accommodation details <textarea name="accommodationDetails" rows="3" placeholder="Rooms, amenities, rules, services">${accountEscapeHtml(offer.accommodationDetails || '')}</textarea></label>
     <label>Gallery URLs <textarea name="galleryUrls" rows="3" placeholder="One image URL per line">${accountEscapeHtml(offer.galleryUrls || '')}</textarea></label>
-    <button class="btn btn-secondary" type="submit">Save offer option updates</button>
+    <button class="btn btn-secondary" type="submit">Save listing updates</button>
   </form>
 `;
 
@@ -782,8 +782,8 @@ const loadRolePanelOffers = async (role) => {
   try {
     const offers = await fetchRoleCollection(endpoint, 'offers');
     renderRoleOffers(target, offers, role === 'owner'
-      ? 'No offers are assigned to your owner email yet.'
-      : 'No offers are assigned to your manager email yet.', role);
+      ? 'No listings are assigned to your owner email yet.'
+      : 'No listings are assigned to your manager email yet.', role);
   } catch (error) {
     renderRoleOffers(target, [], error.message || 'Unable to load assigned offers.', role);
   }
@@ -818,7 +818,7 @@ ownerNewOfferForm?.addEventListener('submit', async (event) => {
     const data = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(data.error || 'Unable to submit this offer.');
     ownerNewOfferForm.reset();
-    setOwnerNewOfferStatus('Offer submitted. Admin can now review, approve, publish, and assign a manager.', 'success');
+    setOwnerNewOfferStatus('Listing submitted. Admin can now review, approve, publish, and assign a manager.', 'success');
     await loadRolePanelOffers('owner');
   } catch (error) {
     setOwnerNewOfferStatus(error.message || 'Unable to submit this offer.', 'error');

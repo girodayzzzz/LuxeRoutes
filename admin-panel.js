@@ -31,7 +31,7 @@ const formatDate = (value) => {
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleString();
 };
-const roleLabel = (role) => ({ customer: 'Customer', owner: 'Owner', manager: 'Manager', admin: 'Admin' }[role] || role || 'Customer');
+const roleLabel = (role) => ({ customer: 'Customer', owner: 'Owner', manager: 'Manager', admin: 'Admin', villa: 'Private villa', chalet: 'Chalet', 'boutique-hotel': 'Boutique hotel', apartment: 'Apartment', cabin: 'Cabin or glamping', retreat: 'Wellness retreat', 'wine-tasting': 'Wine tasting', 'food-experience': 'Food experience', 'private-transfer': 'Private transfer', 'yacht-experience': 'Yacht experience', 'fishing-escape': 'Fishing escape', 'wellness-experience': 'Wellness experience', 'guided-route': 'Guided route', 'event-service': 'Event or concierge service' }[role] || role || 'Customer');
 const statusLabel = (status) => String(status || 'unknown').replaceAll('_', ' ');
 const normalizeEmail = (email) => String(email || '').trim().toLowerCase();
 const safeExternalUrl = (value) => {
@@ -128,7 +128,7 @@ const openPublishDialog = (inquiry) => {
   const location = payload.location || '';
   const values = { sourceInquiryId: inquiry.id, title, description: payload.property_summary || payload.message || '', imageUrl: payload.image_url || '', guestLabel: payload.guest_capacity || '', priceLabel: payload.price_from || '', ownerEmail: inquiry.email || payload.email || '', ownerNotes: payload.property_summary || '', partnerStatus: 'published' };
   Object.entries(values).forEach(([name, value]) => { const field = publishForm.elements.namedItem(name); if (field) field.value = value; });
-  const typeMap = { Villa: 'villa', Apartment: 'apartment', Chalet: 'chalet', 'Boutique hotel': 'boutique-hotel', Cabin: 'cabin', 'Wellness retreat': 'retreat' };
+  const typeMap = { Villa: 'villa', Apartment: 'apartment', Chalet: 'chalet', 'Boutique hotel': 'boutique-hotel', Cabin: 'cabin', 'Wellness retreat': 'retreat', 'Wine tasting': 'wine-tasting', 'Food experience': 'food-experience', 'Private transfer': 'private-transfer', 'Yacht experience': 'yacht-experience', 'Fishing escape': 'fishing-escape', 'Wellness experience': 'wellness-experience', 'Guided route': 'guided-route', 'Event service': 'event-service' };
   if (typeMap[payload.property_type]) publishForm.elements.stayType.value = typeMap[payload.property_type];
   if (payload.country && Array.from(publishForm.elements.country.options).some((option) => option.value === String(payload.country).toLowerCase())) publishForm.elements.country.value = String(payload.country).toLowerCase();
   if (payload.region && Array.from(publishForm.elements.region.options).some((option) => option.value === payload.region)) publishForm.elements.region.value = payload.region;

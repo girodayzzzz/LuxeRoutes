@@ -2,8 +2,8 @@ import { makeId, nowIso, privateErrorJson, privateJson, requireAccountRole } fro
 
 const COUNTRIES = ['slovenia', 'croatia', 'italy', 'austria', 'switzerland', 'france'];
 const REGIONS = ['alps', 'adriatic', 'lakes', 'wine-country', 'city', 'countryside', 'riviera'];
-const STAY_TYPES = ['villa', 'chalet', 'boutique-hotel', 'apartment', 'cabin', 'retreat'];
-const OPTIONS = ['pool', 'spa', 'sea-view', 'family', 'pet-friendly', 'private-chef'];
+const STAY_TYPES = ['villa', 'chalet', 'boutique-hotel', 'apartment', 'cabin', 'retreat', 'wine-tasting', 'food-experience', 'private-transfer', 'yacht-experience', 'fishing-escape', 'wellness-experience', 'guided-route', 'event-service'];
+const OPTIONS = ['pool', 'spa', 'sea-view', 'family', 'pet-friendly', 'private-chef', 'wine', 'food', 'driver', 'yacht', 'adventure', 'romantic'];
 
 const cleanString = (value, maxLength = 2000) => String(value || '').trim().slice(0, maxLength);
 const slugify = (value) => cleanString(value, 160).toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 120);
@@ -76,7 +76,7 @@ const validateOwnerOffer = (offer, body = {}) => {
   if (!offer.title) return 'Offer title is required.';
   if (!COUNTRIES.includes(offer.country)) return 'Choose a supported country.';
   if (!REGIONS.includes(offer.region)) return 'Choose a supported region.';
-  if (!STAY_TYPES.includes(offer.stayType)) return 'Choose a supported stay type.';
+  if (!STAY_TYPES.includes(offer.stayType)) return 'Choose a supported offer category.';
   if (!offer.locationLabel) return 'Location label is required.';
   if (!offer.description) return 'Offer description is required.';
   if (body.imageUrl && !offer.imageUrl) return 'Image URL must start with http:// or https://.';
