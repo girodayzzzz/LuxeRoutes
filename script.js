@@ -6,6 +6,8 @@ document.querySelectorAll('[data-current-year]').forEach((year) => {
 
 const navAccountSessionKey = 'luxeroutes-account-session-v1';
 const affiliateReferralStorageKey = 'luxeroutes-affiliate-referral-v1';
+const navAccountSessionTtlMs = 4 * 60 * 60 * 1000;
+const navAccountFetchTimeoutMs = 8000;
 
 const getStoredAffiliateReferral = () => {
   try {
@@ -63,16 +65,88 @@ const parseAccountSession = (stored) => {
   }
 };
 
+const navStorageGet = (storage, key) => {
+  try {
+    return storage.getItem(key);
+  } catch (error) {
+    return null;
+  }
+};
+
+const navStorageSet = (storage, key, value) => {
+  try {
+    storage.setItem(key, value);
+  } catch (error) {}
+};
+
+const navStorageRemove = (storage, key) => {
+  try {
+    storage.removeItem(key);
+  } catch (error) {}
+};
+
 const readAccountSession = () => {
-  const session = parseAccountSession(sessionStorage.getItem(navAccountSessionKey))
-    || parseAccountSession(localStorage.getItem(navAccountSessionKey));
+  const session = parseAccountSession(navStorageGet(sessionStorage, navAccountSessionKey))
+    || parseAccountSession(navStorageGet(localStorage, navAccountSessionKey));
 
   if (!session) {
-    sessionStorage.removeItem(navAccountSessionKey);
-    localStorage.removeItem(navAccountSessionKey);
+    navStorageRemove(sessionStorage, navAccountSessionKey);
+    navStorageRemove(localStorage, navAccountSessionKey);
   }
 
   return session;
+};
+
+const writeAccountSession = ({ identity = null, profile = null, grant = null, role = '' } = {}) => {
+  const email = identity?.email || profile?.email || '';
+  if (!email) return null;
+
+  const rememberedSession = parseAccountSession(navStorageGet(localStorage, navAccountSessionKey));
+  const session = {
+    identity: identity || { email },
+    profile,
+    grant,
+    role: role || grant?.role || profile?.defaultRole || profile?.requestedRole || 'customer',
+    remembered: Boolean(rememberedSession?.remembered),
+    savedAt: Date.now(),
+    expiresAt: Date.now() + navAccountSessionTtlMs,
+  };
+  const serialized = JSON.stringify(session);
+  navStorageSet(sessionStorage, navAccountSessionKey, serialized);
+  if (rememberedSession?.remembered) navStorageSet(localStorage, navAccountSessionKey, serialized);
+  return session;
+};
+
+const fetchAccountSession = async () => {
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), navAccountFetchTimeoutMs);
+
+  try {
+    const response = await fetch('/api/account', {
+      headers: { Accept: 'application/json' },
+      credentials: 'same-origin',
+      redirect: 'manual',
+      signal: controller.signal,
+    });
+    if (!response.ok) return null;
+    return response.json().catch(() => null);
+  } catch (error) {
+    return null;
+  } finally {
+    window.clearTimeout(timeout);
+  }
+};
+
+const hydrateAccountSessionFromServer = async () => {
+  const account = await fetchAccountSession();
+  if (!account?.identityEmail) return null;
+
+  return writeAccountSession({
+    identity: { email: account.identityEmail, role: account.role },
+    profile: account.profile || null,
+    grant: account.grant || null,
+    role: account.role || account.grant?.role || account.profile?.defaultRole,
+  });
 };
 
 const getPathPrefix = () => (window.location.pathname.includes('/admin/') ? '../' : '');
@@ -126,8 +200,8 @@ const protectPrivateAccessPage = () => {
 
 protectPrivateAccessPage();
 
-const updateRoleBasedNavigation = () => {
-  const session = readAccountSession();
+const updateRoleBasedNavigation = (sessionOverride = null) => {
+  const session = sessionOverride || readAccountSession();
   const isLoggedIn = Boolean(session?.identity?.email || session?.profile?.email);
   const prefix = getPathPrefix();
   const visibleLabels = new Set(['Home', 'Destinations', 'Stays', 'Experiences', 'Partners', 'Journal', 'Contact', 'Partner Offers', 'Private Offers', isLoggedIn ? 'Account' : 'Login', 'Plan a Trip', 'Plan My Trip']);
@@ -174,6 +248,9 @@ const updateRoleBasedNavigation = () => {
 };
 
 updateRoleBasedNavigation();
+hydrateAccountSessionFromServer().then((session) => {
+  if (session) updateRoleBasedNavigation(session);
+});
 
 const updateHeaderState = () => {
   if (!header) return;
