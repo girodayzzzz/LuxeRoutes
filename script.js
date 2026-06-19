@@ -675,7 +675,7 @@ if (offerFilterRoot) {
   const noResults = offerFilterRoot.querySelector('[data-no-results]');
   const resetButton = offerFilterRoot.querySelector('[data-filter-reset]');
   const escapeOfferHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[character]));
-  const typeLabels = { villa: 'Private villa', chalet: 'Chalet', 'boutique-hotel': 'Boutique hotel', apartment: 'Apartment', cabin: 'Cabin', retreat: 'Wellness retreat' };
+  const typeLabels = { villa: 'Private villa', chalet: 'Chalet', 'boutique-hotel': 'Boutique hotel', apartment: 'Apartment', cabin: 'Cabin', retreat: 'Wellness retreat', 'wine-tasting': 'Wine tasting', 'food-experience': 'Food experience', 'private-transfer': 'Private transfer', 'yacht-experience': 'Yacht experience', 'fishing-escape': 'Fishing escape', 'wellness-experience': 'Wellness experience', 'guided-route': 'Guided route', 'event-service': 'Event or concierge service' };
   const bestForLabels = {
     villa: 'Best for families, privacy, and longer stays',
     chalet: 'Best for alpine weeks and fireside downtime',
@@ -683,6 +683,14 @@ if (offerFilterRoot) {
     apartment: 'Best for independent city or lakeside living',
     cabin: 'Best for slower countryside resets',
     retreat: 'Best for wellness-led itineraries',
+    'wine-tasting': 'Best for cellar visits, tastings, and vineyard days',
+    'food-experience': 'Best for private chefs, tastings, and culinary moments',
+    'private-transfer': 'Best for airport pickups, drivers, and route logistics',
+    'yacht-experience': 'Best for coast days, islands, and private sea time',
+    'fishing-escape': 'Best for guided fishing and nature-led escapes',
+    'wellness-experience': 'Best for spa, reset, and recovery moments',
+    'guided-route': 'Best for hosted routes and local insight',
+    'event-service': 'Best for celebrations, proposals, and concierge extras',
   };
   let offerCards = offerFilterRoot.querySelectorAll('[data-offer-card]');
 

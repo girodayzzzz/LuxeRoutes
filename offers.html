@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Accommodation Offers | LuxeRoutes Curated European Stays</title>
-  <meta name="description" content="Find curated European accommodation offers by country, region, stay type, and guest options across villas, chalets, boutique hotels, apartments, cabins, and retreats." />
+  <meta name="description" content="Find curated European accommodation offers by country, region, offer category, and guest options across villas, chalets, boutique hotels, apartments, retreats, experiences, wine tastings, transfers, and private services." />
   <meta property="og:title" content="Accommodation Offers | LuxeRoutes Curated European Stays" />
   <meta property="og:description" content="Browse curated accommodation offers from European providers and request a private stay proposal with LuxeRoutes." />
   <meta property="og:type" content="website" />
@@ -12,7 +12,7 @@
   <meta property="og:image" content="https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?auto=format&fit=crop&w=1800&q=82" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="Accommodation Offers | LuxeRoutes Curated European Stays" />
-  <meta name="twitter:description" content="Find curated European accommodation offers by country, region, stay type, and guest options." />
+  <meta name="twitter:description" content="Find curated European accommodation and experience offers by country, region, offer category, and guest options." />
   <meta name="twitter:image" content="https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?auto=format&fit=crop&w=1800&q=82" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -91,7 +91,7 @@
         </article>
       </div>
       <div class="container offer-process-strip" aria-label="Stay request process">
-        <article><span>01</span><strong>Choose a direction</strong><p>Filter by country, region, stay type, or mood.</p></article>
+        <article><span>01</span><strong>Choose a direction</strong><p>Filter by country, region, offer category, or mood.</p></article>
         <article><span>02</span><strong>Send a private request</strong><p>The stay link carries your selected context into the trip brief.</p></article>
         <article><span>03</span><strong>Confirm personally</strong><p>Dates, pricing, and terms are verified before you decide.</p></article>
       </div>
@@ -103,7 +103,7 @@
           <p class="eyebrow">Stay finder</p>
           <h2 id="stay-finder-heading">Filter accommodation offers by country, region, and desired options.</h2>
         </div>
-        <p>Use the filters to explore villas, chalets, boutique hotels, apartments, cabins, and wellness retreats. Each offer is a curated starting point; final dates, pricing, and terms are confirmed directly after inquiry.</p>
+        <p>Use the filters to explore villas, chalets, boutique hotels, apartments, cabins, wellness retreats, wine tastings, food experiences, transfers, yachts, and curated services. Each offer is a curated starting point; final dates, pricing, and terms are confirmed directly after inquiry.</p>
         <div class="finder-reassurance" role="note">
           <span>Proposal-first booking</span>
           <span>No instant charge or obligation</span>
@@ -151,15 +151,27 @@
           </label>
 
           <label>
-            Stay type
+            Offer category
             <select data-filter-select="type">
-              <option value="all">All stay types</option>
-              <option value="villa">Private villa</option>
-              <option value="chalet">Chalet</option>
-              <option value="boutique-hotel">Boutique hotel</option>
-              <option value="apartment">Apartment</option>
-              <option value="cabin">Cabin</option>
-              <option value="retreat">Wellness retreat</option>
+              <option value="all">All offer categories</option>
+              <optgroup label="Stays">
+                <option value="villa">Private villa</option>
+                <option value="chalet">Chalet</option>
+                <option value="boutique-hotel">Boutique hotel</option>
+                <option value="apartment">Apartment</option>
+                <option value="cabin">Cabin or glamping</option>
+                <option value="retreat">Wellness retreat</option>
+              </optgroup>
+              <optgroup label="Experiences and services">
+                <option value="wine-tasting">Wine tasting</option>
+                <option value="food-experience">Food experience</option>
+                <option value="private-transfer">Private transfer</option>
+                <option value="yacht-experience">Yacht experience</option>
+                <option value="fishing-escape">Fishing escape</option>
+                <option value="wellness-experience">Wellness experience</option>
+                <option value="guided-route">Guided route</option>
+                <option value="event-service">Event or concierge service</option>
+              </optgroup>
             </select>
           </label>
 
@@ -171,6 +183,12 @@
             <label class="checkbox-line"><input type="checkbox" value="family" data-filter-option /> Family ready</label>
             <label class="checkbox-line"><input type="checkbox" value="pet-friendly" data-filter-option /> Pet friendly</label>
             <label class="checkbox-line"><input type="checkbox" value="private-chef" data-filter-option /> Private chef option</label>
+            <label class="checkbox-line"><input type="checkbox" value="wine" data-filter-option /> Wine</label>
+            <label class="checkbox-line"><input type="checkbox" value="food" data-filter-option /> Food</label>
+            <label class="checkbox-line"><input type="checkbox" value="driver" data-filter-option /> Driver / transfer</label>
+            <label class="checkbox-line"><input type="checkbox" value="yacht" data-filter-option /> Yacht / coast</label>
+            <label class="checkbox-line"><input type="checkbox" value="adventure" data-filter-option /> Nature / adventure</label>
+            <label class="checkbox-line"><input type="checkbox" value="romantic" data-filter-option /> Romantic / celebration</label>
           </fieldset>
         </aside>
 
