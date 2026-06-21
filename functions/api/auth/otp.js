@@ -484,7 +484,13 @@ const loginWithPassword = async ({ request, env }) => {
   await ensureAuthSchema(db);
   const profile = await getProfile(db, email);
   const passwordMatches = await verifyAccountPassword(password, profile);
-  if (!passwordMatches) return errorJson('Email or password is not correct. You can still request a one-time code.', 401);
+  if (!passwordMatches) {
+    if (!wantsJsonResponse(request)) {
+      return redirectResponse('/login.html?error=wrong_password');
+    }
+
+    return errorJson('Wrong password.', 401);
+  }
 
   return buildLoginAccountResponse({ request, env, db, email, remember });
 };
