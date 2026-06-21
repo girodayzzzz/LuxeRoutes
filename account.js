@@ -426,6 +426,12 @@ const showLoginEmailStep = () => {
 
 const getAuthRedirectMessage = () => 'Cloudflare Access is redirecting a public LuxeRoutes login API. Keep /login.html, /api/auth/otp, /api/account, /account.html, /owner-panel.html, and /manager-panel.html public in Cloudflare Access; protect only /admin/* and /api/admin/*.';
 
+const normalizeLoginErrorMessage = (message = '') => {
+  const normalized = String(message || '').trim();
+  if (/email or password is not correct/i.test(normalized)) return 'Wrong password.';
+  return normalized;
+};
+
 const readJsonOrAuthError = async (response, fallbackMessage) => {
   const contentType = response.headers.get('content-type') || '';
   const location = response.headers.get('location') || '';
@@ -435,7 +441,7 @@ const readJsonOrAuthError = async (response, fallbackMessage) => {
   }
 
   const data = contentType.includes('application/json') ? await response.json().catch(() => ({})) : {};
-  if (!response.ok) throw new Error(data.error || fallbackMessage);
+  if (!response.ok) throw new Error(normalizeLoginErrorMessage(data.error) || fallbackMessage);
   if (!contentType.includes('application/json')) throw new Error(getAuthRedirectMessage());
   return data;
 };
@@ -1063,7 +1069,9 @@ const initialiseAccount = async () => {
   const cachedSession = loadAccountSession();
   const hasCachedSession = hasVerifiedAccountSession(cachedSession);
   const localPreview = isAccountLocalPreview();
-  const loggedOut = new URLSearchParams(window.location.search).has('logged_out');
+  const queryParams = new URLSearchParams(window.location.search);
+  const loggedOut = queryParams.has('logged_out');
+  const loginError = queryParams.get('error');
   setLoginAccountState(false);
 
   const remoteAccount = await loadRemoteAccountProfile();
@@ -1097,6 +1105,11 @@ const initialiseAccount = async () => {
     role: 'Account',
     approved: false,
   });
+  if (isLoginPage() && loginError === 'wrong_password') {
+    setLoginOtpMessage('Wrong password.', 'error');
+    loginPasswordInput?.setAttribute('aria-invalid', 'true');
+    loginPasswordInput?.focus();
+  }
   renderAccountProfile(null);
 };
 
@@ -1323,6 +1336,10 @@ resetCancel?.addEventListener('click', () => {
   if (passwordResetForm) passwordResetForm.hidden = true;
   if (loginActions) loginActions.hidden = false;
   setResetMessage('Password reset uses the same Resend OTP email verification.');
+});
+
+loginPasswordInput?.addEventListener('input', () => {
+  loginPasswordInput.removeAttribute('aria-invalid');
 });
 
 passwordResetForm?.addEventListener('submit', async (event) => {
