@@ -2895,6 +2895,9 @@ body.home-page {
 .account-checkbox-group label { display: flex; align-items: center; gap: .45rem; }
 .account-checkbox-group input { width: auto; accent-color: var(--color-gold); border-radius: 4px; padding: 0; }
 .owner-submit-form { margin: 1rem 0 1.25rem; padding: 1rem; border: 1px solid rgba(241, 215, 150, .14); border-radius: 20px; background: rgba(255, 255, 255, .03); }
+.owner-offer-images { display: flex; flex-wrap: wrap; gap: .55rem; margin-top: .75rem; }
+.owner-offer-images a { display: block; border-radius: 14px; overflow: hidden; border: 1px solid rgba(241, 215, 150, .16); background: rgba(255, 255, 255, .05); }
+.owner-offer-images img { display: block; width: 120px; height: 80px; object-fit: cover; }
 
 .mini-field { display: grid; gap: .35rem; color: var(--color-muted-strong); font-size: .78rem; font-weight: 800; }
 .mini-field select { min-width: 10rem; }

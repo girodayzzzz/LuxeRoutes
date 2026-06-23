@@ -82,7 +82,7 @@
           <article class="admin-card" id="owner-properties">
             <div class="card-head"><p class="eyebrow">Listings</p><span class="status-pill status-approved">Review queue</span></div>
             <h3>Add a new listing or update connected offers</h3>
-            <p class="admin-helper">Submit properties, experiences, wine tastings, food experiences, transfers, yachts, fishing escapes, wellness sessions, or route services. Assigned offers for your verified owner email appear below for updates.</p>
+            <p class="admin-helper">Submit properties, experiences, wine tastings, food experiences, transfers, yachts, fishing escapes, wellness sessions, or route services. Assigned offers for your verified owner email appear below for updates. Upload JPG, PNG, WebP, or GIF images up to 8 MB each.</p>
             <form class="account-inline-form owner-submit-form" data-owner-new-offer-form>
               <label>Listing title <input type="text" name="title" placeholder="Lake View Villa Bled, Istria Wine Tasting, Private Chef Dinner..." required /></label>
               <label>Offer category
@@ -154,8 +154,10 @@
                 <label><input type="checkbox" name="options" value="romantic" /> Romantic / celebration</label>
               </fieldset>
               <label>Main image URL <input type="url" name="imageUrl" placeholder="https://…" /></label>
+              <label>Upload main image <input type="file" name="mainImageUpload" accept="image/jpeg,image/png,image/webp,image/gif" data-owner-image-upload data-image-target="imageUrl" /></label>
               <label>Image alt text <input type="text" name="imageAlt" placeholder="Elegant villa terrace overlooking Lake Bled" /></label>
               <label class="full">Gallery image URLs <textarea name="galleryUrls" rows="4" placeholder="One image URL per line for rooms, pool, view, wine cellar, dining, yacht, transfer vehicle, guide, or experience details."></textarea></label>
+              <label class="full">Upload gallery images <input type="file" name="galleryImageUpload" accept="image/jpeg,image/png,image/webp,image/gif" data-owner-image-upload data-image-target="galleryUrls" multiple /></label>
               <label class="full">Short public description <textarea name="description" rows="4" placeholder="Describe the listing, setting, experience, ideal guest, and why it belongs on LuxeRoutes." required></textarea></label>
               <label class="full">Listing details <textarea name="accommodationDetails" rows="5" placeholder="For stays: bedrooms, bathrooms, capacity, size, amenities, services, house rules. For experiences: duration, group size, languages, meeting point, inclusions, exclusions, cancellation terms."></textarea></label>
               <label>Availability notes <textarea name="availabilityNotes" rows="3" placeholder="Peak dates, blocked dates, check-in rules, seasonal notes, experience operating days"></textarea></label>
