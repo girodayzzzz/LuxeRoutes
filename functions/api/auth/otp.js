@@ -489,7 +489,7 @@ const loginWithPassword = async ({ request, env }) => {
       return redirectResponse('/login.html?error=wrong_password');
     }
 
-    return errorJson('Wrong password.', 401);
+    return errorJson('Email or password is not correct.', 401);
   }
 
   return buildLoginAccountResponse({ request, env, db, email, remember });

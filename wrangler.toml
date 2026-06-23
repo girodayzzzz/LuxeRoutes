@@ -13,3 +13,9 @@ OTP_EMAIL_FROM = "LuxeRoutes <login@luxeroutes.eu>"
 binding = "DB"
 database_name = "luxeroutes-db"
 database_id = "e526c7bf-7408-4140-906e-5364fff90b64"
+
+# Owner/admin image uploads use this R2 bucket binding from Pages Functions.
+# Keep the binding name in sync with image upload API code.
+[[r2_buckets]]
+binding = "OWNER_IMAGES"
+bucket_name = "luxeroutes-owner-images"
