@@ -96,10 +96,52 @@ const renderAffiliates = () => {
   affiliatesTarget.innerHTML = affiliates.map((affiliate) => `<tr><td><strong>${escapeHtml(affiliate.name || affiliate.email)}</strong><br><small>${escapeHtml(affiliate.email || '')}${affiliate.website ? ` · <a href="${escapeHtml(affiliate.website)}" target="_blank" rel="noopener noreferrer">website</a>` : ''}</small><br><small>${escapeHtml(affiliate.audience || '')}</small></td><td>${escapeHtml(statusLabel(affiliate.status || 'pending_review'))}</td><td><code>${escapeHtml(affiliate.referralCode || '')}</code></td><td>${Number(affiliate.visits || 0)} visits<br>${Number(affiliate.inquiries || 0)} inquiries<br>${Number(affiliate.totalEvents || 0)} events</td><td><form class="inline-role-form" data-affiliate-form data-id="${escapeHtml(affiliate.id)}"><select name="status" aria-label="Affiliate status for ${escapeHtml(affiliate.email || '')}">${['pending_review', 'active', 'paused', 'rejected'].map((status) => `<option value="${status}" ${(affiliate.status || 'pending_review') === status ? 'selected' : ''}>${statusLabel(status)}</option>`).join('')}</select><input name="referralCode" value="${escapeHtml(affiliate.referralCode || '')}" placeholder="referralcode" /><textarea name="note" rows="2" placeholder="Admin note">${escapeHtml(affiliate.note || '')}</textarea><button class="mini-action" type="submit">Save</button></form></td></tr>`).join('') || '<tr><td colspan="5" class="empty-state">No affiliate applications yet.</td></tr>';
 };
 
+const appendUploadedImageUrl = (form, targetName, url) => {
+  const field = form?.elements?.namedItem(targetName);
+  if (!field || !url) return;
+  if (field.tagName === 'TEXTAREA') {
+    const urls = String(field.value || '').split(/\n+/).map((item) => item.trim()).filter(Boolean);
+    if (!urls.includes(url)) urls.push(url);
+    field.value = urls.join('\n');
+    return;
+  }
+  field.value = url;
+};
+
+const adminAllowedImageTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+const adminMaxImageBytes = 8 * 1024 * 1024;
+
+const validateAdminImageFile = (file) => {
+  if (!adminAllowedImageTypes.includes(file.type)) return 'Upload a JPG, PNG, WebP, or GIF image.';
+  if (file.size <= 0) return 'The selected image is empty.';
+  if (file.size > adminMaxImageBytes) return 'Images must be 8 MB or smaller.';
+  return '';
+};
+
+const uploadOfferImageFile = async (file) => {
+  const formData = new FormData();
+  formData.append('image', file);
+  const data = await requestJson('/api/owner/images', {
+    method: 'POST',
+    headers: { Accept: 'application/json' },
+    body: formData,
+  });
+  return data.url;
+};
+
+const payloadFromTextFields = (formData) => {
+  const payload = {};
+  formData.forEach((value, key) => {
+    if (value instanceof File) return;
+    payload[key] = value;
+  });
+  return payload;
+};
+
 const renderOffers = () => {
   if (!offersTarget) return;
   const partnerStatuses = ['draft', 'pending_review', 'changes_requested', 'approved', 'published', 'archived'];
-  offersTarget.innerHTML = offers.map((offer) => `<tr><td><strong>${escapeHtml(offer.title)}</strong><br><small>${escapeHtml(offer.locationLabel)}</small></td><td>${escapeHtml(roleLabel(offer.stayType))}<br><small>${escapeHtml(offer.country)} · ${escapeHtml(offer.region)}</small></td><td>${escapeHtml(statusLabel(offer.status))}<br><small>${escapeHtml(statusLabel(offer.partnerStatus || 'pending_review'))}</small></td><td><form class="inline-offer-form" data-offer-form data-id="${escapeHtml(offer.id)}"><label>Owner email<input type="email" name="ownerEmail" value="${escapeHtml(offer.ownerEmail || '')}" placeholder="owner@example.com" /></label><label>Manager email<input type="email" name="managerEmail" value="${escapeHtml(offer.managerEmail || '')}" placeholder="manager@example.com" /></label><label>Partner status<select name="partnerStatus">${partnerStatuses.map((status) => `<option value="${status}" ${(offer.partnerStatus || 'pending_review') === status ? 'selected' : ''}>${statusLabel(status)}</option>`).join('')}</select></label><label>Owner note<textarea name="ownerNotes" rows="2" placeholder="Message visible in owner panel">${escapeHtml(offer.ownerNotes || '')}</textarea></label><label>Manager note<textarea name="managerNotes" rows="2" placeholder="Message visible in manager panel">${escapeHtml(offer.managerNotes || '')}</textarea></label><button class="mini-action" type="submit">Save assignments</button></form></td><td>${escapeHtml(formatDate(offer.updatedAt))}</td><td><div class="admin-action-stack">${offer.status === 'published' ? `<button class="mini-action" type="button" data-offer-status="unpublished" data-partner-status="approved" data-id="${escapeHtml(offer.id)}">Unpublish</button>` : `<button class="mini-action" type="button" data-offer-status="published" data-partner-status="published" data-id="${escapeHtml(offer.id)}">Approve & publish</button>`}<button class="mini-action" type="button" data-offer-status="unpublished" data-partner-status="changes_requested" data-id="${escapeHtml(offer.id)}">Request changes</button><button class="mini-action" type="button" data-offer-status="unpublished" data-partner-status="archived" data-id="${escapeHtml(offer.id)}">Decline/archive</button></div></td></tr>`).join('') || '<tr><td colspan="6" class="empty-state">No database-backed stay offers yet.</td></tr>';
+  offersTarget.innerHTML = offers.map((offer) => `<tr><td><strong>${escapeHtml(offer.title)}</strong><br><small>${escapeHtml(offer.locationLabel)}</small></td><td>${escapeHtml(roleLabel(offer.stayType))}<br><small>${escapeHtml(offer.country)} · ${escapeHtml(offer.region)}</small></td><td>${escapeHtml(statusLabel(offer.status))}<br><small>${escapeHtml(statusLabel(offer.partnerStatus || 'pending_review'))}</small></td><td><form class="inline-offer-form" data-offer-form data-id="${escapeHtml(offer.id)}"><label>Owner email<input type="email" name="ownerEmail" value="${escapeHtml(offer.ownerEmail || '')}" placeholder="owner@example.com" /></label><label>Manager email<input type="email" name="managerEmail" value="${escapeHtml(offer.managerEmail || '')}" placeholder="manager@example.com" /></label><label>Partner status<select name="partnerStatus">${partnerStatuses.map((status) => `<option value="${status}" ${(offer.partnerStatus || 'pending_review') === status ? 'selected' : ''}>${statusLabel(status)}</option>`).join('')}</select></label><label>Main image URL<input type="url" name="imageUrl" value="${escapeHtml(offer.imageUrl || '')}" placeholder="https://…" /></label><label>Upload main image<input type="file" name="mainImageUpload" accept="image/jpeg,image/png,image/webp,image/gif" data-admin-image-upload data-image-target="imageUrl" /></label><label>Gallery URLs<textarea name="galleryUrls" rows="2" placeholder="One URL per line">${escapeHtml(offer.galleryUrls || '')}</textarea></label><label>Upload gallery images<input type="file" name="galleryImageUpload" accept="image/jpeg,image/png,image/webp,image/gif" data-admin-image-upload data-image-target="galleryUrls" multiple /></label><label>Owner note<textarea name="ownerNotes" rows="2" placeholder="Message visible in owner panel">${escapeHtml(offer.ownerNotes || '')}</textarea></label><label>Manager note<textarea name="managerNotes" rows="2" placeholder="Message visible in manager panel">${escapeHtml(offer.managerNotes || '')}</textarea></label><button class="mini-action" type="submit">Save assignments</button></form></td><td>${escapeHtml(formatDate(offer.updatedAt))}</td><td><div class="admin-action-stack">${offer.status === 'published' ? `<button class="mini-action" type="button" data-offer-status="unpublished" data-partner-status="approved" data-id="${escapeHtml(offer.id)}">Unpublish</button>` : `<button class="mini-action" type="button" data-offer-status="published" data-partner-status="published" data-id="${escapeHtml(offer.id)}">Approve & publish</button>`}<button class="mini-action" type="button" data-offer-status="unpublished" data-partner-status="changes_requested" data-id="${escapeHtml(offer.id)}">Request changes</button><button class="mini-action" type="button" data-offer-status="unpublished" data-partner-status="archived" data-id="${escapeHtml(offer.id)}">Decline/archive</button></div></td></tr>`).join('') || '<tr><td colspan="6" class="empty-state">No database-backed stay offers yet.</td></tr>';
 };
 const renderAll = () => { renderStats(); renderApplications(); renderMembers(); renderInquiries(); renderAffiliates();
     renderOffers(); };
@@ -178,12 +220,42 @@ document.addEventListener('click', async (event) => {
   const statusButton = event.target.closest('[data-offer-status]');
   if (statusButton) { statusButton.disabled = true; try { await requestJson('/api/admin/offers', { method: 'PATCH', body: JSON.stringify({ id: statusButton.dataset.id, status: statusButton.dataset.offerStatus, partnerStatus: statusButton.dataset.partnerStatus }) }); showAlert(`Offer ${statusButton.textContent.trim().toLowerCase()} saved.`, 'success'); await loadAdminData(); } catch (error) { showAlert(error.message); statusButton.disabled = false; } }
 });
+document.addEventListener('change', async (event) => {
+  const input = event.target.closest('[data-admin-image-upload]');
+  if (!input) return;
+
+  const form = input.form;
+  const files = Array.from(input.files || []);
+  if (!form || files.length === 0) return;
+
+  input.disabled = true;
+  const validationError = files.map(validateAdminImageFile).find(Boolean);
+  if (validationError) {
+    showAlert(validationError);
+    input.value = '';
+    input.disabled = false;
+    return;
+  }
+  showAlert(`Uploading ${files.length === 1 ? 'image' : `${files.length} images`}…`, 'success');
+  try {
+    for (const file of files) {
+      const url = await uploadOfferImageFile(file);
+      appendUploadedImageUrl(form, input.dataset.imageTarget, url);
+    }
+    input.value = '';
+    showAlert('Image upload complete. Uploaded URL fields were filled automatically.', 'success');
+  } catch (error) {
+    showAlert(error.message || 'Unable to upload image.');
+  } finally {
+    input.disabled = false;
+  }
+});
 document.addEventListener('submit', async (event) => {
   const offerForm = event.target.closest('[data-offer-form]');
   if (offerForm) {
     event.preventDefault();
     const data = new FormData(offerForm);
-    const payload = Object.fromEntries(data.entries());
+    const payload = payloadFromTextFields(data);
     payload.id = offerForm.dataset.id;
     try {
       await requestJson('/api/admin/offers', { method: 'PATCH', body: JSON.stringify(payload) });
@@ -211,7 +283,7 @@ document.addEventListener('submit', async (event) => {
   const memberForm = event.target.closest('[data-member-form]');
   if (memberForm) { event.preventDefault(); try { await saveGrant({ email: memberForm.dataset.email, role: new FormData(memberForm).get('role'), note: 'Role updated from admin console' }); } catch (error) { showAlert(error.message); } return; }
   if (event.target === grantForm) { event.preventDefault(); const data = new FormData(grantForm); try { await saveGrant({ email: data.get('email'), role: data.get('role'), note: data.get('note') }); grantForm.reset(); } catch (error) { showAlert(error.message); } return; }
-  if (event.target === publishForm) { event.preventDefault(); const data = new FormData(publishForm); const payload = Object.fromEntries(data.entries()); payload.options = data.getAll('options'); payload.status = payload.partnerStatus === 'published' ? 'published' : 'unpublished'; try { await requestJson('/api/admin/offers', { method: 'POST', body: JSON.stringify(payload) }); publishDialog.close(); showAlert(payload.status === 'published' ? 'Offer assigned to owner and published.' : 'Offer assigned to owner for review.', 'success'); await loadAdminData(); } catch (error) { showAlert(error.message); } }
+  if (event.target === publishForm) { event.preventDefault(); const data = new FormData(publishForm); const payload = payloadFromTextFields(data); payload.options = data.getAll('options'); payload.status = payload.partnerStatus === 'published' ? 'published' : 'unpublished'; try { await requestJson('/api/admin/offers', { method: 'POST', body: JSON.stringify(payload) }); publishDialog.close(); showAlert(payload.status === 'published' ? 'Offer assigned to owner and published.' : 'Offer assigned to owner for review.', 'success'); await loadAdminData(); } catch (error) { showAlert(error.message); } }
 });
 document.addEventListener('change', async (event) => {
   const select = event.target.closest('[data-inquiry-status]');

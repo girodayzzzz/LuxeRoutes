@@ -221,11 +221,14 @@ export const onRequestPatch = async ({ request, env }) => {
     const partnerStatus = requestedPartnerStatus || (status === 'published' ? 'published' : status === 'unpublished' ? 'approved' : '');
     const ownerNotes = cleanString(body.ownerNotes, 2000);
     const managerNotes = cleanString(body.managerNotes, 2000);
+    const imageUrl = safeImageUrl(body.imageUrl);
+    const galleryUrls = (Array.isArray(body.galleryUrls) ? body.galleryUrls : cleanString(body.galleryUrls, 4000).split(/[\n,]+/)).map(safeImageUrl).filter(Boolean).slice(0, 12).join('\n');
     if (!id) return privateErrorJson('Offer ID is required.', 400);
     if (status && !STATUSES.includes(status)) return privateErrorJson('Invalid offer status.', 400);
     if (partnerStatus && !PARTNER_STATUSES.includes(partnerStatus)) return privateErrorJson('Invalid partner status.', 400);
     if (ownerEmail && !ownerEmail.includes('@')) return privateErrorJson('Owner email must be a valid email address.', 400);
     if (managerEmail && !managerEmail.includes('@')) return privateErrorJson('Manager email must be a valid email address.', 400);
+    if (body.imageUrl && !imageUrl) return privateErrorJson('Image URL must start with http:// or https://.', 400);
     const existingOffer = await auth.db.prepare(`${offerSelect} WHERE id = ? LIMIT 1`).bind(id).first();
     if (!existingOffer) return privateErrorJson('Offer not found.', 404);
 
@@ -239,12 +242,15 @@ export const onRequestPatch = async ({ request, env }) => {
         partner_status = COALESCE(NULLIF(?, ''), partner_status),
         owner_notes = CASE WHEN ? IS NULL THEN owner_notes ELSE ? END,
         manager_notes = CASE WHEN ? IS NULL THEN manager_notes ELSE ? END,
+        image_url = CASE WHEN ? IS NULL THEN image_url ELSE ? END,
+        gallery_urls = CASE WHEN ? IS NULL THEN gallery_urls ELSE ? END,
         updated_at = ?
       WHERE id = ?
     `).bind(status, status, timestamp, body.ownerEmail === undefined ? null : ownerEmail, ownerEmail,
       body.managerEmail === undefined ? null : managerEmail, managerEmail, partnerStatus,
       body.ownerNotes === undefined ? null : ownerNotes, ownerNotes, body.managerNotes === undefined ? null : managerNotes,
-      managerNotes, timestamp, id).run();
+      managerNotes, body.imageUrl === undefined ? null : imageUrl, imageUrl,
+      body.galleryUrls === undefined ? null : galleryUrls, galleryUrls, timestamp, id).run();
     const offer = await auth.db.prepare(`${offerSelect} WHERE id = ? LIMIT 1`).bind(id).first();
     if (!offer) return privateErrorJson('Offer not found.', 404);
 

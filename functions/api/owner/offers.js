@@ -210,10 +210,16 @@ export const onRequestPatch = async ({ request, env }) => {
     if (availableFrom && availableTo && availableFrom > availableTo) return privateErrorJson('Available from must be before available to.', 400);
 
     const priceLabel = cleanString(body.priceLabel, 180);
+    const guestLabel = cleanString(body.guestLabel, 140);
     const discountLabel = cleanString(body.discountLabel, 180);
     const availabilityNotes = cleanString(body.availabilityNotes, 2000);
     const accommodationDetails = cleanString(body.accommodationDetails, 5000);
     const pricingDetails = cleanString(body.pricingDetails, 5000);
+    const description = cleanString(body.description, 4000);
+    const imageUrl = safeImageUrl(body.imageUrl);
+    const imageAlt = cleanString(body.imageAlt, 220) || offer.title;
+    if (body.description !== undefined && !description) return privateErrorJson('Offer description is required.', 400);
+    if (body.imageUrl && !imageUrl) return privateErrorJson('Image URL must start with http:// or https://.', 400);
     const galleryUrls = (Array.isArray(body.galleryUrls) ? body.galleryUrls : cleanString(body.galleryUrls, 4000).split(/[\n,]+/)).map(safeImageUrl).filter(Boolean).slice(0, 12).join('\n');
     const externalAvailabilityUrl = safeImageUrl(body.externalAvailabilityUrl);
     if (body.externalAvailabilityUrl && !externalAvailabilityUrl) return privateErrorJson('External availability URL must start with http:// or https://.', 400);
@@ -221,11 +227,11 @@ export const onRequestPatch = async ({ request, env }) => {
 
     await auth.db.prepare(`
       UPDATE stay_offers
-      SET available_from = ?, available_to = ?, price_label = ?, discount_label = ?, availability_notes = ?,
-        accommodation_details = ?, pricing_details = ?, gallery_urls = ?, external_availability_url = ?,
+      SET guest_label = ?, available_from = ?, available_to = ?, price_label = ?, discount_label = ?, availability_notes = ?,
+        accommodation_details = ?, pricing_details = ?, description = ?, image_url = ?, image_alt = ?, gallery_urls = ?, external_availability_url = ?,
         partner_status = CASE WHEN status = 'published' THEN partner_status ELSE 'pending_review' END, updated_at = ?
       WHERE id = ?
-    `).bind(availableFrom || null, availableTo || null, priceLabel, discountLabel, availabilityNotes, accommodationDetails, pricingDetails, galleryUrls, externalAvailabilityUrl, timestamp, id).run();
+    `).bind(guestLabel, availableFrom || null, availableTo || null, priceLabel, discountLabel, availabilityNotes, accommodationDetails, pricingDetails, description || offer.description, imageUrl, imageAlt, galleryUrls, externalAvailabilityUrl, timestamp, id).run();
 
     const updated = await auth.db.prepare(`${ownerOfferSelect} WHERE id = ? LIMIT 1`).bind(id).first();
     return privateJson({ offer: updated });

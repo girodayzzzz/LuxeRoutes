@@ -153,6 +153,7 @@
       <label>Manager email<input name="managerEmail" type="email" maxlength="320" placeholder="manager@example.com" /></label>
       <label>Partner status<select name="partnerStatus"><option value="published">Published</option><option value="approved">Approved</option><option value="pending_review">Pending review</option><option value="changes_requested">Changes requested</option><option value="draft">Draft</option><option value="archived">Archived</option></select></label>
       <label>Image URL<input name="imageUrl" type="url" maxlength="1500" placeholder="https://…" /></label>
+      <label>Upload main image<input name="mainImageUpload" type="file" accept="image/jpeg,image/png,image/webp,image/gif" data-admin-image-upload data-image-target="imageUrl" /></label>
       <label>External availability URL<input name="externalAvailabilityUrl" type="url" maxlength="1500" placeholder="https://calendar.example.com" /></label>
       <fieldset><legend>Options</legend><div class="admin-option-grid"><label><input type="checkbox" name="options" value="pool" /> Pool</label><label><input type="checkbox" name="options" value="spa" /> Spa</label><label><input type="checkbox" name="options" value="sea-view" /> Sea view</label><label><input type="checkbox" name="options" value="family" /> Family ready</label><label><input type="checkbox" name="options" value="pet-friendly" /> Pet friendly</label><label><input type="checkbox" name="options" value="private-chef" /> Private chef</label></div></fieldset>
       <label class="full">Public description<textarea name="description" rows="5" required maxlength="4000"></textarea></label>
@@ -160,6 +161,7 @@
       <label class="full">Pricing details<textarea name="pricingDetails" rows="3" maxlength="5000" placeholder="Seasonal rates, fees, deposit, payment terms, commission notes."></textarea></label>
       <label class="full">Availability notes<textarea name="availabilityNotes" rows="3" maxlength="2000" placeholder="Blocked dates, seasonality, operating days, check-in rules."></textarea></label>
       <label class="full">Gallery URLs<textarea name="galleryUrls" rows="3" maxlength="4000" placeholder="One URL per line."></textarea></label>
+      <label class="full">Upload gallery images<input name="galleryImageUpload" type="file" accept="image/jpeg,image/png,image/webp,image/gif" data-admin-image-upload data-image-target="galleryUrls" multiple /></label>
       <label class="full">Owner notes<textarea name="ownerNotes" rows="3" maxlength="2000" placeholder="Private owner-facing notes."></textarea></label>
       <label class="full">Manager notes<textarea name="managerNotes" rows="3" maxlength="2000" placeholder="Private manager-facing notes."></textarea></label>
       <button class="btn btn-primary full" type="submit">Approve and publish stay</button>

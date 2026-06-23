@@ -691,6 +691,8 @@ const renderRoleRequests = (target, inquiries = [], emptyMessage = 'No customer 
 
 const renderOwnerOfferForm = (offer = {}) => `
   <form class="account-inline-form" data-owner-offer-form data-offer-id="${accountEscapeHtml(offer.id || '')}">
+    <label>Guest / group label <input type="text" name="guestLabel" value="${accountEscapeHtml(offer.guestLabel || '')}" placeholder="Up to 8 guests, 2–12 people, private group..." /></label>
+    <label>Image alt text <input type="text" name="imageAlt" value="${accountEscapeHtml(offer.imageAlt || '')}" placeholder="Elegant villa terrace overlooking Lake Bled" /></label>
     <label>Available from <input type="date" name="availableFrom" value="${accountEscapeHtml(offer.availableFrom || '')}" /></label>
     <label>Available to <input type="date" name="availableTo" value="${accountEscapeHtml(offer.availableTo || '')}" /></label>
     <label>Price label <input type="text" name="priceLabel" value="${accountEscapeHtml(offer.priceLabel || '')}" placeholder="From €650/night" /></label>
@@ -699,10 +701,24 @@ const renderOwnerOfferForm = (offer = {}) => `
     <label>Availability notes <textarea name="availabilityNotes" rows="3" placeholder="Peak dates, blocked dates, seasonal notes">${accountEscapeHtml(offer.availabilityNotes || '')}</textarea></label>
     <label>External availability URL <input type="url" name="externalAvailabilityUrl" value="${accountEscapeHtml(offer.externalAvailabilityUrl || '')}" placeholder="https://calendar.example.com" /></label>
     <label>Accommodation details <textarea name="accommodationDetails" rows="3" placeholder="Rooms, amenities, rules, services">${accountEscapeHtml(offer.accommodationDetails || '')}</textarea></label>
+    <label>Main image URL <input type="url" name="imageUrl" value="${accountEscapeHtml(offer.imageUrl || '')}" placeholder="https://…" /></label>
+    <label>Upload main image <input type="file" name="mainImageUpload" accept="image/jpeg,image/png,image/webp,image/gif" data-owner-image-upload data-image-target="imageUrl" /></label>
     <label>Gallery URLs <textarea name="galleryUrls" rows="3" placeholder="One image URL per line">${accountEscapeHtml(offer.galleryUrls || '')}</textarea></label>
+    <label>Upload gallery images <input type="file" name="galleryImageUpload" accept="image/jpeg,image/png,image/webp,image/gif" data-owner-image-upload data-image-target="galleryUrls" multiple /></label>
+    <label class="full">Short public description <textarea name="description" rows="3" placeholder="Describe the listing, setting, experience, and ideal guest">${accountEscapeHtml(offer.description || '')}</textarea></label>
+    <p class="status-pill status-pending" data-owner-offer-status>Saved updates return this listing to the LuxeRoutes review queue before publishing changes.</p>
     <button class="btn btn-secondary" type="submit">Save listing updates</button>
   </form>
 `;
+
+const renderOfferImages = (offer = {}) => {
+  const urls = [offer.imageUrl, ...String(offer.galleryUrls || '').split(/\n+/)]
+    .map((url) => String(url || '').trim())
+    .filter(Boolean)
+    .slice(0, 6);
+  if (!urls.length) return '';
+  return `<div class="owner-offer-images">${urls.map((url, index) => `<a href="${accountEscapeHtml(url)}" target="_blank" rel="noopener noreferrer"><img src="${accountEscapeHtml(url)}" alt="${accountEscapeHtml(index === 0 ? (offer.imageAlt || offer.title || 'Listing image') : `${offer.title || 'Listing'} gallery image ${index}`)}" loading="lazy" width="120" height="80" /></a>`).join('')}</div>`;
+};
 
 const renderRoleOffers = (target, offers = [], emptyMessage = 'No assigned offers yet.', role = '') => {
   if (!target) return;
@@ -726,6 +742,7 @@ const renderRoleOffers = (target, offers = [], emptyMessage = 'No assigned offer
         ${offer.managerEmail ? `<span>Manager: ${accountEscapeHtml(offer.managerEmail)}</span>` : ''}
         ${offer.ownerNotes ? `<span>Owner note: ${accountEscapeHtml(offer.ownerNotes)}</span>` : ''}
         ${offer.managerNotes ? `<span>Manager note: ${accountEscapeHtml(offer.managerNotes)}</span>` : ''}
+        ${renderOfferImages(offer)}
       </div>
       <span class="status-pill ${offer.status === 'published' ? 'status-approved' : 'status-pending'}">${accountEscapeHtml(offer.status || 'draft')}</span>
       ${role === 'owner' ? renderOwnerOfferForm(offer) : ''}
@@ -780,6 +797,63 @@ const setOwnerNewOfferStatus = (message = '', tone = 'pending') => {
   ownerNewOfferStatus.classList.toggle('status-pending', tone !== 'success' && tone !== 'error');
 };
 
+const ownerAllowedImageTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+const ownerMaxImageBytes = 8 * 1024 * 1024;
+
+const setOwnerFormStatus = (form, message = '', tone = 'pending') => {
+  const status = form?.querySelector?.('[data-owner-offer-status]');
+  if (!status) {
+    setOwnerNewOfferStatus(message, tone);
+    return;
+  }
+  status.textContent = message;
+  status.classList.toggle('status-approved', tone === 'success');
+  status.classList.toggle('status-warning', tone === 'error');
+  status.classList.toggle('status-pending', tone !== 'success' && tone !== 'error');
+};
+
+const validateOwnerImageFile = (file) => {
+  if (!ownerAllowedImageTypes.includes(file.type)) return 'Upload a JPG, PNG, WebP, or GIF image.';
+  if (file.size <= 0) return 'The selected image is empty.';
+  if (file.size > ownerMaxImageBytes) return 'Images must be 8 MB or smaller.';
+  return '';
+};
+
+const appendUploadedImageUrl = (form, targetName, url) => {
+  const field = form?.elements?.namedItem(targetName);
+  if (!field || !url) return;
+  if (field.tagName === 'TEXTAREA') {
+    const urls = String(field.value || '').split(/\n+/).map((item) => item.trim()).filter(Boolean);
+    if (!urls.includes(url)) urls.push(url);
+    field.value = urls.join('\n');
+    return;
+  }
+  field.value = url;
+};
+
+const uploadOwnerImageFile = async (file) => {
+  const formData = new FormData();
+  formData.append('image', file);
+  const response = await fetch('/api/owner/images', {
+    method: 'POST',
+    headers: { Accept: 'application/json' },
+    credentials: 'same-origin',
+    body: formData,
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data.error || 'Unable to upload this image.');
+  return data.url;
+};
+
+const payloadFromTextFields = (formData) => {
+  const payload = {};
+  formData.forEach((value, key) => {
+    if (value instanceof File) return;
+    payload[key] = value;
+  });
+  return payload;
+};
+
 const loadRolePanelOffers = async (role) => {
   const endpoint = role === 'owner' ? '/api/owner/offers' : role === 'manager' ? '/api/manager/offers' : '';
   const target = role === 'owner' ? ownerOffersTarget : role === 'manager' ? managerOffersTarget : null;
@@ -809,7 +883,7 @@ ownerNewOfferForm?.addEventListener('submit', async (event) => {
     setOwnerNewOfferStatus(availabilityError, 'error');
     return;
   }
-  const payload = Object.fromEntries(formData.entries());
+  const payload = payloadFromTextFields(formData);
   payload.options = formData.getAll('options');
   submitButton.disabled = true;
   setOwnerNewOfferStatus('Submitting your offer for admin review…');
@@ -830,6 +904,37 @@ ownerNewOfferForm?.addEventListener('submit', async (event) => {
     setOwnerNewOfferStatus(error.message || 'Unable to submit this offer.', 'error');
   } finally {
     submitButton.disabled = false;
+  }
+});
+
+document.addEventListener('change', async (event) => {
+  const input = event.target.closest?.('[data-owner-image-upload]');
+  if (!input) return;
+
+  const form = input.form;
+  const files = Array.from(input.files || []);
+  if (!form || files.length === 0) return;
+
+  input.disabled = true;
+  const validationError = files.map(validateOwnerImageFile).find(Boolean);
+  if (validationError) {
+    setOwnerFormStatus(form, validationError, 'error');
+    input.value = '';
+    input.disabled = false;
+    return;
+  }
+  setOwnerFormStatus(form, `Uploading ${files.length === 1 ? 'image' : `${files.length} images`}…`);
+  try {
+    for (const file of files) {
+      const url = await uploadOwnerImageFile(file);
+      appendUploadedImageUrl(form, input.dataset.imageTarget, url);
+    }
+    setOwnerFormStatus(form, 'Image upload complete. Uploaded URL fields were filled automatically.', 'success');
+    input.value = '';
+  } catch (error) {
+    setOwnerFormStatus(form, error.message || 'Unable to upload image.', 'error');
+  } finally {
+    input.disabled = false;
   }
 });
 
@@ -1212,7 +1317,7 @@ document.addEventListener('submit', async (event) => {
       window.alert(availabilityError);
       return;
     }
-    const payload = Object.fromEntries(formData.entries());
+    const payload = payloadFromTextFields(formData);
     payload.id = form.dataset.offerId || '';
     const response = await fetch('/api/owner/offers', {
       method: 'PATCH',
