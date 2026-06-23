@@ -10,6 +10,10 @@ const PARTNER_STATUSES = ['draft', 'pending_review', 'changes_requested', 'appro
 const cleanString = (value, maxLength = 2000) => String(value || '').trim().slice(0, maxLength);
 const cleanEmail = (value) => cleanString(value, 320).toLowerCase();
 const slugify = (value) => cleanString(value, 160).toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 120);
+const cleanDate = (value) => {
+  const input = cleanString(value, 20);
+  return /^\d{4}-\d{2}-\d{2}$/.test(input) ? input : '';
+};
 const safeImageUrl = (value) => {
   const input = cleanString(value, 1500);
   if (!input) return '';
@@ -94,6 +98,10 @@ const normalizeOffer = (body) => ({
   locationLabel: cleanString(body.locationLabel, 180),
   guestLabel: cleanString(body.guestLabel, 120),
   priceLabel: cleanString(body.priceLabel, 180),
+  availableFrom: cleanDate(body.availableFrom),
+  availableTo: cleanDate(body.availableTo),
+  discountLabel: cleanString(body.discountLabel, 180),
+  availabilityNotes: cleanString(body.availabilityNotes, 2000),
   accommodationDetails: cleanString(body.accommodationDetails, 5000),
   pricingDetails: cleanString(body.pricingDetails, 5000),
   galleryUrls: (Array.isArray(body.galleryUrls) ? body.galleryUrls : cleanString(body.galleryUrls, 4000).split(/[\n,]+/)).map(safeImageUrl).filter(Boolean).slice(0, 12).join('\n'),
@@ -109,13 +117,18 @@ const normalizeOffer = (body) => ({
   managerNotes: cleanString(body.managerNotes, 2000),
 });
 
-const validateOffer = (offer) => {
+const validateOffer = (offer, body = {}) => {
   if (!offer.title || !offer.slug || !offer.locationLabel || !offer.description) return 'Title, location, and description are required.';
   if (!COUNTRIES.includes(offer.country)) return 'Invalid country.';
   if (!REGIONS.includes(offer.region)) return 'Invalid region.';
   if (!STAY_TYPES.includes(offer.stayType)) return 'Invalid offer category.';
   if (!STATUSES.includes(offer.status)) return 'Invalid offer status.';
   if (!PARTNER_STATUSES.includes(offer.partnerStatus)) return 'Invalid partner status.';
+  if (body.availableFrom && !offer.availableFrom) return 'Available from must use YYYY-MM-DD.';
+  if (body.availableTo && !offer.availableTo) return 'Available to must use YYYY-MM-DD.';
+  if (offer.availableFrom && offer.availableTo && offer.availableFrom > offer.availableTo) return 'Available from must be before available to.';
+  if (body.imageUrl && !offer.imageUrl) return 'Image URL must start with http:// or https://.';
+  if (body.externalAvailabilityUrl && !offer.externalAvailabilityUrl) return 'External availability URL must start with http:// or https://.';
   if (offer.ownerEmail && !offer.ownerEmail.includes('@')) return 'Owner email must be a valid email address.';
   if (offer.managerEmail && !offer.managerEmail.includes('@')) return 'Manager email must be a valid email address.';
   return '';
@@ -138,7 +151,7 @@ export const onRequestPost = async ({ request, env }) => {
     if (auth.error) return auth.error;
     const body = await request.json().catch(() => ({}));
     const offer = normalizeOffer(body);
-    const validationError = validateOffer(offer);
+    const validationError = validateOffer(offer, body);
     if (validationError) return privateErrorJson(validationError, 400);
 
     const timestamp = nowIso();
@@ -157,6 +170,16 @@ export const onRequestPost = async ({ request, env }) => {
       offer.galleryUrls, offer.externalAvailabilityUrl, offer.description, offer.imageUrl,
       offer.imageAlt || offer.title, offer.status, publishedAt, auth.email, offer.ownerEmail, offer.managerEmail,
       offer.partnerStatus, offer.ownerNotes, offer.managerNotes, timestamp, timestamp).run();
+
+    await auth.db.prepare(`
+      UPDATE stay_offers
+      SET available_from = ?,
+        available_to = ?,
+        discount_label = ?,
+        availability_notes = ?,
+        updated_at = ?
+      WHERE id = ?
+    `).bind(offer.availableFrom || null, offer.availableTo || null, offer.discountLabel, offer.availabilityNotes, timestamp, id).run();
 
     if (offer.sourceInquiryId) {
       await auth.db.prepare(`

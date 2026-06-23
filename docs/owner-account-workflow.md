@@ -39,6 +39,7 @@ This checklist tracks the public owner journey and the private admin checks that
 4. Configured admin reviewers are emailed when a new owner offer enters the review queue.
 5. The owner can update availability, price labels, discounts, detailed notes, gallery URLs, and external availability links for their own offers only.
 6. Admins can later approve/publish offers and assign managers; owners are emailed when their offer is approved, published, or returned with change requests.
+7. Admins can also create an offer directly for a paid owner service from the admin console by assigning the owner email, adding availability/pricing/detail fields, and choosing whether to publish immediately or keep it assigned for owner review.
 
 ## 5. Requests and follow-up
 

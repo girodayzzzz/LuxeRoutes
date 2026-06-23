@@ -15,6 +15,7 @@ const inquiryDialogTitle = document.querySelector('[data-inquiry-dialog-title]')
 const inquiryDialogContent = document.querySelector('[data-inquiry-dialog-content]');
 const publishDialog = document.querySelector('[data-publish-dialog]');
 const publishForm = document.querySelector('[data-publish-form]');
+const createOwnerOfferButton = document.querySelector('[data-create-owner-offer]');
 
 let currentAdminEmail = '';
 let profiles = [];
@@ -120,10 +121,23 @@ const saveGrant = async ({ email, role, action = 'approve', note = '' }) => {
   showAlert(`${email} was updated successfully.`, 'success');
   await loadAdminData();
 };
+const resetPublishOptions = () => {
+  publishForm?.querySelectorAll('[name="options"]').forEach((input) => { input.checked = false; });
+};
+
+const openBlankOfferDialog = () => {
+  if (!publishForm || !publishDialog) return;
+  publishForm.reset();
+  resetPublishOptions();
+  if (publishForm.elements.partnerStatus) publishForm.elements.partnerStatus.value = 'published';
+  publishDialog.showModal();
+};
+
 const openPublishDialog = (inquiry) => {
   if (!publishForm || !publishDialog) return;
   const payload = parsePayload(inquiry);
   publishForm.reset();
+  resetPublishOptions();
   const title = payload.property_name || payload.offer_name || payload.company_name || '';
   const location = payload.location || '';
   const values = { sourceInquiryId: inquiry.id, title, description: payload.property_summary || payload.message || '', imageUrl: payload.image_url || '', guestLabel: payload.guest_capacity || '', priceLabel: payload.price_from || '', ownerEmail: inquiry.email || payload.email || '', ownerNotes: payload.property_summary || '', partnerStatus: 'published' };
@@ -153,6 +167,8 @@ const verifyAdmin = async () => {
 };
 
 document.addEventListener('click', async (event) => {
+  const createOfferButton = event.target.closest('[data-create-owner-offer]');
+  if (createOfferButton) { openBlankOfferDialog(); return; }
   const grantButton = event.target.closest('[data-grant-action]');
   if (grantButton) { grantButton.disabled = true; try { await saveGrant({ email: grantButton.dataset.email, role: grantButton.dataset.role, action: grantButton.dataset.grantAction }); } catch (error) { showAlert(error.message); grantButton.disabled = false; } return; }
   const detailButton = event.target.closest('[data-inquiry-detail]');
@@ -195,7 +211,7 @@ document.addEventListener('submit', async (event) => {
   const memberForm = event.target.closest('[data-member-form]');
   if (memberForm) { event.preventDefault(); try { await saveGrant({ email: memberForm.dataset.email, role: new FormData(memberForm).get('role'), note: 'Role updated from admin console' }); } catch (error) { showAlert(error.message); } return; }
   if (event.target === grantForm) { event.preventDefault(); const data = new FormData(grantForm); try { await saveGrant({ email: data.get('email'), role: data.get('role'), note: data.get('note') }); grantForm.reset(); } catch (error) { showAlert(error.message); } return; }
-  if (event.target === publishForm) { event.preventDefault(); const data = new FormData(publishForm); const payload = Object.fromEntries(data.entries()); payload.options = data.getAll('options'); payload.status = 'published'; try { await requestJson('/api/admin/offers', { method: 'POST', body: JSON.stringify(payload) }); publishDialog.close(); showAlert('Stay approved and published to the public offer finder.', 'success'); await loadAdminData(); } catch (error) { showAlert(error.message); } }
+  if (event.target === publishForm) { event.preventDefault(); const data = new FormData(publishForm); const payload = Object.fromEntries(data.entries()); payload.options = data.getAll('options'); payload.status = payload.partnerStatus === 'published' ? 'published' : 'unpublished'; try { await requestJson('/api/admin/offers', { method: 'POST', body: JSON.stringify(payload) }); publishDialog.close(); showAlert(payload.status === 'published' ? 'Offer assigned to owner and published.' : 'Offer assigned to owner for review.', 'success'); await loadAdminData(); } catch (error) { showAlert(error.message); } }
 });
 document.addEventListener('change', async (event) => {
   const select = event.target.closest('[data-inquiry-status]');

@@ -98,7 +98,8 @@
         <section class="admin-console-section" aria-labelledby="offers-title">
           <div class="admin-section-heading">
             <div><p class="eyebrow">Published collection</p><h2 id="offers-title">Live stay offers</h2></div>
-            <p>Published offers appear automatically in the public stay finder. Unpublish an offer to remove it immediately.</p>
+            <button class="btn btn-primary" type="button" data-create-owner-offer>Add offer for owner</button>
+            <p>Published offers appear automatically in the public stay finder. Admins can also create paid owner offers directly by assigning the owner email before publishing.</p>
           </div>
           <div class="table-wrap">
             <table class="admin-table">
@@ -145,12 +146,20 @@
       <label>Offer category<select name="stayType" required><optgroup label="Stays"><option value="villa">Private villa</option><option value="chalet">Chalet</option><option value="boutique-hotel">Boutique hotel</option><option value="apartment">Apartment</option><option value="cabin">Cabin or glamping</option><option value="retreat">Wellness retreat</option></optgroup><optgroup label="Experiences and services"><option value="wine-tasting">Wine tasting</option><option value="food-experience">Food experience</option><option value="private-transfer">Private transfer</option><option value="yacht-experience">Yacht experience</option><option value="fishing-escape">Fishing escape</option><option value="wellness-experience">Wellness experience</option><option value="guided-route">Guided route</option><option value="event-service">Event or concierge service</option></optgroup></select></label>
       <label>Guest label<input name="guestLabel" maxlength="120" placeholder="2–8 guests" /></label>
       <label>Price label<input name="priceLabel" maxlength="180" placeholder="From €450/night" /></label>
+      <label>Available from<input name="availableFrom" type="date" /></label>
+      <label>Available to<input name="availableTo" type="date" /></label>
+      <label>Discount label<input name="discountLabel" maxlength="180" placeholder="10% for 7+ nights" /></label>
       <label>Owner email<input name="ownerEmail" type="email" maxlength="320" placeholder="owner@example.com" /></label>
       <label>Manager email<input name="managerEmail" type="email" maxlength="320" placeholder="manager@example.com" /></label>
       <label>Partner status<select name="partnerStatus"><option value="published">Published</option><option value="approved">Approved</option><option value="pending_review">Pending review</option><option value="changes_requested">Changes requested</option><option value="draft">Draft</option><option value="archived">Archived</option></select></label>
       <label>Image URL<input name="imageUrl" type="url" maxlength="1500" placeholder="https://…" /></label>
+      <label>External availability URL<input name="externalAvailabilityUrl" type="url" maxlength="1500" placeholder="https://calendar.example.com" /></label>
       <fieldset><legend>Options</legend><div class="admin-option-grid"><label><input type="checkbox" name="options" value="pool" /> Pool</label><label><input type="checkbox" name="options" value="spa" /> Spa</label><label><input type="checkbox" name="options" value="sea-view" /> Sea view</label><label><input type="checkbox" name="options" value="family" /> Family ready</label><label><input type="checkbox" name="options" value="pet-friendly" /> Pet friendly</label><label><input type="checkbox" name="options" value="private-chef" /> Private chef</label></div></fieldset>
-      <label class="full">Public description<textarea name="description" rows="5" required maxlength="1200"></textarea></label>
+      <label class="full">Public description<textarea name="description" rows="5" required maxlength="4000"></textarea></label>
+      <label class="full">Accommodation / offer details<textarea name="accommodationDetails" rows="4" maxlength="5000" placeholder="Bedrooms, amenities, inclusions, exclusions, service terms, or experience details."></textarea></label>
+      <label class="full">Pricing details<textarea name="pricingDetails" rows="3" maxlength="5000" placeholder="Seasonal rates, fees, deposit, payment terms, commission notes."></textarea></label>
+      <label class="full">Availability notes<textarea name="availabilityNotes" rows="3" maxlength="2000" placeholder="Blocked dates, seasonality, operating days, check-in rules."></textarea></label>
+      <label class="full">Gallery URLs<textarea name="galleryUrls" rows="3" maxlength="4000" placeholder="One URL per line."></textarea></label>
       <label class="full">Owner notes<textarea name="ownerNotes" rows="3" maxlength="2000" placeholder="Private owner-facing notes."></textarea></label>
       <label class="full">Manager notes<textarea name="managerNotes" rows="3" maxlength="2000" placeholder="Private manager-facing notes."></textarea></label>
       <button class="btn btn-primary full" type="submit">Approve and publish stay</button>

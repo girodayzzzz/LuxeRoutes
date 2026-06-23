@@ -38,16 +38,22 @@ export const onRequestPatch = async ({ request, env }) => {
     if (!INQUIRY_STATUSES.includes(status)) return privateErrorJson('Invalid inquiry status.', 400);
 
     const timestamp = nowIso();
-    await auth.db.prepare(`
-      UPDATE inquiries
-      SET status = ?,
-        admin_approved_at = CASE WHEN ? = 'approved' THEN COALESCE(admin_approved_at, ?) ELSE admin_approved_at END,
-        forwarded_to_owner_at = CASE WHEN ? = 'approved' THEN COALESCE(forwarded_to_owner_at, ?) ELSE forwarded_to_owner_at END,
-        inquiry_fee_status = CASE WHEN ? = 'approved' AND NULLIF(owner_email, '') IS NOT NULL THEN 'billable' ELSE inquiry_fee_status END,
-        inquiry_fee_label = CASE WHEN ? = 'approved' AND NULLIF(owner_email, '') IS NOT NULL THEN COALESCE(NULLIF(inquiry_fee_label, ''), 'Billable approved LuxeRoutes inquiry') ELSE inquiry_fee_label END,
-        updated_at = ?
-      WHERE id = ?
-    `).bind(status, status, timestamp, status, timestamp, status, status, timestamp, id).run();
+    if (status === 'approved') {
+      await auth.db.prepare(`
+        UPDATE inquiries SET status = ?,
+          admin_approved_at = COALESCE(admin_approved_at, ?),
+          forwarded_to_owner_at = COALESCE(forwarded_to_owner_at, ?),
+          inquiry_fee_status = CASE WHEN NULLIF(owner_email, '') IS NOT NULL THEN 'billable' ELSE inquiry_fee_status END,
+          inquiry_fee_label = CASE WHEN NULLIF(owner_email, '') IS NOT NULL THEN COALESCE(NULLIF(inquiry_fee_label, ''), 'Billable approved LuxeRoutes inquiry') ELSE inquiry_fee_label END,
+          updated_at = ?
+        WHERE id = ?
+      `).bind(status, timestamp, timestamp, timestamp, id).run();
+    } else {
+      await auth.db.prepare(`
+        UPDATE inquiries SET status = ?, updated_at = ?
+        WHERE id = ?
+      `).bind(status, timestamp, id).run();
+    }
 
     const inquiry = await auth.db.prepare(`${inquirySelect} WHERE id = ? LIMIT 1`).bind(id).first();
     if (!inquiry) return privateErrorJson('Inquiry not found.', 404);
