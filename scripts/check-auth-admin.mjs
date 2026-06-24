@@ -66,6 +66,7 @@ assert.match(
   /const isProtectedAccountPage = \(\) => isDashboardPage\(\);/,
   'Registration must stay public; only account dashboards should force a verified session redirect.',
 );
+assert.match(accountSource, /if \(hasCachedSession\) \{[\s\S]*restoreCachedAccountSession[\s\S]*Your saved browser session is active while we reconnect to your account[\s\S]*if \(!localPreview && isProtectedAccountPage\(\)\)/, 'Protected account pages should restore a saved password or OTP browser session before redirecting back to login.');
 const accountHtmlSource = readFileSync('account.html', 'utf8');
 assert.match(accountHtmlSource, /data-required-account-role="customer"/, 'Customer account page should declare its required customer role.');
 assert.match(accountSource, /return normalizedRole === requiredRole \|\| normalizedRole === 'admin';/, 'Role dashboards should route users to their exact role home while allowing admins to access every dashboard.');

@@ -1188,14 +1188,19 @@ const initialiseAccount = async () => {
   const identity = await getAccessIdentity();
   if (identity) accountIdentity = identity;
 
+  if (hasCachedSession) {
+    const restored = restoreCachedAccountSession(
+      cachedSession,
+      localPreview
+        ? 'Your local preview session is active in this browser.'
+        : 'Your saved browser session is active while we reconnect to your account.',
+    );
+    if (restored) return;
+  }
+
   if (!localPreview && isProtectedAccountPage()) {
     redirectToLogin();
     return;
-  }
-
-  if (localPreview && hasCachedSession) {
-    const restored = restoreCachedAccountSession(cachedSession, 'Your local preview session is active in this browser.');
-    if (restored) return;
   }
 
   if (isRegisterPage() && accountEmailInput) accountEmailInput.readOnly = false;
