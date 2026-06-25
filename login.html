@@ -17,7 +17,7 @@
   <link rel="manifest" href="site.webmanifest" />
   <link rel="stylesheet" href="styles.css" />
 </head>
-<body class="admin-page account-page login-page auth-page">
+<body class="login-page auth-page">
   <a class="skip-link" href="#main-content">Skip to content</a>
   <header class="site-header" data-header>
     <div class="header-top" aria-label="LuxeRoutes login highlights">
@@ -56,14 +56,18 @@
             <p class="admin-lead">Use a secure one-time code to access curated offers, partner details, and your private workspace.</p>
           </div>
           <div class="login-route-preview" aria-label="Login access highlights">
-            <span>Resend OTP</span>
+            <span>Secure OTP</span>
             <span>Private offers</span>
-            <span>Partner access</span>
+            <span>Partner workspace</span>
           </div>
           <div class="login-trust-panel" aria-label="Account protection details">
             <div>
-              <strong>Access</strong>
-              <span>Verified email</span>
+              <strong>OTP</strong>
+              <span>Email verification</span>
+            </div>
+            <div>
+              <strong>24/7</strong>
+              <span>Concierge access</span>
             </div>
           </div>
         </div>
@@ -100,9 +104,11 @@
                 <input name="password" type="password" placeholder="Your password" autocomplete="current-password" data-login-password-input>
               </label>
               <label class="auth-checkbox"><input type="checkbox" data-login-remember-input> Keep me signed in on this device</label>
-              <button class="btn btn-primary" type="submit" formaction="/api/auth/otp?action=password" formmethod="post" data-login-password-submit>Sign in with password</button>
-              <button class="btn btn-secondary" type="submit" formaction="/api/auth/otp" formmethod="post" data-login-otp-submit>Email me a login code</button>
-              <a class="btn btn-secondary" href="register.html">Don't have an account? Register here</a>
+              <div class="login-action-stack">
+                <button class="btn btn-primary" type="submit" formaction="/api/auth/otp?action=password" formmethod="post" data-login-password-submit>Sign in with password</button>
+                <button class="btn btn-secondary" type="submit" formaction="/api/auth/otp" formmethod="post" data-login-otp-submit>Email me a login code</button>
+              </div>
+              <p class="account-switch-link">New to LuxeRoutes? <a href="register.html">Create an account</a></p>
             </div>
             <div class="login-step" data-login-code-step hidden>
               <div class="otp-summary">
@@ -139,20 +145,20 @@
             <p class="login-access-note otp-helper" data-reset-message>Password reset uses the same Resend OTP email verification.</p>
           </form>
 
-          <div class="auth-status-card admin-access-card" aria-label="Admin access">
-            <h3>Admin access</h3>
-            <p>Admins do not use the public Resend code form. Open the protected admin console and Cloudflare Access will send the admin verification check.</p>
-            <a class="btn btn-secondary" href="admin/index.html" data-admin-access-link>Continue with Cloudflare Access</a>
-          </div>
+          <details class="login-admin-details">
+            <summary>Admin access</summary>
+            <p>Admins use the protected Cloudflare Access console instead of the public code form.</p>
+            <a class="text-link" href="admin/index.html" data-admin-access-link>Continue to admin console</a>
+          </details>
 
           <ul class="login-security-list" aria-label="Security notes">
             <li>Use your account password or a short-lived one-time code.</li>
             <li>Partner access is reviewed by the LuxeRoutes team.</li>
           </ul>
 
-          <div class="auth-status-card" aria-label="Account access" data-login-session-status>
-            <h3 data-account-heading>Account access</h3>
-            <p data-account-status>Enter your email above and verify the one-time code to continue.</p>
+          <div class="login-session-note" aria-label="Account access" data-login-session-status>
+            <strong data-account-heading>Account access</strong>
+            <span data-account-status>Enter your email above and verify the one-time code to continue.</span>
           </div>
 
         </aside>
