@@ -148,7 +148,10 @@ const isAccountLocalPreview = () => ['localhost', '127.0.0.1', ''].includes(wind
 
 const isSessionFresh = (session) => Boolean(session?.expiresAt && Date.now() < session.expiresAt);
 
-const normalizeAccountRole = (role) => (accountDashboardRoles.includes(role) ? role : 'customer');
+const normalizeAccountRole = (role) => {
+  const normalizedRole = String(role || '').trim().toLowerCase();
+  return accountDashboardRoles.includes(normalizedRole) ? normalizedRole : 'customer';
+};
 
 const getRoleHomePath = (role) => accountRoleHomePaths[normalizeAccountRole(role)] || accountRoleHomePaths.customer;
 
@@ -1076,6 +1079,7 @@ const getVerifiedRoleLabel = (role) => ({
   manager: 'Manager access confirmed',
   admin: 'Admin access confirmed',
   customer: 'Customer access confirmed',
+  partner: 'Partner access confirmed',
 }[normalizeAccountRole(role)] || 'Email verified');
 
 const getAccountStatusCopy = (remoteAccount = {}, profile = null) => {

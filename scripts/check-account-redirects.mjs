@@ -195,12 +195,17 @@ assert.deepEqual(
   ['/api/account', '/api/auth/otp?action=session'],
   'The OTP session fallback should run immediately after an unavailable account API response.',
 );
+assert.equal(accountApiRedirectFallback.body.dataset.accountLocked, 'false', 'Verified customers should unlock account.html.');
+assert.equal(accountApiRedirectFallback.elements['[data-account-heading]'].textContent, 'Customer access confirmed', 'Account page status heading should confirm customer access.');
+assert.equal(accountApiRedirectFallback.elements['[data-account-email]'].textContent, 'customer@example.com', 'Account page should display the verified customer email.');
+assert.equal(accountApiRedirectFallback.elements['[data-account-role]'].textContent, 'Customer', 'Account page should display the resolved customer role.');
+assert.match(accountApiRedirectFallback.elements['[data-account-status]'].textContent, /Customer role/, 'Account page status should explain active customer access.');
 
 const ownerAccountResponse = new Response(JSON.stringify({
   identityEmail: 'owner@example.com',
   profile: { email: 'owner@example.com', defaultRole: 'customer', requestedRole: 'owner', status: 'active' },
-  grant: { role: 'owner', status: 'active' },
-  role: 'owner',
+  grant: { role: 'Owner', status: 'active' },
+  role: 'Owner',
   accessStatus: 'active',
 }), { status: 200, headers: { 'Content-Type': 'application/json' } });
 const ownerOnCustomerDashboard = await runAccountClient({ accountResponse: ownerAccountResponse });
