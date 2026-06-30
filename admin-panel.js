@@ -8,7 +8,17 @@ const statsTarget = document.querySelector('[data-admin-stats]');
 const applicationsTarget = document.querySelector('[data-applications]');
 const membersTarget = document.querySelector('[data-members]');
 const inquiriesTarget = document.querySelector('[data-inquiries]');
+const inquiryFilterInput = document.querySelector('[data-admin-inquiry-filter]');
+const inquirySearchInput = document.querySelector('[data-admin-inquiry-search]');
+const affiliateFilterInput = document.querySelector('[data-admin-affiliate-filter]');
+const affiliateSearchInput = document.querySelector('[data-admin-affiliate-search]');
 const offersTarget = document.querySelector('[data-admin-offers]');
+const customerOffersTarget = document.querySelector('[data-customer-offers]');
+const revenueStatsTarget = document.querySelector('[data-revenue-stats]');
+const sendProposalRemindersButton = document.querySelector('[data-send-proposal-reminders]');
+const couponsTarget = document.querySelector('[data-coupons]');
+const couponForm = document.querySelector('[data-coupon-form]');
+const customerOfferForm = document.querySelector('[data-customer-offer-form]');
 const grantForm = document.querySelector('[data-grant-form]');
 const inquiryDialog = document.querySelector('[data-inquiry-dialog]');
 const inquiryDialogTitle = document.querySelector('[data-inquiry-dialog-title]');
@@ -23,6 +33,8 @@ let grants = [];
 let inquiries = [];
 let offers = [];
 let affiliates = [];
+let coupons = [];
+let customerOffers = [];
 
 const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (character) => ({
   '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;',
@@ -57,6 +69,32 @@ const requestJson = async (url, options = {}) => {
   }
   return data;
 };
+
+const formatMoney = (amount = 0, currency = 'EUR') => `${currency || 'EUR'} ${Number(amount || 0).toLocaleString('en-US', { maximumFractionDigits: 2 })}`;
+const sumCustomerOffers = (predicate, field = 'estimatedCommissionAmount') => customerOffers
+  .filter(predicate)
+  .reduce((total, offer) => total + Number(offer[field] || 0), 0);
+const renderRevenueStats = () => {
+  if (!revenueStatsTarget) return;
+  const activeStatuses = new Set(['sent', 'customer_interested', 'changes_requested', 'owner_confirmed']);
+  const primaryCurrency = customerOffers.find((offer) => offer.currency)?.currency || 'EUR';
+  const activeProposals = customerOffers.filter((offer) => activeStatuses.has(offer.status || 'draft'));
+  const wonProposals = customerOffers.filter((offer) => offer.status === 'won');
+  const pendingCustomer = customerOffers.filter((offer) => ['sent', 'changes_requested'].includes(offer.status || '') && !offer.customerRespondedAt).length;
+  const commissionDue = sumCustomerOffers((offer) => offer.commissionStatus === 'due');
+  const commissionPaid = sumCustomerOffers((offer) => offer.commissionStatus === 'paid');
+  const activeValue = activeProposals.reduce((total, offer) => total + Number(offer.ownerPriceAmount || 0), 0);
+  const activeCommission = activeProposals.reduce((total, offer) => total + Number(offer.estimatedCommissionAmount || 0), 0);
+  revenueStatsTarget.innerHTML = [
+    ['Active proposal value', formatMoney(activeValue, primaryCurrency)],
+    ['Estimated commission', formatMoney(activeCommission, primaryCurrency)],
+    ['Commission due', formatMoney(commissionDue, primaryCurrency)],
+    ['Commission paid', formatMoney(commissionPaid, primaryCurrency)],
+    ['Won proposals', wonProposals.length],
+    ['Needs customer reply', pendingCustomer],
+  ].map(([label, value]) => `<article><strong>${escapeHtml(value)}</strong><span>${escapeHtml(label)}</span></article>`).join('');
+};
+
 const isPropertyInquiry = (inquiry) => {
   const payload = parsePayload(inquiry);
   return Boolean(payload.property_type || String(payload.offer_type || '').toLowerCase() === 'property' || /property|owner/i.test(inquiry.inquiryType));
@@ -87,13 +125,44 @@ const renderMembers = () => {
     return `<tr><td><strong>${escapeHtml(profile.name || grant.email)}</strong><br><small>${escapeHtml(grant.email)}</small></td><td>${escapeHtml(roleLabel(grant.role))}</td><td>${escapeHtml(statusLabel(grant.status))}</td><td>${escapeHtml(profile.companyName || '—')}</td><td>${escapeHtml(formatDate(grant.updatedAt))}</td><td><form class="inline-role-form" data-member-form data-email="${escapeHtml(grant.email)}"><select name="role" aria-label="Role for ${escapeHtml(grant.email)}" ${isSelf ? 'disabled' : ''}>${['customer', 'owner', 'manager', 'admin'].map((role) => `<option value="${role}" ${grant.role === role ? 'selected' : ''}>${roleLabel(role)}</option>`).join('')}</select><button class="mini-action" type="submit" ${isSelf ? 'disabled' : ''}>Save</button></form></td></tr>`;
   }).join('') || '<tr><td colspan="6" class="empty-state">No member grants found.</td></tr>';
 };
+const getFilteredInquiries = () => {
+  const statusFilter = inquiryFilterInput?.value || 'all';
+  const search = String(inquirySearchInput?.value || '').trim().toLowerCase();
+  return inquiries.filter((inquiry) => {
+    if (statusFilter !== 'all' && inquiry.status !== statusFilter) return false;
+    if (!search) return true;
+    const payload = parsePayload(inquiry);
+    return [inquiry.name, inquiry.email, inquiry.phone, inquiry.inquiryType, inquiry.status, inquiry.offerTitle, payload.message, payload.notes, payload.property_name, payload.offer]
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase()
+      .includes(search);
+  });
+};
+
 const renderInquiries = () => {
   if (!inquiriesTarget) return;
-  inquiriesTarget.innerHTML = inquiries.map((inquiry) => `<tr><td><strong>${escapeHtml(inquiry.name || 'Unnamed')}</strong><br><small>${escapeHtml(inquiry.email || inquiry.phone || 'No contact')}</small></td><td>${escapeHtml(inquiry.inquiryType)}</td><td>${escapeHtml(formatDate(inquiry.createdAt))}</td><td><select data-inquiry-status data-id="${escapeHtml(inquiry.id)}" aria-label="Status for ${escapeHtml(inquiry.inquiryType)}">${['new', 'in_progress', 'waiting', 'approved', 'resolved', 'closed', 'declined'].map((status) => `<option value="${status}" ${inquiry.status === status ? 'selected' : ''}>${statusLabel(status)}</option>`).join('')}</select></td><td><button class="mini-action" type="button" data-inquiry-detail="${escapeHtml(inquiry.id)}">View details</button>${isPropertyInquiry(inquiry) && !offers.some((offer) => offer.sourceInquiryId === inquiry.id) ? ` <button class="mini-action" type="button" data-publish-inquiry="${escapeHtml(inquiry.id)}">Publish stay</button>` : ''}</td></tr>`).join('') || '<tr><td colspan="5" class="empty-state">No inquiries received yet.</td></tr>';
+  const filteredInquiries = getFilteredInquiries();
+  inquiriesTarget.innerHTML = filteredInquiries.map((inquiry) => `<tr><td><strong>${escapeHtml(inquiry.name || 'Unnamed')}</strong><br><small>${escapeHtml(inquiry.email || inquiry.phone || 'No contact')}</small></td><td>${escapeHtml(inquiry.inquiryType)}</td><td>${escapeHtml(formatDate(inquiry.createdAt))}</td><td><select data-inquiry-status data-id="${escapeHtml(inquiry.id)}" aria-label="Status for ${escapeHtml(inquiry.inquiryType)}">${['new', 'in_progress', 'waiting', 'approved', 'resolved', 'closed', 'declined'].map((status) => `<option value="${status}" ${inquiry.status === status ? 'selected' : ''}>${statusLabel(status)}</option>`).join('')}</select></td><td><button class="mini-action" type="button" data-inquiry-detail="${escapeHtml(inquiry.id)}">View details</button>${isPropertyInquiry(inquiry) && !offers.some((offer) => offer.sourceInquiryId === inquiry.id) ? ` <button class="mini-action" type="button" data-publish-inquiry="${escapeHtml(inquiry.id)}">Publish stay</button>` : ''}</td></tr>`).join('') || '<tr><td colspan="5" class="empty-state">No inquiries match the current filters.</td></tr>';
 };
+const getFilteredAffiliates = () => {
+  const statusFilter = affiliateFilterInput?.value || 'all';
+  const search = String(affiliateSearchInput?.value || '').trim().toLowerCase();
+  return affiliates.filter((affiliate) => {
+    if (statusFilter !== 'all' && (affiliate.status || 'pending_review') !== statusFilter) return false;
+    if (!search) return true;
+    return [affiliate.name, affiliate.email, affiliate.website, affiliate.audience, affiliate.referralCode, affiliate.note]
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase()
+      .includes(search);
+  });
+};
+
 const renderAffiliates = () => {
   if (!affiliatesTarget) return;
-  affiliatesTarget.innerHTML = affiliates.map((affiliate) => `<tr><td><strong>${escapeHtml(affiliate.name || affiliate.email)}</strong><br><small>${escapeHtml(affiliate.email || '')}${affiliate.website ? ` · <a href="${escapeHtml(affiliate.website)}" target="_blank" rel="noopener noreferrer">website</a>` : ''}</small><br><small>${escapeHtml(affiliate.audience || '')}</small></td><td>${escapeHtml(statusLabel(affiliate.status || 'pending_review'))}</td><td><code>${escapeHtml(affiliate.referralCode || '')}</code></td><td>${Number(affiliate.visits || 0)} visits<br>${Number(affiliate.inquiries || 0)} inquiries<br>${Number(affiliate.totalEvents || 0)} events</td><td><form class="inline-role-form" data-affiliate-form data-id="${escapeHtml(affiliate.id)}"><select name="status" aria-label="Affiliate status for ${escapeHtml(affiliate.email || '')}">${['pending_review', 'active', 'paused', 'rejected'].map((status) => `<option value="${status}" ${(affiliate.status || 'pending_review') === status ? 'selected' : ''}>${statusLabel(status)}</option>`).join('')}</select><input name="referralCode" value="${escapeHtml(affiliate.referralCode || '')}" placeholder="referralcode" /><textarea name="note" rows="2" placeholder="Admin note">${escapeHtml(affiliate.note || '')}</textarea><button class="mini-action" type="submit">Save</button></form></td></tr>`).join('') || '<tr><td colspan="5" class="empty-state">No affiliate applications yet.</td></tr>';
+  const filteredAffiliates = getFilteredAffiliates();
+  affiliatesTarget.innerHTML = filteredAffiliates.map((affiliate) => `<tr><td><strong>${escapeHtml(affiliate.name || affiliate.email)}</strong><br><small>${escapeHtml(affiliate.email || '')}${affiliate.website ? ` · <a href="${escapeHtml(affiliate.website)}" target="_blank" rel="noopener noreferrer">website</a>` : ''}</small><br><small>${escapeHtml(affiliate.audience || '')}</small></td><td>${escapeHtml(statusLabel(affiliate.status || 'pending_review'))}</td><td><code>${escapeHtml(affiliate.referralCode || '')}</code></td><td>${Number(affiliate.visits || 0)} visits<br>${Number(affiliate.inquiries || 0)} inquiries<br>${Number(affiliate.totalEvents || 0)} events</td><td><form class="inline-role-form" data-affiliate-form data-id="${escapeHtml(affiliate.id)}"><select name="status" aria-label="Affiliate status for ${escapeHtml(affiliate.email || '')}">${['pending_review', 'active', 'paused', 'rejected'].map((status) => `<option value="${status}" ${(affiliate.status || 'pending_review') === status ? 'selected' : ''}>${statusLabel(status)}</option>`).join('')}</select><input name="referralCode" value="${escapeHtml(affiliate.referralCode || '')}" placeholder="referralcode" /><textarea name="note" rows="2" placeholder="Admin note">${escapeHtml(affiliate.note || '')}</textarea><button class="mini-action" type="submit">Save</button></form></td></tr>`).join('') || '<tr><td colspan="5" class="empty-state">No affiliate applications match the current filters.</td></tr>';
 };
 
 const appendUploadedImageUrl = (form, targetName, url) => {
@@ -138,23 +207,37 @@ const payloadFromTextFields = (formData) => {
   return payload;
 };
 
+const renderCoupons = () => {
+  if (!couponsTarget) return;
+  couponsTarget.innerHTML = coupons.map((coupon) => `<tr><td><strong>${escapeHtml(coupon.email)}</strong><br><small>${escapeHtml(coupon.title || '')}</small></td><td><code>${escapeHtml(coupon.code || '')}</code><br><small>${escapeHtml(coupon.description || coupon.note || '')}</small></td><td>${escapeHtml(statusLabel(coupon.status || 'active'))}</td><td>${escapeHtml(coupon.expiresAt || 'No expiry')}</td><td><form class="inline-role-form" data-coupon-row-form data-id="${escapeHtml(coupon.id)}"><select name="status" aria-label="Coupon status for ${escapeHtml(coupon.code || '')}">${['active', 'used', 'expired', 'revoked'].map((status) => `<option value="${status}" ${(coupon.status || 'active') === status ? 'selected' : ''}>${statusLabel(status)}</option>`).join('')}</select><input type="date" name="expiresAt" value="${escapeHtml(coupon.expiresAt || '')}" /><input name="note" value="${escapeHtml(coupon.note || '')}" placeholder="Internal note" /><button class="mini-action" type="submit">Save</button></form></td></tr>`).join('') || '<tr><td colspan="5" class="empty-state">No customer coupons have been created yet.</td></tr>';
+};
+
+const renderCustomerOffers = () => {
+  if (!customerOffersTarget) return;
+  const statuses = ['draft', 'sent', 'customer_interested', 'changes_requested', 'owner_confirmed', 'won', 'lost', 'expired', 'cancelled'];
+  const commissionStatuses = ['not_due', 'due', 'invoiced', 'paid', 'waived'];
+  customerOffersTarget.innerHTML = customerOffers.map((offer) => `<tr><td><strong>${escapeHtml(offer.customerEmail || '')}</strong><br><small>${escapeHtml(offer.inquiryId || 'No inquiry linked')}</small></td><td><strong>${escapeHtml(offer.title || 'Private proposal')}</strong><br><small>${escapeHtml(offer.destinationLabel || '')}</small><br><small>${escapeHtml(offer.couponLabel || offer.perkLabel || '')}</small></td><td>${escapeHtml(offer.currency || 'EUR')} ${Number(offer.ownerPriceAmount || 0).toLocaleString()}<br><small>${escapeHtml(offer.priceNote || '')}</small></td><td>${escapeHtml(statusLabel(offer.commissionType || 'percent'))}: ${Number(offer.commissionValue || 0)}<br><small>Est. ${escapeHtml(offer.currency || 'EUR')} ${Number(offer.estimatedCommissionAmount || 0).toLocaleString()}</small><br><small>${escapeHtml(statusLabel(offer.commissionStatus || 'not_due'))}</small></td><td>${escapeHtml(statusLabel(offer.status || 'draft'))}<br><small>${offer.expiresAt ? `Expires ${escapeHtml(offer.expiresAt)}` : 'No expiry'}</small></td><td><form class="inline-role-form" data-customer-offer-row-form data-id="${escapeHtml(offer.id)}"><select name="status" aria-label="Proposal status for ${escapeHtml(offer.customerEmail || '')}">${statuses.map((status) => `<option value="${status}" ${(offer.status || 'draft') === status ? 'selected' : ''}>${statusLabel(status)}</option>`).join('')}</select><select name="commissionStatus" aria-label="Commission status for ${escapeHtml(offer.title || '')}">${commissionStatuses.map((status) => `<option value="${status}" ${(offer.commissionStatus || 'not_due') === status ? 'selected' : ''}>${statusLabel(status)}</option>`).join('')}</select><input type="date" name="expiresAt" value="${escapeHtml(offer.expiresAt || '')}" /><textarea name="internalNote" rows="2" placeholder="Internal note">${escapeHtml(offer.internalNote || '')}</textarea><button class="mini-action" type="submit">Save</button></form></td></tr>`).join('') || '<tr><td colspan="6" class="empty-state">No customer proposals yet.</td></tr>';
+};
+
 const renderOffers = () => {
   if (!offersTarget) return;
   const partnerStatuses = ['draft', 'pending_review', 'changes_requested', 'approved', 'published', 'archived'];
-  offersTarget.innerHTML = offers.map((offer) => `<tr><td><strong>${escapeHtml(offer.title)}</strong><br><small>${escapeHtml(offer.locationLabel)}</small></td><td>${escapeHtml(roleLabel(offer.stayType))}<br><small>${escapeHtml(offer.country)} · ${escapeHtml(offer.region)}</small></td><td>${escapeHtml(statusLabel(offer.status))}<br><small>${escapeHtml(statusLabel(offer.partnerStatus || 'pending_review'))}</small></td><td><form class="inline-offer-form" data-offer-form data-id="${escapeHtml(offer.id)}"><label>Owner email<input type="email" name="ownerEmail" value="${escapeHtml(offer.ownerEmail || '')}" placeholder="owner@example.com" /></label><label>Manager email<input type="email" name="managerEmail" value="${escapeHtml(offer.managerEmail || '')}" placeholder="manager@example.com" /></label><label>Partner status<select name="partnerStatus">${partnerStatuses.map((status) => `<option value="${status}" ${(offer.partnerStatus || 'pending_review') === status ? 'selected' : ''}>${statusLabel(status)}</option>`).join('')}</select></label><label>Main image URL<input type="url" name="imageUrl" value="${escapeHtml(offer.imageUrl || '')}" placeholder="https://…" /></label><label>Upload main image<input type="file" name="mainImageUpload" accept="image/jpeg,image/png,image/webp,image/gif" data-admin-image-upload data-image-target="imageUrl" /></label><label>Gallery URLs<textarea name="galleryUrls" rows="2" placeholder="One URL per line">${escapeHtml(offer.galleryUrls || '')}</textarea></label><label>Upload gallery images<input type="file" name="galleryImageUpload" accept="image/jpeg,image/png,image/webp,image/gif" data-admin-image-upload data-image-target="galleryUrls" multiple /></label><label>Owner note<textarea name="ownerNotes" rows="2" placeholder="Message visible in owner panel">${escapeHtml(offer.ownerNotes || '')}</textarea></label><label>Manager note<textarea name="managerNotes" rows="2" placeholder="Message visible in manager panel">${escapeHtml(offer.managerNotes || '')}</textarea></label><button class="mini-action" type="submit">Save assignments</button></form></td><td>${escapeHtml(formatDate(offer.updatedAt))}</td><td><div class="admin-action-stack">${offer.status === 'published' ? `<button class="mini-action" type="button" data-offer-status="unpublished" data-partner-status="approved" data-id="${escapeHtml(offer.id)}">Unpublish</button>` : `<button class="mini-action" type="button" data-offer-status="published" data-partner-status="published" data-id="${escapeHtml(offer.id)}">Approve & publish</button>`}<button class="mini-action" type="button" data-offer-status="unpublished" data-partner-status="changes_requested" data-id="${escapeHtml(offer.id)}">Request changes</button><button class="mini-action" type="button" data-offer-status="unpublished" data-partner-status="archived" data-id="${escapeHtml(offer.id)}">Decline/archive</button></div></td></tr>`).join('') || '<tr><td colspan="6" class="empty-state">No database-backed stay offers yet.</td></tr>';
+  const followUpStatuses = ['not_started', 'contacted', 'waiting_reply', 'scheduled', 'complete'];
+  offersTarget.innerHTML = offers.map((offer) => `<tr><td><strong>${escapeHtml(offer.title)}</strong><br><small>${escapeHtml(offer.locationLabel)}</small></td><td>${escapeHtml(roleLabel(offer.stayType))}<br><small>${escapeHtml(offer.country)} · ${escapeHtml(offer.region)}</small></td><td>${escapeHtml(statusLabel(offer.status))}<br><small>${escapeHtml(statusLabel(offer.partnerStatus || 'pending_review'))}</small></td><td><form class="inline-offer-form" data-offer-form data-id="${escapeHtml(offer.id)}"><label>Owner email<input type="email" name="ownerEmail" value="${escapeHtml(offer.ownerEmail || '')}" placeholder="owner@example.com" /></label><label>Manager email<input type="email" name="managerEmail" value="${escapeHtml(offer.managerEmail || '')}" placeholder="manager@example.com" /></label><label>Partner status<select name="partnerStatus">${partnerStatuses.map((status) => `<option value="${status}" ${(offer.partnerStatus || 'pending_review') === status ? 'selected' : ''}>${statusLabel(status)}</option>`).join('')}</select></label><label>Main image URL<input type="url" name="imageUrl" value="${escapeHtml(offer.imageUrl || '')}" placeholder="https://…" /></label><label>Upload main image<input type="file" name="mainImageUpload" accept="image/jpeg,image/png,image/webp,image/gif" data-admin-image-upload data-image-target="imageUrl" /></label><label>Gallery URLs<textarea name="galleryUrls" rows="2" placeholder="One URL per line">${escapeHtml(offer.galleryUrls || '')}</textarea></label><label>Upload gallery images<input type="file" name="galleryImageUpload" accept="image/jpeg,image/png,image/webp,image/gif" data-admin-image-upload data-image-target="galleryUrls" multiple /></label><label>Owner note<textarea name="ownerNotes" rows="2" placeholder="Message visible in owner panel">${escapeHtml(offer.ownerNotes || '')}</textarea></label><label>Owner follow-up date<input type="date" name="ownerFollowUpAt" value="${escapeHtml(offer.ownerFollowUpAt || '')}" /></label><label>Owner follow-up status<select name="ownerFollowUpStatus"><option value="">Not set</option>${followUpStatuses.map((status) => `<option value="${status}" ${(offer.ownerFollowUpStatus || '') === status ? 'selected' : ''}>${statusLabel(status)}</option>`).join('')}</select></label><label>Manager note<textarea name="managerNotes" rows="2" placeholder="Message visible in manager panel">${escapeHtml(offer.managerNotes || '')}</textarea></label><label>Manager follow-up date<input type="date" name="managerFollowUpAt" value="${escapeHtml(offer.managerFollowUpAt || '')}" /></label><label>Manager follow-up status<select name="managerFollowUpStatus"><option value="">Not set</option>${followUpStatuses.map((status) => `<option value="${status}" ${(offer.managerFollowUpStatus || '') === status ? 'selected' : ''}>${statusLabel(status)}</option>`).join('')}</select></label><button class="mini-action" type="submit">Save assignments</button></form></td><td>${escapeHtml(formatDate(offer.updatedAt))}</td><td><div class="admin-action-stack">${offer.status === 'published' ? `<button class="mini-action" type="button" data-offer-status="unpublished" data-partner-status="approved" data-id="${escapeHtml(offer.id)}">Unpublish</button>` : `<button class="mini-action" type="button" data-offer-status="published" data-partner-status="published" data-id="${escapeHtml(offer.id)}">Approve & publish</button>`}<button class="mini-action" type="button" data-offer-status="unpublished" data-partner-status="changes_requested" data-id="${escapeHtml(offer.id)}">Request changes</button><button class="mini-action" type="button" data-offer-status="unpublished" data-partner-status="archived" data-id="${escapeHtml(offer.id)}">Decline/archive</button></div></td></tr>`).join('') || '<tr><td colspan="6" class="empty-state">No database-backed stay offers yet.</td></tr>';
 };
-const renderAll = () => { renderStats(); renderApplications(); renderMembers(); renderInquiries(); renderAffiliates();
-    renderOffers(); };
+const renderAll = () => { renderStats(); renderRevenueStats(); renderApplications(); renderMembers(); renderInquiries(); renderAffiliates(); renderCoupons(); renderCustomerOffers(); renderOffers(); };
 const loadAdminData = async () => {
   showAlert('');
   if (refreshButton) refreshButton.disabled = true;
   try {
-    const [grantData, inquiryData, offerData, affiliateData] = await Promise.all([requestJson('/api/admin/grants'), requestJson('/api/admin/inquiries'), requestJson('/api/admin/offers'), requestJson('/api/admin/affiliates')]);
+    const [grantData, inquiryData, offerData, affiliateData, couponData, customerOfferData] = await Promise.all([requestJson('/api/admin/grants'), requestJson('/api/admin/inquiries'), requestJson('/api/admin/offers'), requestJson('/api/admin/affiliates'), requestJson('/api/admin/coupons'), requestJson('/api/admin/customer-offers')]);
     profiles = Array.isArray(grantData.profiles) ? grantData.profiles : [];
     grants = Array.isArray(grantData.grants) ? grantData.grants : [];
     inquiries = Array.isArray(inquiryData.inquiries) ? inquiryData.inquiries : [];
     offers = Array.isArray(offerData.offers) ? offerData.offers : [];
     affiliates = Array.isArray(affiliateData.affiliates) ? affiliateData.affiliates : [];
+    coupons = Array.isArray(couponData.coupons) ? couponData.coupons : [];
+    customerOffers = Array.isArray(customerOfferData.customerOffers) ? customerOfferData.customerOffers : [];
     renderAll();
   } catch (error) { showAlert(error.message); } finally { if (refreshButton) refreshButton.disabled = false; }
 };
@@ -211,6 +294,20 @@ const verifyAdmin = async () => {
 document.addEventListener('click', async (event) => {
   const createOfferButton = event.target.closest('[data-create-owner-offer]');
   if (createOfferButton) { openBlankOfferDialog(); return; }
+  const reminderButton = event.target.closest('[data-send-proposal-reminders]');
+  if (reminderButton) {
+    reminderButton.disabled = true;
+    try {
+      const result = await requestJson('/api/admin/customer-offers/reminders', { method: 'POST', body: JSON.stringify({}) });
+      showAlert(`Proposal reminders sent: ${Number(result.customerReminders || 0)} customer, ${Number(result.internalReminders || 0)} internal.`, 'success');
+      await loadAdminData();
+    } catch (error) {
+      showAlert(error.message);
+    } finally {
+      reminderButton.disabled = false;
+    }
+    return;
+  }
   const grantButton = event.target.closest('[data-grant-action]');
   if (grantButton) { grantButton.disabled = true; try { await saveGrant({ email: grantButton.dataset.email, role: grantButton.dataset.role, action: grantButton.dataset.grantAction }); } catch (error) { showAlert(error.message); grantButton.disabled = false; } return; }
   const detailButton = event.target.closest('[data-inquiry-detail]');
@@ -266,6 +363,50 @@ document.addEventListener('submit', async (event) => {
     }
     return;
   }
+  if (event.target === customerOfferForm) {
+    event.preventDefault();
+    const formData = new FormData(customerOfferForm);
+    try {
+      await requestJson('/api/admin/customer-offers', { method: 'POST', body: JSON.stringify(payloadFromTextFields(formData)) });
+      customerOfferForm.reset();
+      showAlert('Customer proposal created.', 'success');
+      await loadAdminData();
+    } catch (error) { showAlert(error.message); }
+    return;
+  }
+  const customerOfferRowForm = event.target.closest('[data-customer-offer-row-form]');
+  if (customerOfferRowForm) {
+    event.preventDefault();
+    const formData = new FormData(customerOfferRowForm);
+    try {
+      await requestJson('/api/admin/customer-offers', { method: 'PATCH', body: JSON.stringify({ id: customerOfferRowForm.dataset.id, status: formData.get('status'), commissionStatus: formData.get('commissionStatus'), expiresAt: formData.get('expiresAt'), internalNote: formData.get('internalNote') }) });
+      showAlert('Customer proposal updated.', 'success');
+      await loadAdminData();
+    } catch (error) { showAlert(error.message); }
+    return;
+  }
+  if (event.target === couponForm) {
+    event.preventDefault();
+    const formData = new FormData(couponForm);
+    try {
+      await requestJson('/api/admin/coupons', { method: 'POST', body: JSON.stringify(payloadFromTextFields(formData)) });
+      couponForm.reset();
+      showAlert('Customer coupon saved.', 'success');
+      await loadAdminData();
+    } catch (error) { showAlert(error.message); }
+    return;
+  }
+  const couponRowForm = event.target.closest('[data-coupon-row-form]');
+  if (couponRowForm) {
+    event.preventDefault();
+    const formData = new FormData(couponRowForm);
+    try {
+      await requestJson('/api/admin/coupons', { method: 'PATCH', body: JSON.stringify({ id: couponRowForm.dataset.id, status: formData.get('status'), expiresAt: formData.get('expiresAt'), note: formData.get('note') }) });
+      showAlert('Coupon updated.', 'success');
+      await loadAdminData();
+    } catch (error) { showAlert(error.message); }
+    return;
+  }
   const affiliateForm = event.target.closest('[data-affiliate-form]');
   if (affiliateForm) {
     event.preventDefault();
@@ -291,5 +432,9 @@ document.addEventListener('change', async (event) => {
   select.disabled = true;
   try { await requestJson('/api/admin/inquiries', { method: 'PATCH', body: JSON.stringify({ id: select.dataset.id, status: select.value }) }); showAlert('Inquiry status updated.', 'success'); await loadAdminData(); } catch (error) { showAlert(error.message); select.disabled = false; }
 });
+inquiryFilterInput?.addEventListener('change', renderInquiries);
+inquirySearchInput?.addEventListener('input', renderInquiries);
+affiliateFilterInput?.addEventListener('change', renderAffiliates);
+affiliateSearchInput?.addEventListener('input', renderAffiliates);
 refreshButton?.addEventListener('click', loadAdminData);
 verifyAdmin();

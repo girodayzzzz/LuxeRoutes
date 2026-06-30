@@ -9,6 +9,101 @@ const profileSelect = `
 
 const getProfile = async (db, email) => db.prepare(`${profileSelect} WHERE lower(trim(email)) = ? LIMIT 1`).bind(email).first();
 
+const getAccountInquiries = async (db, email) => {
+  const rows = await db.prepare(`
+    SELECT id, inquiry_type AS inquiryType, name, email, phone, source_page AS sourcePage,
+      submitted_from AS submittedFrom, payload_json AS payloadJson, offer_id AS offerId,
+      offer_title AS offerTitle, status, created_at AS createdAt, updated_at AS updatedAt
+    FROM inquiries
+    WHERE lower(trim(email)) = ?
+    ORDER BY created_at DESC
+    LIMIT 50
+  `).bind(email).all();
+  return rows.results || [];
+};
+
+
+const ensureAccountCouponsSchema = async (db) => {
+  await db.prepare(`CREATE TABLE IF NOT EXISTS account_coupons (
+    id TEXT PRIMARY KEY,
+    email TEXT NOT NULL,
+    code TEXT NOT NULL,
+    title TEXT NOT NULL,
+    description TEXT,
+    status TEXT NOT NULL DEFAULT 'active',
+    expires_at TEXT,
+    redeemed_at TEXT,
+    note TEXT,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  )`).run();
+  await db.prepare('CREATE INDEX IF NOT EXISTS idx_account_coupons_email_status ON account_coupons(email, status)').run();
+};
+
+const getAccountCoupons = async (db, email) => {
+  await ensureAccountCouponsSchema(db);
+  const rows = await db.prepare(`
+    SELECT id, code, title, description, status, expires_at AS expiresAt,
+      redeemed_at AS redeemedAt, created_at AS createdAt, updated_at AS updatedAt
+    FROM account_coupons
+    WHERE lower(trim(email)) = ?
+    ORDER BY CASE status WHEN 'active' THEN 0 WHEN 'used' THEN 1 WHEN 'expired' THEN 2 ELSE 3 END, updated_at DESC
+    LIMIT 25
+  `).bind(email).all();
+  return rows.results || [];
+};
+
+
+const ensureCustomerOffersSchema = async (db) => {
+  await db.prepare(`CREATE TABLE IF NOT EXISTS customer_offers (
+    id TEXT PRIMARY KEY,
+    inquiry_id TEXT,
+    customer_email TEXT NOT NULL,
+    offer_id TEXT,
+    owner_email TEXT,
+    manager_email TEXT,
+    title TEXT NOT NULL,
+    destination_label TEXT,
+    owner_price_amount REAL,
+    currency TEXT NOT NULL DEFAULT 'EUR',
+    price_note TEXT,
+    included_items TEXT,
+    coupon_id TEXT,
+    coupon_label TEXT,
+    perk_label TEXT,
+    customer_message TEXT,
+    internal_note TEXT,
+    commission_type TEXT NOT NULL DEFAULT 'percent',
+    commission_value REAL NOT NULL DEFAULT 0,
+    estimated_commission_amount REAL NOT NULL DEFAULT 0,
+    commission_status TEXT NOT NULL DEFAULT 'not_due',
+    status TEXT NOT NULL DEFAULT 'draft',
+    expires_at TEXT,
+    customer_responded_at TEXT,
+    owner_confirmed_at TEXT,
+    commission_paid_at TEXT,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  )`).run();
+  await db.prepare('CREATE INDEX IF NOT EXISTS idx_customer_offers_customer_email ON customer_offers(lower(trim(customer_email)), status)').run();
+};
+
+const getAccountCustomerOffers = async (db, email) => {
+  await ensureCustomerOffersSchema(db);
+  const rows = await db.prepare(`
+    SELECT id, inquiry_id AS inquiryId, offer_id AS offerId, title, destination_label AS destinationLabel,
+      owner_price_amount AS ownerPriceAmount, currency, price_note AS priceNote, included_items AS includedItems,
+      coupon_label AS couponLabel, perk_label AS perkLabel, customer_message AS customerMessage,
+      status, expires_at AS expiresAt, customer_responded_at AS customerRespondedAt,
+      created_at AS createdAt, updated_at AS updatedAt
+    FROM customer_offers
+    WHERE lower(trim(customer_email)) = ? AND status != 'draft'
+    ORDER BY updated_at DESC
+    LIMIT 50
+  `).bind(email).all();
+  return rows.results || [];
+};
+
 const getAccessStatus = (profile, grant) => {
   if (!profile) return 'profile_required';
   if (profile.requestedRole && profile.requestedRole !== 'customer' && !['admin', profile.requestedRole].includes(grant?.role)) {
@@ -25,6 +120,12 @@ export const onRequestGet = async ({ request, env }) => {
 
     const db = requireDb(env);
     await ensureAuthSchema(db);
+    const action = new URL(request.url).searchParams.get('action');
+    if (action === 'activity') {
+      const [inquiries, coupons, customerOffers] = await Promise.all([getAccountInquiries(db, email), getAccountCoupons(db, email), getAccountCustomerOffers(db, email)]);
+      return privateJson({ identityEmail: email, inquiries, coupons, customerOffers });
+    }
+
     const [profile, grant] = await Promise.all([
       getProfile(db, email),
       getActiveGrant(db, email),

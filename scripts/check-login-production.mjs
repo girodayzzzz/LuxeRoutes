@@ -19,6 +19,13 @@ const checks = [
     fail: 'login should serve public HTML. If this redirects back to /login.html, it creates a loop with an .html canonical redirect rule.',
   },
   {
+    name: 'Public password reset page',
+    path: '/reset-password.html',
+    expect: isHtmlOk,
+    pass: 'reset-password.html is public and serving the password recovery HTML shell.',
+    fail: 'reset-password.html should be public HTML so users can recover account access.',
+  },
+  {
     name: 'Public account shell (.html or canonical redirect)',
     path: '/account.html',
     expect: (result) => isHtmlOk(result) || isExtensionlessRedirect('/account')(result),

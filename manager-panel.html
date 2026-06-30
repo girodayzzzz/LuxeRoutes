@@ -90,6 +90,10 @@
             <div class="card-head"><p class="eyebrow">Requests</p><span class="status-pill status-approved">Live</span></div>
             <h3>Customer stay requests</h3>
             <p class="admin-helper">Stay requests for your assigned owner properties appear here for follow-up.</p>
+            <div class="manager-request-summary" data-manager-request-counts aria-label="Manager request summary"></div>
+            <div class="manager-filter-bar" aria-label="Manager request filters">
+              <label>Status<select data-manager-request-filter><option value="all">All requests</option><option value="new">New</option><option value="in_progress">In progress</option><option value="waiting">Waiting</option><option value="approved">Approved</option><option value="resolved">Resolved</option><option value="closed">Closed</option><option value="declined">Declined</option></select></label>
+            </div>
             <div class="stack-list" data-manager-requests><p class="empty-state">Loading manager requests…</p></div>
           </article>
           <article class="admin-card" id="manager-profile">

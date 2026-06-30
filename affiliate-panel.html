@@ -15,10 +15,142 @@
 </head>
 <body class="admin-page account-page account-dashboard-page affiliate-dashboard-page" data-account-locked="true">
   <a class="skip-link" href="#main-content">Skip to content</a>
-  <header class="site-header" data-header><div class="header-top"><div class="container header-top-inner"><span>Affiliate dashboard</span><a href="mailto:info@luxeroutes.eu">info@luxeroutes.eu</a><span>Referral links · Visits · Inquiries</span></div></div><div class="container nav-shell"><a class="brand" href="index.html"><img src="logo.svg" alt="LuxeRoutes" width="620" height="160" /></a><nav id="primary-navigation" class="primary-nav"><a href="account.html" class="nav-link">Account</a><a href="login.html" class="nav-link" data-nav-login>Login</a><a href="account.html" class="nav-link" data-nav-account hidden>Account</a></nav></div></header>
-  <main id="main-content"><section class="admin-hero"><div class="container admin-hero-grid"><div><p class="eyebrow">LuxeRoutes affiliate</p><h1>Your referral workspace.</h1><p class="admin-lead">Create referral links to any LuxeRoutes page and review tracked visits and inquiries.</p><div class="button-row"><a class="btn btn-primary" href="#affiliate-links">Create referral link</a><button class="btn btn-secondary" type="button" data-account-logout hidden>Logout</button></div></div><aside class="admin-login-card"><p class="eyebrow">Affiliate access</p><h2 data-account-heading>Checking session</h2><p data-account-status>Checking affiliate access.</p><div class="admin-auth-meta"><span class="status-pill status-pending" data-account-role>Verifying</span><span data-account-email>Email pending</span></div></aside></div></section>
-  <section class="section admin-workspace" id="affiliate-workspace"><div class="container admin-grid two"><article class="admin-card" data-affiliate-panel><div class="card-head"><p class="eyebrow">Referral stats</p><span class="status-pill" data-affiliate-status>Pending</span></div><h3 data-affiliate-heading>Loading affiliate dashboard</h3><p class="admin-helper" data-affiliate-message>Approved affiliate partners can track visits and inquiries here.</p><div class="admin-stats"><article><span data-affiliate-visits>0</span><small>Tracked visits</small></article><article><span data-affiliate-inquiries>0</span><small>Tracked inquiries</small></article><article><span data-affiliate-total>0</span><small>Total events</small></article></div></article><article class="admin-card" id="affiliate-links"><div class="card-head"><p class="eyebrow">Link builder</p><span class="status-pill status-approved">Referral</span></div><h3>Create a tracked link</h3><form class="admin-form" data-affiliate-link-form><label class="full">Destination URL<input name="target" type="url" placeholder="https://luxeroutes.eu/plan-trip.html" data-affiliate-target /></label><button class="btn btn-primary" type="submit">Generate referral link</button><p class="admin-helper full" data-affiliate-link-output>Your referral link will appear here after affiliate approval.</p></form></article><article class="admin-card"><div class="card-head"><p class="eyebrow">Profile</p><span class="status-pill">Account</span></div><h3>Current access</h3><div class="stack-list" data-account-profile></div></article></div></section></main>
-  <footer class="site-footer"><div class="container footer-bottom"><p>© <span data-current-year>2026</span> LuxeRoutes.</p><p>Affiliate dashboard.</p></div></footer>
-  <script src="script.js"></script><script src="account.js"></script>
+  <header class="site-header" data-header>
+    <div class="header-top" aria-label="Affiliate dashboard highlights">
+      <div class="container header-top-inner">
+        <span>Affiliate dashboard</span>
+        <a href="mailto:info@luxeroutes.eu">info@luxeroutes.eu</a>
+        <span>Referral links · Visits · Inquiries</span>
+      </div>
+    </div>
+    <div class="container nav-shell">
+      <a class="brand" href="index.html" aria-label="LuxeRoutes home"><img src="logo.svg" alt="LuxeRoutes wordmark" width="620" height="160" loading="eager" decoding="async" /></a>
+      <button class="menu-toggle" type="button" aria-label="Open navigation" aria-controls="primary-navigation" aria-expanded="false"><span></span><span></span><span></span></button>
+      <nav id="primary-navigation" class="primary-nav" aria-label="Primary navigation">
+        <a href="account.html" class="nav-link">Account</a>
+        <a href="become-affiliate.html" class="nav-link">Apply</a>
+        <a href="login.html" class="nav-link" data-nav-login>Login</a>
+        <a href="account.html" class="nav-link" data-nav-account hidden>Account</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main-content">
+    <section class="admin-hero">
+      <div class="container admin-hero-grid">
+        <div>
+          <p class="eyebrow">LuxeRoutes affiliate</p>
+          <h1>Your referral workspace.</h1>
+          <p class="admin-lead">Create referral links to approved LuxeRoutes pages, understand your approval status, and review tracked visits and inquiries.</p>
+          <div class="button-row">
+            <a class="btn btn-primary" href="#affiliate-links">Create referral link</a>
+            <a class="btn btn-secondary" href="become-affiliate.html">Apply or update application</a>
+            <button class="btn btn-secondary" type="button" data-account-logout hidden>Logout</button>
+          </div>
+        </div>
+        <aside class="admin-login-card" aria-label="Affiliate account access">
+          <p class="eyebrow">Affiliate access</p>
+          <h2 data-account-heading>Checking session</h2>
+          <p data-account-status>Checking affiliate access.</p>
+          <div class="admin-auth-meta">
+            <span class="status-pill status-pending" data-account-role>Verifying</span>
+            <span data-account-email>Email pending</span>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <section class="section admin-workspace" id="affiliate-workspace">
+      <div class="container admin-grid two">
+        <article class="admin-card" data-affiliate-panel>
+          <div class="card-head">
+            <p class="eyebrow">Referral stats</p>
+            <span class="status-pill" data-affiliate-status>Pending</span>
+          </div>
+          <h3 data-affiliate-heading>Loading affiliate dashboard</h3>
+          <p class="admin-helper" data-affiliate-message>Approved affiliate partners can track visits and inquiries here.</p>
+          <div class="admin-stats">
+            <article><span data-affiliate-visits>0</span><small>Tracked visits</small></article>
+            <article><span data-affiliate-inquiries>0</span><small>Tracked inquiries</small></article>
+            <article><span data-affiliate-total>0</span><small>Total events</small></article>
+          </div>
+        </article>
+
+        <article class="admin-card affiliate-status-card" data-affiliate-status-card>
+          <div class="card-head">
+            <p class="eyebrow">Affiliate status</p>
+            <span class="status-pill status-pending">Review</span>
+          </div>
+          <h3>Checking approval status</h3>
+          <p class="admin-helper">We will show whether your affiliate links are active, pending review, paused, or need an application.</p>
+          <div class="affiliate-code-card">
+            <span>Referral code</span>
+            <strong data-affiliate-code>Waiting for approval</strong>
+          </div>
+          <div class="button-row" data-affiliate-next-step>
+            <a class="btn btn-secondary" href="become-affiliate.html">Apply for affiliate review</a>
+          </div>
+        </article>
+
+        <article class="admin-card affiliate-link-card" id="affiliate-links" data-affiliate-link-card>
+          <div class="card-head">
+            <p class="eyebrow">Link builder</p>
+            <span class="status-pill status-pending" data-affiliate-link-status>Approval required</span>
+          </div>
+          <h3>Create a tracked link</h3>
+          <p class="admin-helper">Referral links begin tracking only after LuxeRoutes approves and activates your affiliate application.</p>
+          <form class="admin-form" data-affiliate-link-form>
+            <label>Quick destination<select data-affiliate-target-preset><option value="">Custom URL</option><option value="plan-trip.html">Plan a Trip</option><option value="stays.html">Stays</option><option value="experiences.html">Experiences</option><option value="destinations.html">Destinations</option><option value="offers.html">Private Offers</option></select></label>
+            <label>Destination URL<input name="target" type="url" placeholder="https://luxeroutes.eu/plan-trip.html" data-affiliate-target /></label>
+            <button class="btn btn-primary" type="submit" data-affiliate-link-submit disabled>Generate referral link</button>
+            <button class="btn btn-secondary" type="button" data-affiliate-copy-link hidden>Copy generated link</button>
+            <p class="admin-helper full" data-affiliate-link-output>Your referral link will appear here after affiliate approval.</p>
+          </form>
+        </article>
+
+
+        <article class="admin-card affiliate-activity-card">
+          <div class="card-head">
+            <p class="eyebrow">Recent activity</p>
+            <span class="status-pill">Events</span>
+          </div>
+          <h3>Latest referral events</h3>
+          <div class="stack-list" data-affiliate-activity><p class="empty-state">Affiliate visits and inquiries will appear here after activation.</p></div>
+        </article>
+
+        <article class="admin-card affiliate-how-card">
+          <div class="card-head">
+            <p class="eyebrow">How tracking works</p>
+            <span class="status-pill">Guide</span>
+          </div>
+          <h3>From referral to inquiry</h3>
+          <ol class="affiliate-steps">
+            <li><strong>Apply</strong><span>Submit your audience and promotion plan for review.</span></li>
+            <li><strong>Activate</strong><span>LuxeRoutes approves fit and activates your referral code.</span></li>
+            <li><strong>Share</strong><span>Create links to LuxeRoutes pages and share with qualified travelers.</span></li>
+            <li><strong>Track</strong><span>Visits and inquiries connected to your code appear in this dashboard.</span></li>
+          </ol>
+        </article>
+
+        <article class="admin-card">
+          <div class="card-head">
+            <p class="eyebrow">Profile</p>
+            <span class="status-pill">Account</span>
+          </div>
+          <h3>Current access</h3>
+          <div class="stack-list" data-account-profile></div>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-bottom">
+      <p>© <span data-current-year>2026</span> LuxeRoutes.</p>
+      <p>Affiliate dashboard.</p>
+    </div>
+  </footer>
+  <script src="script.js"></script>
+  <script src="account.js"></script>
 </body>
 </html>

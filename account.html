@@ -137,6 +137,19 @@
             <a class="btn btn-secondary" href="#account-settings">Open Profile</a>
           </article>
 
+
+          <article class="admin-card">
+            <div class="card-head"><p class="eyebrow">Private proposals</p><span class="status-pill status-approved">Offers</span></div>
+            <h3>Offers received</h3>
+            <p class="admin-helper">Private LuxeRoutes proposals prepared from owner or partner pricing appear here. Final availability and booking terms are confirmed by the owner or partner.</p>
+            <div class="stack-list" data-account-customer-offers>
+              <div class="stack-item">
+                <div><strong>No private offers yet</strong><span>Request an offer and LuxeRoutes will prepare a proposal when owner pricing is available.</span></div>
+                <span class="status-pill status-pending">Waiting</span>
+              </div>
+            </div>
+          </article>
+
           <article class="admin-card">
             <div class="card-head"><p class="eyebrow">Saved offers / inquiries</p><span class="status-pill status-approved">Traveler</span></div>
             <h3>Saved offers and inquiries</h3>
@@ -168,8 +181,11 @@
           <article class="admin-card" data-account-role-link="partner" hidden>
             <div class="card-head"><p class="eyebrow">Partner area</p><span class="status-pill status-approved">Partner</span></div>
             <h3>Partner access</h3>
-            <p class="admin-helper">Open partner tools and collaboration details for approved partner accounts.</p>
-            <a class="btn btn-secondary" href="partners.html">Partner Access</a>
+            <p class="admin-helper">Open affiliate referral tools, generate tracked links, and review visits or inquiries after approval.</p>
+            <div class="button-row">
+              <a class="btn btn-secondary" href="affiliate-panel.html">Affiliate Dashboard</a>
+              <a class="btn btn-secondary" href="partners.html">Partner Details</a>
+            </div>
           </article>
 
           <article class="admin-card" data-account-role-link="admin" hidden>
@@ -182,7 +198,7 @@
           <article class="admin-card" id="accepted-offers">
             <div class="card-head"><p class="eyebrow">Accepted offers</p><span class="status-pill status-approved">Account</span></div>
             <h3>Your accepted offers</h3>
-            <div class="stack-list">
+            <div class="stack-list" data-account-saved-offers>
               <div class="stack-item">
                 <div>
                   <strong>No accepted offers yet</strong>
@@ -202,15 +218,33 @@
           <article class="admin-card" id="account-settings">
             <div class="card-head"><p class="eyebrow">Settings</p><span class="status-pill">Private profile</span></div>
             <h3>Account settings</h3>
-            <p class="admin-helper">Update the profile details and travel preferences LuxeRoutes uses for future trip briefs.</p>
+            <p class="admin-helper">Update the contact details, sign-in email, and travel preferences LuxeRoutes uses for future trip briefs.</p>
+            <div class="account-contact-summary" data-account-contact-summary>
+              <div><strong>Email</strong><span>Email pending</span></div>
+              <div><strong>Phone</strong><span>Not added yet</span></div>
+              <div><strong>Preferred</strong><span>Email</span></div>
+            </div>
             <form class="admin-form account-settings-form" data-account-settings-form>
+              <h4 class="full">Profile details</h4>
               <label>Full name<input name="name" type="text" placeholder="Your name" autocomplete="name" required data-settings-name></label>
               <label>Company / group<input name="company_name" type="text" placeholder="Optional company or property group" autocomplete="organization" data-settings-company></label>
-              <label>Phone / WhatsApp<input name="phone" type="tel" placeholder="Optional" autocomplete="tel" data-settings-phone></label>
+              <h4 class="full">Change phone number and contact preference</h4>
+              <label>Current sign-in email<input type="text" readonly data-current-email-display value="Email pending"></label>
+              <label>Phone / WhatsApp<input name="phone" type="tel" placeholder="+386 40 000 000" autocomplete="tel" data-settings-phone></label>
               <label>Preferred contact<select name="preferred_contact" data-settings-preferred-contact><option value="email">Email</option><option value="whatsapp">WhatsApp</option><option value="phone">Phone</option></select></label>
+              <p class="admin-helper full">Phone changes save immediately with your profile. Email changes need the secure code step below.</p>
               <label class="full">Travel preferences<textarea name="notes" rows="4" placeholder="Preferred regions, stay types, budget notes, guest details, and privacy requests." data-settings-notes></textarea></label>
-              <button class="btn btn-primary" type="submit" data-account-settings-submit>Save settings</button>
+              <button class="btn btn-primary" type="submit" data-account-settings-submit>Save profile and phone</button>
               <p class="admin-helper full" data-account-settings-message>Saved settings stay connected to your verified email.</p>
+            </form>
+            <hr class="admin-divider" />
+            <form class="admin-form account-email-form" data-account-email-form>
+              <h4 class="full">Change sign-in email</h4>
+              <p class="admin-helper full">Enter the new email, submit once to receive a 6-digit code, then submit again with the code to move your account.</p>
+              <label>New email<input name="new_email" type="email" autocomplete="email" required data-change-email-input></label>
+              <label>6-digit code<input name="otp" type="text" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" data-change-email-code></label>
+              <button class="btn btn-secondary" type="submit" data-change-email-submit>Send verification code</button>
+              <p class="admin-helper full" data-change-email-message>We will verify the new email before moving your account.</p>
             </form>
             <hr class="admin-divider" />
             <form class="admin-form account-password-form" data-account-password-form>
@@ -218,16 +252,9 @@
               <label>Current password<span class="password-field"><input name="current_password" type="password" autocomplete="current-password" required data-current-password><button type="button" class="password-toggle" data-password-toggle aria-label="Show password">Show</button></span></label>
               <label>New password<span class="password-field"><input name="new_password" type="password" autocomplete="new-password" minlength="8" required data-new-password><button type="button" class="password-toggle" data-password-toggle aria-label="Show password">Show</button></span></label>
               <label>Confirm new password<span class="password-field"><input name="new_password_confirm" type="password" autocomplete="new-password" minlength="8" required data-new-password-confirm><button type="button" class="password-toggle" data-password-toggle aria-label="Show password">Show</button></span></label>
+              <p class="password-strength full" data-account-password-strength data-strength="0">Use 12+ characters with upper/lowercase, a number, and a symbol.</p>
               <button class="btn btn-secondary" type="submit" data-account-password-submit>Update password</button>
               <p class="admin-helper full" data-account-password-message>Use your current password; OTP login remains available as a backup.</p>
-            </form>
-            <hr class="admin-divider" />
-            <form class="admin-form account-email-form" data-account-email-form>
-              <h4 class="full">Change email</h4>
-              <label>New email<input name="new_email" type="email" autocomplete="email" required data-change-email-input></label>
-              <label>6-digit code<input name="otp" type="text" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" data-change-email-code></label>
-              <button class="btn btn-secondary" type="submit" data-change-email-submit>Send verification code</button>
-              <p class="admin-helper full" data-change-email-message>We will verify the new email before moving your account.</p>
             </form>
             <hr class="admin-divider" />
             <div class="stack-list" data-security-activity></div>
@@ -238,7 +265,7 @@
             <div class="card-head"><p class="eyebrow">Coupons</p><span class="status-pill status-pending">Rewards</span></div>
             <h3>Coupons and invitations</h3>
             <p class="admin-helper">Welcome notes, repeat-traveler rewards, and private benefits appear here when assigned to your account.</p>
-            <div class="stack-list">
+            <div class="stack-list" data-account-coupons>
               <div class="stack-item">
                 <div><strong>No active coupons</strong><span>Ask LuxeRoutes to attach a private code to your verified email.</span></div>
                 <span class="status-pill">0 codes</span>

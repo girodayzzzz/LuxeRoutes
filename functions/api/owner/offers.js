@@ -54,7 +54,7 @@ const ownerOfferSelect = `
     gallery_urls AS galleryUrls, external_availability_url AS externalAvailabilityUrl,
     description, image_url AS imageUrl, image_alt AS imageAlt, status, published_at AS publishedAt,
     owner_email AS ownerEmail, manager_email AS managerEmail, partner_status AS partnerStatus,
-    owner_notes AS ownerNotes, manager_notes AS managerNotes, updated_at AS updatedAt
+    owner_notes AS ownerNotes, manager_notes AS managerNotes, owner_follow_up_at AS ownerFollowUpAt, owner_follow_up_status AS ownerFollowUpStatus, manager_follow_up_at AS managerFollowUpAt, manager_follow_up_status AS managerFollowUpStatus, updated_at AS updatedAt
   FROM stay_offers
 `;
 
@@ -109,11 +109,26 @@ const validateOwnerOffer = (offer, body = {}) => {
   if (offer.availableFrom && offer.availableTo && offer.availableFrom > offer.availableTo) return 'Available from must be before available to.';
   return '';
 };
+const ensureOfferFollowUpColumns = async (db) => {
+  for (const [column, type] of [
+    ['owner_follow_up_at', 'TEXT'],
+    ['owner_follow_up_status', 'TEXT'],
+    ['manager_follow_up_at', 'TEXT'],
+    ['manager_follow_up_status', 'TEXT'],
+  ]) {
+    try {
+      await db.prepare(`ALTER TABLE stay_offers ADD COLUMN ${column} ${type}`).run();
+    } catch (error) {
+      if (!String(error.message || '').toLowerCase().includes('duplicate column')) throw error;
+    }
+  }
+};
 
 export const onRequestGet = async ({ request, env }) => {
   try {
     const auth = await requireAccountRole(request, env, ['owner']);
     if (auth.error) return auth.error;
+    await ensureOfferFollowUpColumns(auth.db);
 
     const isAdmin = auth.role === 'admin';
     const statement = isAdmin
@@ -130,6 +145,7 @@ export const onRequestPost = async ({ request, env }) => {
   try {
     const auth = await requireAccountRole(request, env, ['owner']);
     if (auth.error) return auth.error;
+    await ensureOfferFollowUpColumns(auth.db);
 
     const body = await request.json().catch(() => ({}));
     const timestamp = nowIso();
@@ -192,6 +208,7 @@ export const onRequestPatch = async ({ request, env }) => {
   try {
     const auth = await requireAccountRole(request, env, ['owner']);
     if (auth.error) return auth.error;
+    await ensureOfferFollowUpColumns(auth.db);
 
     const body = await request.json().catch(() => ({}));
     const id = cleanString(body.id, 160);

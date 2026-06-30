@@ -19,6 +19,8 @@ const accountLogoutButtons = document.querySelectorAll('[data-account-logout]');
 const accountSettingsForm = document.querySelector('[data-account-settings-form]');
 const accountSettingsSubmit = document.querySelector('[data-account-settings-submit]');
 const accountSettingsMessage = document.querySelector('[data-account-settings-message]');
+const accountContactSummary = document.querySelector('[data-account-contact-summary]');
+const currentEmailDisplay = document.querySelector('[data-current-email-display]');
 const settingsNameInput = document.querySelector('[data-settings-name]');
 const settingsCompanyInput = document.querySelector('[data-settings-company]');
 const settingsNotesInput = document.querySelector('[data-settings-notes]');
@@ -27,6 +29,9 @@ const settingsPreferredContactInput = document.querySelector('[data-settings-pre
 const accountPasswordForm = document.querySelector('[data-account-password-form]');
 const accountPasswordSubmit = document.querySelector('[data-account-password-submit]');
 const accountPasswordMessage = document.querySelector('[data-account-password-message]');
+const accountNewPasswordInput = document.querySelector('[data-new-password]');
+const accountNewPasswordConfirmInput = document.querySelector('[data-new-password-confirm]');
+const accountPasswordStrength = document.querySelector('[data-account-password-strength]');
 const affiliateHeading = document.querySelector('[data-affiliate-heading]');
 const affiliateMessage = document.querySelector('[data-affiliate-message]');
 const affiliateStatus = document.querySelector('[data-affiliate-status]');
@@ -34,13 +39,27 @@ const affiliateVisits = document.querySelector('[data-affiliate-visits]');
 const affiliateInquiries = document.querySelector('[data-affiliate-inquiries]');
 const affiliateTotal = document.querySelector('[data-affiliate-total]');
 const affiliateLinkForm = document.querySelector('[data-affiliate-link-form]');
+const affiliateStatusCard = document.querySelector('[data-affiliate-status-card]');
+const affiliateCodeOutput = document.querySelector('[data-affiliate-code]');
+const affiliateNextStep = document.querySelector('[data-affiliate-next-step]');
+const affiliateLinkCard = document.querySelector('[data-affiliate-link-card]');
+const affiliateLinkStatus = document.querySelector('[data-affiliate-link-status]');
+const affiliateLinkSubmit = document.querySelector('[data-affiliate-link-submit]');
+const affiliateTargetPreset = document.querySelector('[data-affiliate-target-preset]');
+const affiliateTargetInput = document.querySelector('[data-affiliate-target]');
+const affiliateCopyLink = document.querySelector('[data-affiliate-copy-link]');
 const affiliateLinkOutput = document.querySelector('[data-affiliate-link-output]');
+const affiliateActivity = document.querySelector('[data-affiliate-activity]');
 const ownerOffersTarget = document.querySelector('[data-owner-offers]');
 const managerOffersTarget = document.querySelector('[data-manager-offers]');
 const ownerRequestsTarget = document.querySelector('[data-owner-requests]');
 const managerRequestsTarget = document.querySelector('[data-manager-requests]');
 const ownerNewOfferForm = document.querySelector('[data-owner-new-offer-form]');
 const ownerNewOfferStatus = document.querySelector('[data-owner-new-offer-status]');
+const ownerListingChecklist = document.querySelector('[data-owner-listing-checklist]');
+const ownerListingPreview = document.querySelector('[data-owner-listing-preview]');
+const managerRequestFilter = document.querySelector('[data-manager-request-filter]');
+const managerRequestCounts = document.querySelector('[data-manager-request-counts]');
 const loginOtpForm = document.querySelector('[data-login-otp-form]');
 const loginEmailStep = document.querySelector('[data-login-email-step]');
 const loginCodeStep = document.querySelector('[data-login-code-step]');
@@ -50,10 +69,13 @@ const loginRememberInput = document.querySelector('[data-login-remember-input]')
 const loginPasswordInput = document.querySelector('[data-login-password-input]');
 const passwordResetForm = document.querySelector('[data-password-reset-form]');
 const forgotPasswordToggle = document.querySelector('[data-forgot-password-toggle]');
+const forgotPasswordLink = document.querySelector('[data-forgot-password-link]');
 const resetCancel = document.querySelector('[data-reset-cancel]');
 const resetEmailInput = document.querySelector('[data-reset-email-input]');
 const resetCodeInput = document.querySelector('[data-reset-code-input]');
 const resetPasswordInput = document.querySelector('[data-reset-password-input]');
+const resetPasswordConfirmInput = document.querySelector('[data-reset-password-confirm-input]');
+const resetPasswordStrength = document.querySelector('[data-reset-password-strength]');
 const resetSubmit = document.querySelector('[data-reset-submit]');
 const resetMessage = document.querySelector('[data-reset-message]');
 const registerOtpCodeInput = document.querySelector('[data-register-otp-code-input]');
@@ -77,10 +99,14 @@ const changeEmailCode = document.querySelector('[data-change-email-code]');
 const changeEmailSubmit = document.querySelector('[data-change-email-submit]');
 const changeEmailMessage = document.querySelector('[data-change-email-message]');
 const securityActivity = document.querySelector('[data-security-activity]');
+const accountSavedOffers = document.querySelector('[data-account-saved-offers]');
+const accountCoupons = document.querySelector('[data-account-coupons]');
+const accountCustomerOffers = document.querySelector('[data-account-customer-offers]');
 const isRegisterPage = () => document.body.classList.contains('register-page') && Boolean(accountForm);
 const isDashboardPage = () => document.body.classList.contains('account-dashboard-page');
 const isProtectedAccountPage = () => isDashboardPage();
 const isLoginPage = () => document.body.classList.contains('login-page');
+const isPasswordResetPage = () => document.body.classList.contains('reset-password-page');
 const isAffiliatePage = () => document.body.classList.contains('affiliate-dashboard-page');
 
 if (document.body.classList.contains('account-dashboard-page')) {
@@ -101,6 +127,7 @@ const accountRoleHomePaths = {
 };
 let accountIdentity = null;
 let accountApiEnabled = false;
+const roleRequestCache = { owner: [], manager: [] };
 
 const accountEscapeHtml = (value) => String(value || '').replace(/[&<>"]/g, (character) => ({
   '&': '&amp;',
@@ -390,13 +417,30 @@ const changeAccountPassword = async (currentPassword, newPassword, newPasswordCo
   return readJsonOrAuthError(response, 'Unable to update your password right now.');
 };
 
+const contactPreferenceLabel = (value = '') => ({
+  email: 'Email',
+  whatsapp: 'WhatsApp',
+  phone: 'Phone',
+}[String(value || '').toLowerCase()] || 'Email');
+
 const populateAccountSettings = (profile = {}) => {
   if (!profile) return;
+  const email = profile.email || accountIdentity?.email || '';
+  const phone = profile.phone || '';
+  const preferredContact = profile.preferredContact || 'email';
   if (settingsNameInput) settingsNameInput.value = profile.name || '';
   if (settingsCompanyInput) settingsCompanyInput.value = profile.companyName || '';
   if (settingsNotesInput) settingsNotesInput.value = profile.notes || '';
-  if (settingsPhoneInput) settingsPhoneInput.value = profile.phone || '';
-  if (settingsPreferredContactInput) settingsPreferredContactInput.value = profile.preferredContact || 'email';
+  if (settingsPhoneInput) settingsPhoneInput.value = phone;
+  if (settingsPreferredContactInput) settingsPreferredContactInput.value = preferredContact;
+  if (currentEmailDisplay) currentEmailDisplay.value = email || 'Email pending';
+  if (accountContactSummary) {
+    accountContactSummary.innerHTML = `
+      <div><strong>Email</strong><span>${accountEscapeHtml(email || 'Email pending')}</span></div>
+      <div><strong>Phone</strong><span>${accountEscapeHtml(phone || 'Not added yet')}</span></div>
+      <div><strong>Preferred</strong><span>${accountEscapeHtml(contactPreferenceLabel(preferredContact))}</span></div>
+    `;
+  }
 };
 
 const getSettingsProfilePayload = () => {
@@ -482,13 +526,39 @@ const setResendCooldown = (seconds = 45) => {
 
 const passwordScore = (value = '') => [value.length >= 12, /[A-Z]/.test(value), /[a-z]/.test(value), /\d/.test(value), /[^A-Za-z0-9]/.test(value)].filter(Boolean).length;
 
+const getPasswordStrengthMessage = (value = '', matches = true) => {
+  const score = passwordScore(value);
+  return {
+    score,
+    message: `${score >= 4 ? 'Strong' : score >= 3 ? 'Good' : 'Needs work'} password · ${matches ? 'Passwords match' : 'Passwords do not match'} · Use 12+ chars, upper/lowercase, number, and symbol.`,
+  };
+};
+
 const updatePasswordStrength = () => {
   if (!passwordStrength || !registerPasswordInput) return;
   const value = registerPasswordInput.value || '';
-  const score = passwordScore(value);
   const matches = !registerPasswordConfirm?.value || registerPasswordConfirm.value === value;
+  const { score, message } = getPasswordStrengthMessage(value, matches);
   passwordStrength.dataset.strength = String(score);
-  passwordStrength.textContent = `${score >= 4 ? 'Strong' : score >= 3 ? 'Good' : 'Needs work'} password · ${matches ? 'Passwords match' : 'Passwords do not match'} · Use 12+ chars, upper/lowercase, number, and symbol.`;
+  passwordStrength.textContent = message;
+};
+
+const updateResetPasswordStrength = () => {
+  if (!resetPasswordStrength || !resetPasswordInput) return;
+  const value = resetPasswordInput.value || '';
+  const matches = !resetPasswordConfirmInput?.value || resetPasswordConfirmInput.value === value;
+  const { score, message } = getPasswordStrengthMessage(value, matches);
+  resetPasswordStrength.dataset.strength = String(score);
+  resetPasswordStrength.textContent = message;
+};
+
+const updateAccountPasswordStrength = () => {
+  if (!accountPasswordStrength || !accountNewPasswordInput) return;
+  const value = accountNewPasswordInput.value || '';
+  const matches = !accountNewPasswordConfirmInput?.value || accountNewPasswordConfirmInput.value === value;
+  const { score, message } = getPasswordStrengthMessage(value, matches);
+  accountPasswordStrength.dataset.strength = String(score);
+  accountPasswordStrength.textContent = message;
 };
 
 const setLoginOtpBusy = (busy = false) => {
@@ -699,6 +769,56 @@ const ownerAvailabilityRangeError = (formData) => {
   return '';
 };
 
+const updateOwnerListingChecklist = () => {
+  if (!ownerListingChecklist || !ownerNewOfferForm) return;
+  const data = new FormData(ownerNewOfferForm);
+  const has = (name) => String(data.get(name) || '').trim().length > 0;
+  const checks = {
+    basics: has('title') && has('stayType'),
+    location: has('country') && has('region') && has('locationLabel'),
+    description: has('description') && has('accommodationDetails'),
+    pricing: has('priceLabel') || has('pricingDetails'),
+    images: has('imageUrl') || has('galleryUrls'),
+    availability: has('availableFrom') || has('availableTo') || has('availabilityNotes') || has('externalAvailabilityUrl'),
+  };
+  Object.entries(checks).forEach(([key, complete]) => {
+    const item = ownerListingChecklist.querySelector(`[data-check="${key}"]`);
+    if (item) item.dataset.complete = complete ? 'true' : 'false';
+  });
+};
+
+
+const updateOwnerListingPreview = () => {
+  if (!ownerListingPreview || !ownerNewOfferForm) return;
+  const data = new FormData(ownerNewOfferForm);
+  const title = String(data.get('title') || '').trim() || 'Untitled LuxeRoutes listing';
+  const location = String(data.get('locationLabel') || '').trim() || [data.get('country'), data.get('region')].filter(Boolean).join(' · ') || 'Location pending';
+  const price = String(data.get('priceLabel') || '').trim() || 'Pricing pending';
+  const description = String(data.get('description') || '').trim() || 'Add a short public description to preview the listing story.';
+  const imageUrl = String(data.get('imageUrl') || '').trim();
+  const galleryUrls = String(data.get('galleryUrls') || '').split(/\n+/).map((url) => url.trim()).filter(Boolean).slice(0, 3);
+  const selectedOptions = data.getAll('options').filter(Boolean).slice(0, 5);
+  const stayType = String(data.get('stayType') || '').trim();
+  const missing = [];
+  if (!String(data.get('title') || '').trim()) missing.push('title');
+  if (!String(data.get('locationLabel') || '').trim()) missing.push('location');
+  if (!String(data.get('description') || '').trim()) missing.push('description');
+  if (!imageUrl && !galleryUrls.length) missing.push('image');
+  ownerListingPreview.innerHTML = `
+    <p class="eyebrow">Live listing preview</p>
+    ${imageUrl ? `<img src="${accountEscapeHtml(imageUrl)}" alt="${accountEscapeHtml(title)} preview image" loading="lazy" />` : '<div class="owner-preview-placeholder">Image pending</div>'}
+    <div class="owner-preview-chips">
+      ${stayType ? `<span>${accountEscapeHtml(stayType.replaceAll('-', ' '))}</span>` : '<span>Category pending</span>'}
+      ${selectedOptions.map((option) => `<span>${accountEscapeHtml(String(option).replaceAll('-', ' '))}</span>`).join('')}
+    </div>
+    <h4>${accountEscapeHtml(title)}</h4>
+    <p>${accountEscapeHtml(location)} · ${accountEscapeHtml(price)}</p>
+    <span>${accountEscapeHtml(description).slice(0, 220)}</span>
+    ${galleryUrls.length ? `<div class="owner-preview-gallery">${galleryUrls.map((url, index) => `<img src="${accountEscapeHtml(url)}" alt="${accountEscapeHtml(title)} gallery preview ${index + 1}" loading="lazy" />`).join('')}</div>` : ''}
+    ${missing.length ? `<small class="owner-preview-missing">Still missing: ${accountEscapeHtml(missing.join(', '))}</small>` : '<small class="owner-preview-missing is-complete">Ready for LuxeRoutes review.</small>'}
+  `;
+};
+
 const syncOwnerAvailabilityMinimums = (form) => {
   const fromField = form?.elements?.availableFrom;
   const toField = form?.elements?.availableTo;
@@ -735,14 +855,35 @@ const getInquiryContact = (inquiry = {}, payload = {}) => inquiry.email || inqui
 
 const requestStatusOptions = ['new', 'in_progress', 'waiting', 'approved', 'resolved', 'closed', 'declined'];
 
+const renderManagerRequestCounts = (requests = []) => {
+  if (!managerRequestCounts) return;
+  const count = (status) => requests.filter((request) => (request.status || 'new') === status).length;
+  managerRequestCounts.innerHTML = [
+    ['All', requests.length],
+    ['New', count('new')],
+    ['In progress', count('in_progress')],
+    ['Waiting', count('waiting')],
+    ['Resolved', count('resolved') + count('closed')],
+  ].map(([label, value]) => `<span><strong>${accountEscapeHtml(value)}</strong>${accountEscapeHtml(label)}</span>`).join('');
+};
+
+const getFilteredRoleRequests = (role, inquiries = []) => {
+  if (role !== 'manager') return inquiries;
+  const statusFilter = managerRequestFilter?.value || 'all';
+  if (statusFilter === 'all') return inquiries;
+  return inquiries.filter((inquiry) => (inquiry.status || 'new') === statusFilter);
+};
+
 const renderRoleRequests = (target, inquiries = [], emptyMessage = 'No customer requests yet.', role = '') => {
   if (!target) return;
-  if (!inquiries.length) {
-    target.innerHTML = `<p class="empty-state">${accountEscapeHtml(emptyMessage)}</p>`;
+  const filteredInquiries = getFilteredRoleRequests(role, inquiries);
+  if (role === 'manager') renderManagerRequestCounts(inquiries);
+  if (!filteredInquiries.length) {
+    target.innerHTML = `<p class="empty-state">${accountEscapeHtml(role === 'manager' && inquiries.length ? 'No requests match this status filter.' : emptyMessage)}</p>`;
     return;
   }
 
-  target.innerHTML = inquiries.map((inquiry) => {
+  target.innerHTML = filteredInquiries.map((inquiry) => {
     const payload = parseInquiryPayload(inquiry);
     const dates = [payload.start_date || payload.check_in || payload.from, payload.end_date || payload.check_out || payload.to]
       .filter(Boolean)
@@ -758,6 +899,7 @@ const renderRoleRequests = (target, inquiries = [], emptyMessage = 'No customer 
           ${payload.message || payload.notes ? `<span>Request: ${accountEscapeHtml(payload.message || payload.notes)}</span>` : ''}
         </div>
         ${role ? `<label class="mini-field">Request status<select data-role-request-status data-role="${accountEscapeHtml(role)}" data-id="${accountEscapeHtml(inquiry.id || '')}" aria-label="Request status for ${accountEscapeHtml(inquiry.offerTitle || payload.offer || 'customer request')}">${requestStatusOptions.map((option) => `<option value="${option}" ${status === option ? 'selected' : ''}>${accountEscapeHtml(option.replaceAll('_', ' '))}</option>`).join('')}</select></label>` : `<span class="status-pill ${['approved', 'resolved', 'closed'].includes(status) ? 'status-approved' : status === 'declined' ? 'status-warning' : 'status-pending'}">${accountEscapeHtml(status.replaceAll('_', ' '))}</span>`}
+        ${role === 'manager' ? `<form class="account-inline-form manager-request-note-form" data-manager-request-note-form data-id="${accountEscapeHtml(inquiry.id || '')}"><label>Contact status<select name="managerContactStatus"><option value="">Not set</option>${['new', 'customer_contacted', 'owner_contacted', 'waiting_customer', 'waiting_owner', 'resolved'].map((option) => `<option value="${option}" ${(inquiry.managerContactStatus || '') === option ? 'selected' : ''}>${accountEscapeHtml(option.replaceAll('_', ' '))}</option>`).join('')}</select></label><label>Follow-up date<input type="date" name="managerFollowUpAt" value="${accountEscapeHtml(inquiry.managerFollowUpAt || '')}" /></label><label class="full">Manager note<textarea name="managerNote" rows="2" placeholder="Private follow-up note for this request">${accountEscapeHtml(inquiry.managerNote || '')}</textarea></label><button class="mini-action" type="submit">Save follow-up</button></form>` : ''}
       </div>
     `;
   }).join('');
@@ -816,6 +958,8 @@ const renderRoleOffers = (target, offers = [], emptyMessage = 'No assigned offer
         ${offer.managerEmail ? `<span>Manager: ${accountEscapeHtml(offer.managerEmail)}</span>` : ''}
         ${offer.ownerNotes ? `<span>Owner note: ${accountEscapeHtml(offer.ownerNotes)}</span>` : ''}
         ${offer.managerNotes ? `<span>Manager note: ${accountEscapeHtml(offer.managerNotes)}</span>` : ''}
+        ${offer.ownerFollowUpAt || offer.ownerFollowUpStatus ? `<span>Owner follow-up: ${accountEscapeHtml([offer.ownerFollowUpAt, String(offer.ownerFollowUpStatus || '').replaceAll('_', ' ')].filter(Boolean).join(' · '))}</span>` : ''}
+        ${offer.managerFollowUpAt || offer.managerFollowUpStatus ? `<span>Manager follow-up: ${accountEscapeHtml([offer.managerFollowUpAt, String(offer.managerFollowUpStatus || '').replaceAll('_', ' ')].filter(Boolean).join(' · '))}</span>` : ''}
         ${renderOfferImages(offer)}
       </div>
       <span class="status-pill ${offer.status === 'published' ? 'status-approved' : 'status-pending'}">${accountEscapeHtml(offer.status || 'draft')}</span>
@@ -839,10 +983,12 @@ const loadRolePanelRequests = async (role) => {
 
   try {
     const inquiries = await fetchRoleCollection(endpoint, 'inquiries');
+    roleRequestCache[role] = inquiries;
     renderRoleRequests(target, inquiries, role === 'owner'
       ? 'No customer stay requests are connected to your properties yet.'
       : 'No customer stay requests are connected to your assigned properties yet.', role);
   } catch (error) {
+    roleRequestCache[role] = [];
     renderRoleRequests(target, [], error.message || 'Unable to load customer requests.', role);
   }
 };
@@ -946,7 +1092,13 @@ const loadRolePanelOffers = async (role) => {
 };
 
 
-if (ownerNewOfferForm) syncOwnerAvailabilityMinimums(ownerNewOfferForm);
+if (ownerNewOfferForm) {
+  syncOwnerAvailabilityMinimums(ownerNewOfferForm);
+  updateOwnerListingChecklist();
+  updateOwnerListingPreview();
+  ownerNewOfferForm.addEventListener('input', () => { updateOwnerListingChecklist(); updateOwnerListingPreview(); });
+  ownerNewOfferForm.addEventListener('change', () => { updateOwnerListingChecklist(); updateOwnerListingPreview(); });
+}
 
 ownerNewOfferForm?.addEventListener('submit', async (event) => {
   event.preventDefault();
@@ -1041,6 +1193,8 @@ const renderAccountProfile = (profile, grant = null) => {
   const profileStatus = profile.status || (currentRole === 'customer' ? 'active' : 'pending_admin_grant');
   const companyDetails = [
     profile.companyName ? `Company: ${accountEscapeHtml(profile.companyName)}` : '',
+    profile.phone ? `Phone: ${accountEscapeHtml(profile.phone)}` : '',
+    profile.preferredContact ? `Preferred contact: ${accountEscapeHtml(contactPreferenceLabel(profile.preferredContact))}` : '',
     profile.businessContext ? `Context: ${accountEscapeHtml(profile.businessContext)}` : '',
     profile.companyWebsite ? `Website: <a href="${accountEscapeHtml(profile.companyWebsite)}" target="_blank" rel="noopener">${accountEscapeHtml(profile.companyWebsite)}</a>` : '',
   ].filter(Boolean).map((item) => `<span>${item}</span>`).join('');
@@ -1190,9 +1344,114 @@ const applyRemoteAccount = (remoteAccount) => {
   populateAccountSettings(profile);
   renderAccountProfile(profile, remoteAccount.grant);
   renderAffiliateDashboard();
+  loadAccountActivity();
   setLoginAccountState(true);
   if (redirectToRoleHomeIfNeeded(remoteAccount.role || remoteAccount.grant?.role || profile?.defaultRole)) return true;
   return true;
+};
+
+const setAffiliateLinkBuilderEnabled = (enabled = false, message = '') => {
+  if (affiliateLinkSubmit) affiliateLinkSubmit.disabled = !enabled;
+  if (affiliateLinkCard) affiliateLinkCard.dataset.affiliateLinkEnabled = enabled ? 'true' : 'false';
+  if (affiliateLinkStatus) {
+    affiliateLinkStatus.textContent = enabled ? 'Active' : 'Approval required';
+    affiliateLinkStatus.classList.toggle('status-approved', enabled);
+    affiliateLinkStatus.classList.toggle('status-pending', !enabled);
+  }
+  if (message && affiliateLinkOutput) affiliateLinkOutput.textContent = message;
+};
+
+const renderAffiliateStatusState = (affiliate = null) => {
+  const status = String(affiliate?.status || 'not_applied').toLowerCase();
+  const isActive = status === 'active';
+  const statusCopy = {
+    not_applied: {
+      label: 'Not applied',
+      heading: 'Affiliate application required',
+      body: 'Apply for affiliate review before referral links can be activated for tracking.',
+      code: 'Apply first',
+      action: '<a class="btn btn-secondary" href="become-affiliate.html">Apply for affiliate review</a>',
+    },
+    pending_review: {
+      label: 'Pending review',
+      heading: 'Application waiting for approval',
+      body: 'Your referral code is reserved, but tracking starts only after LuxeRoutes activates your affiliate account.',
+      code: affiliate?.referralCode || 'Reserved after review',
+      action: '<a class="btn btn-secondary" href="become-affiliate.html">Update application</a>',
+    },
+    active: {
+      label: 'Active',
+      heading: 'Affiliate links are active',
+      body: 'Create referral links below and share them with qualified travelers. Visits and inquiries will count in this dashboard.',
+      code: affiliate?.referralCode || 'Active',
+      action: '<a class="btn btn-primary" href="#affiliate-links">Create referral link</a>',
+    },
+    paused: {
+      label: 'Paused',
+      heading: 'Affiliate tracking is paused',
+      body: 'Your code is on file, but new visits and inquiries are not being tracked while the affiliate account is paused.',
+      code: affiliate?.referralCode || 'Paused',
+      action: '<a class="btn btn-secondary" href="mailto:info@luxeroutes.eu">Contact LuxeRoutes</a>',
+    },
+    rejected: {
+      label: 'Rejected',
+      heading: 'Application not approved',
+      body: 'You can update your audience and promotion plan if you would like LuxeRoutes to review the application again.',
+      code: affiliate?.referralCode || 'Not active',
+      action: '<a class="btn btn-secondary" href="become-affiliate.html">Update application</a>',
+    },
+  }[status] || null;
+  const copy = statusCopy || {
+    label: status.replaceAll('_', ' '),
+    heading: 'Affiliate status needs review',
+    body: 'Contact LuxeRoutes if this affiliate status does not look right.',
+    code: affiliate?.referralCode || 'Unavailable',
+    action: '<a class="btn btn-secondary" href="mailto:info@luxeroutes.eu">Contact LuxeRoutes</a>',
+  };
+
+  if (affiliateStatusCard) {
+    affiliateStatusCard.dataset.affiliateStatus = status;
+    affiliateStatusCard.innerHTML = `
+      <div class="card-head">
+        <p class="eyebrow">Affiliate status</p>
+        <span class="status-pill ${isActive ? 'status-approved' : status === 'rejected' || status === 'paused' ? 'status-warning' : 'status-pending'}">${accountEscapeHtml(copy.label)}</span>
+      </div>
+      <h3>${accountEscapeHtml(copy.heading)}</h3>
+      <p class="admin-helper">${accountEscapeHtml(copy.body)}</p>
+      <div class="affiliate-code-card">
+        <span>Referral code</span>
+        <strong data-affiliate-code>${accountEscapeHtml(copy.code)}</strong>
+      </div>
+      <div class="button-row" data-affiliate-next-step>${copy.action}</div>
+    `;
+  } else if (affiliateCodeOutput) {
+    affiliateCodeOutput.textContent = copy.code;
+  }
+  if (affiliateNextStep) affiliateNextStep.innerHTML = copy.action;
+  document.body.dataset.affiliateActive = isActive ? 'true' : 'false';
+  document.body.dataset.affiliateCode = isActive ? (affiliate?.referralCode || '') : '';
+  setAffiliateLinkBuilderEnabled(isActive, isActive
+    ? 'Enter a LuxeRoutes page URL and generate your tracked referral link.'
+    : 'Referral link generation unlocks after affiliate approval and activation.');
+};
+
+const renderAffiliateActivity = (events = []) => {
+  if (!affiliateActivity) return;
+  if (!events.length) {
+    affiliateActivity.innerHTML = '<p class="empty-state">No affiliate activity recorded yet.</p>';
+    return;
+  }
+  affiliateActivity.innerHTML = events.map((event) => `
+    <div class="stack-item">
+      <div>
+        <strong>${accountEscapeHtml(String(event.eventType || 'event').replaceAll('_', ' '))}</strong>
+        <span>${accountEscapeHtml(event.targetUrl || 'LuxeRoutes page')}</span>
+        ${event.sourceUrl ? `<span>Source: ${accountEscapeHtml(event.sourceUrl)}</span>` : ''}
+        ${event.inquiryId ? `<span>Inquiry: ${accountEscapeHtml(event.inquiryId)}</span>` : ''}
+      </div>
+      <span class="status-pill">${accountEscapeHtml(event.createdAt ? new Date(event.createdAt).toLocaleDateString() : 'Recent')}</span>
+    </div>
+  `).join('');
 };
 
 const renderAffiliateDashboard = async () => {
@@ -1206,45 +1465,158 @@ const renderAffiliateDashboard = async () => {
     const data = await readJsonOrAuthError(response, 'Unable to load affiliate dashboard.');
     const affiliate = data.affiliate || null;
     const stats = data.stats || {};
+    const recentEvents = Array.isArray(data.recentEvents) ? data.recentEvents : [];
+    renderAffiliateStatusState(affiliate);
+    renderAffiliateActivity(recentEvents);
     if (!affiliate) {
       if (affiliateHeading) affiliateHeading.textContent = 'Affiliate application required';
       if (affiliateMessage) affiliateMessage.innerHTML = 'Apply for affiliate access first. <a href="become-affiliate.html">Become an Affiliate</a>';
       if (affiliateStatus) affiliateStatus.textContent = 'Not applied';
+      if (affiliateVisits) affiliateVisits.textContent = '0';
+      if (affiliateInquiries) affiliateInquiries.textContent = '0';
+      if (affiliateTotal) affiliateTotal.textContent = '0';
+      renderAffiliateActivity([]);
       return;
     }
 
-    if (affiliateHeading) affiliateHeading.textContent = affiliate.status === 'active' ? 'Affiliate access active' : 'Affiliate review status';
-    if (affiliateMessage) affiliateMessage.textContent = affiliate.status === 'active'
+    const affiliateIsActive = affiliate.status === 'active';
+    if (affiliateHeading) affiliateHeading.textContent = affiliateIsActive ? 'Affiliate access active' : 'Affiliate review status';
+    if (affiliateMessage) affiliateMessage.textContent = affiliateIsActive
       ? `Referral code: ${affiliate.referralCode}`
-      : `Your affiliate application is ${String(affiliate.status || 'pending_review').replaceAll('_', ' ')}.`;
-    if (affiliateStatus) affiliateStatus.textContent = String(affiliate.status || 'pending_review').replaceAll('_', ' ');
+      : `Your affiliate application is ${String(affiliate.status || 'pending_review').replaceAll('_', ' ')}. Tracking starts after activation.`;
+    if (affiliateStatus) {
+      affiliateStatus.textContent = String(affiliate.status || 'pending_review').replaceAll('_', ' ');
+      affiliateStatus.classList.toggle('status-approved', affiliateIsActive);
+      affiliateStatus.classList.toggle('status-pending', !affiliateIsActive && affiliate.status !== 'rejected' && affiliate.status !== 'paused');
+      affiliateStatus.classList.toggle('status-warning', affiliate.status === 'rejected' || affiliate.status === 'paused');
+    }
     if (affiliateVisits) affiliateVisits.textContent = String(stats.visits || 0);
     if (affiliateInquiries) affiliateInquiries.textContent = String(stats.inquiries || 0);
     if (affiliateTotal) affiliateTotal.textContent = String(stats.totalEvents || 0);
-    document.body.dataset.affiliateCode = affiliate.referralCode || '';
   } catch (error) {
     if (affiliateHeading) affiliateHeading.textContent = 'Affiliate dashboard unavailable';
     if (affiliateMessage) affiliateMessage.textContent = error.message || 'Unable to load affiliate dashboard right now.';
   }
 };
 
+affiliateTargetPreset?.addEventListener('change', () => {
+  if (!affiliateTargetInput) return;
+  const value = affiliateTargetPreset.value;
+  if (!value) return;
+  affiliateTargetInput.value = new URL(value, window.location.origin).href;
+});
+
+affiliateCopyLink?.addEventListener('click', async () => {
+  const link = document.body.dataset.affiliateGeneratedLink || '';
+  if (!link) return;
+  try {
+    await navigator.clipboard.writeText(link);
+    if (affiliateLinkOutput) affiliateLinkOutput.textContent = 'Referral link copied to clipboard.';
+  } catch (error) {
+    if (affiliateLinkOutput) affiliateLinkOutput.textContent = link;
+  }
+});
+
 affiliateLinkForm?.addEventListener('submit', (event) => {
   event.preventDefault();
   const code = document.body.dataset.affiliateCode || '';
+  const isActive = document.body.dataset.affiliateActive === 'true';
   const formData = new FormData(affiliateLinkForm);
   const target = String(formData.get('target') || window.location.origin || 'https://luxeroutes.eu').trim();
-  if (!code) {
-    if (affiliateLinkOutput) affiliateLinkOutput.textContent = 'Your referral code will be available after admin approval.';
+  if (!code || !isActive) {
+    if (affiliateLinkOutput) affiliateLinkOutput.textContent = 'Referral links unlock after LuxeRoutes approves and activates your affiliate account.';
     return;
   }
   try {
     const url = new URL(target, window.location.origin);
     url.searchParams.set('ref', code);
+    document.body.dataset.affiliateGeneratedLink = url.href;
     if (affiliateLinkOutput) affiliateLinkOutput.innerHTML = `Referral link: <a href="${accountEscapeHtml(url.href)}" target="_blank" rel="noopener">${accountEscapeHtml(url.href)}</a>`;
+    if (affiliateCopyLink) affiliateCopyLink.hidden = false;
   } catch (error) {
     if (affiliateLinkOutput) affiliateLinkOutput.textContent = 'Enter a valid LuxeRoutes destination URL.';
   }
 });
+
+const getInquiryPayload = (inquiry = {}) => {
+  try { return JSON.parse(inquiry.payloadJson || '{}') || {}; } catch (error) { return {}; }
+};
+
+
+const customerOfferStatusClass = (status = '') => {
+  if (['won', 'owner_confirmed', 'customer_interested'].includes(status)) return 'status-approved';
+  if (['lost', 'expired', 'cancelled'].includes(status)) return 'status-warning';
+  return 'status-pending';
+};
+
+const renderAccountCustomerOffers = (customerOffers = []) => {
+  if (!accountCustomerOffers) return;
+  if (!customerOffers.length) {
+    accountCustomerOffers.innerHTML = '<div class="stack-item"><div><strong>No private offers yet</strong><span>Request an offer and LuxeRoutes will prepare a proposal when owner pricing is available.</span></div><span class="status-pill status-pending">Waiting</span></div>';
+    return;
+  }
+  accountCustomerOffers.innerHTML = customerOffers.map((offer) => {
+    const status = String(offer.status || 'sent').replaceAll('_', ' ');
+    const price = Number(offer.ownerPriceAmount || 0) > 0 ? `${accountEscapeHtml(offer.currency || 'EUR')} ${Number(offer.ownerPriceAmount).toLocaleString()}` : 'Owner price pending';
+    const details = [offer.destinationLabel, offer.includedItems, offer.couponLabel || offer.perkLabel, offer.expiresAt ? `Valid until ${offer.expiresAt}` : ''].filter(Boolean).join(' · ');
+    const canRespond = ['sent', 'changes_requested'].includes(offer.status || 'sent');
+    return `<div class="stack-item stack-item-vertical" data-customer-offer-card>
+      <div>
+        <strong>${accountEscapeHtml(offer.title || 'Private LuxeRoutes proposal')}</strong>
+        <span>${price}</span>
+        ${details ? `<span>${accountEscapeHtml(details).slice(0, 260)}</span>` : ''}
+        ${offer.customerMessage ? `<span>${accountEscapeHtml(offer.customerMessage).slice(0, 260)}</span>` : ''}
+      </div>
+      <span class="status-pill ${customerOfferStatusClass(offer.status)}">${accountEscapeHtml(status)}</span>
+      ${canRespond ? `<form class="account-inline-form proposal-response-form" data-customer-offer-response-form data-id="${accountEscapeHtml(offer.id || '')}"><label class="full">Message to concierge<textarea name="message" rows="2" placeholder="Ask a question or tell us what you would like to adjust"></textarea></label><div class="button-row"><button class="mini-action" type="submit" name="action" value="customer_interested">I'm interested</button><button class="mini-action" type="submit" name="action" value="changes_requested">Request changes</button><button class="mini-action" type="submit" name="action" value="declined">Not interested</button></div></form>` : ''}
+    </div>`;
+  }).join('');
+};
+
+const couponStatusClass = (status = '') => ['active'].includes(status) ? 'status-approved' : ['expired', 'revoked'].includes(status) ? 'status-warning' : 'status-pending';
+
+const renderAccountCoupons = (coupons = []) => {
+  if (!accountCoupons) return;
+  if (!coupons.length) {
+    accountCoupons.innerHTML = '<div class="stack-item"><div><strong>No active coupons</strong><span>Ask LuxeRoutes to attach a private code to your verified email.</span></div><span class="status-pill">0 codes</span></div>';
+    return;
+  }
+  accountCoupons.innerHTML = coupons.map((coupon) => {
+    const status = String(coupon.status || 'active').replaceAll('_', ' ');
+    const expires = coupon.expiresAt ? `Expires ${accountEscapeHtml(coupon.expiresAt)}` : 'No expiry set';
+    return `<div class="stack-item"><div><strong>${accountEscapeHtml(coupon.title || 'Private LuxeRoutes code')}</strong><span><code>${accountEscapeHtml(coupon.code || '')}</code> · ${accountEscapeHtml(coupon.description || expires)}</span><span>${expires}</span></div><span class="status-pill ${couponStatusClass(coupon.status)}">${accountEscapeHtml(status)}</span></div>`;
+  }).join('');
+};
+
+const renderAccountSavedOffers = (inquiries = []) => {
+  if (!accountSavedOffers) return;
+  if (!inquiries.length) {
+    accountSavedOffers.innerHTML = '<div class="stack-item"><div><strong>No saved offers yet</strong><span>Approved travel proposals and submitted inquiries for your email will appear here.</span></div><span class="status-pill status-pending">Waiting</span></div>';
+    return;
+  }
+  accountSavedOffers.innerHTML = inquiries.map((inquiry) => {
+    const payload = getInquiryPayload(inquiry);
+    const title = inquiry.offerTitle || payload.offer || payload.property_name || payload.accommodation_interest || inquiry.inquiryType || 'LuxeRoutes inquiry';
+    const detail = payload.message || payload.notes || payload.travel_style || payload.destination || inquiry.submittedFrom || 'Request received by LuxeRoutes.';
+    const status = String(inquiry.status || 'new').replaceAll('_', ' ');
+    return `<div class="stack-item"><div><strong>${accountEscapeHtml(title)}</strong><span>${accountEscapeHtml(detail).slice(0, 180)}</span><span>Submitted ${accountEscapeHtml(inquiry.createdAt ? new Date(inquiry.createdAt).toLocaleDateString() : 'recently')}</span></div><span class="status-pill ${['approved', 'resolved', 'closed'].includes(inquiry.status) ? 'status-approved' : inquiry.status === 'declined' ? 'status-warning' : 'status-pending'}">${accountEscapeHtml(status)}</span></div>`;
+  }).join('');
+};
+
+const loadAccountActivity = async () => {
+  if (!accountSavedOffers || !isDashboardPage()) return;
+  try {
+    const response = await fetchAccountAuth('/api/account?action=activity', { headers: { Accept: 'application/json' }, credentials: 'same-origin', redirect: 'manual' });
+    const data = await readJsonOrAuthError(response, 'Unable to load saved offers and inquiries.');
+    renderAccountCustomerOffers(Array.isArray(data.customerOffers) ? data.customerOffers : []);
+    renderAccountSavedOffers(Array.isArray(data.inquiries) ? data.inquiries : []);
+    renderAccountCoupons(Array.isArray(data.coupons) ? data.coupons : []);
+  } catch (error) {
+    renderAccountCustomerOffers([]);
+    renderAccountSavedOffers([]);
+    renderAccountCoupons([]);
+  }
+};
 
 const initialiseAccount = async () => {
   const cachedSession = loadAccountSession();
@@ -1388,6 +1760,35 @@ accountForm?.addEventListener('submit', async (event) => {
 
 
 document.addEventListener('submit', async (event) => {
+  const form = event.target.closest?.('[data-manager-request-note-form]');
+  if (!form) return;
+  event.preventDefault();
+  const button = form.querySelector('button[type="submit"]');
+  if (button) button.disabled = true;
+  try {
+    const formData = new FormData(form);
+    const response = await fetch('/api/manager/inquiries', {
+      method: 'PATCH',
+      headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify({
+        id: form.dataset.id || '',
+        managerNote: formData.get('managerNote'),
+        managerFollowUpAt: formData.get('managerFollowUpAt'),
+        managerContactStatus: formData.get('managerContactStatus'),
+      }),
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || 'Unable to save manager follow-up.');
+    await loadRolePanelRequests('manager');
+  } catch (error) {
+    window.alert(error.message || 'Unable to save manager follow-up.');
+  } finally {
+    if (button) button.disabled = false;
+  }
+});
+
+document.addEventListener('submit', async (event) => {
   const form = event.target.closest?.('[data-owner-offer-form]');
   if (!form) return;
   event.preventDefault();
@@ -1418,6 +1819,32 @@ document.addEventListener('submit', async (event) => {
   }
 });
 
+
+document.addEventListener('submit', async (event) => {
+  const form = event.target.closest?.('[data-customer-offer-response-form]');
+  if (!form) return;
+  event.preventDefault();
+  const submitter = event.submitter;
+  const action = submitter?.value || 'customer_interested';
+  const button = submitter || form.querySelector('button[type="submit"]');
+  if (button) button.disabled = true;
+  try {
+    const formData = new FormData(form);
+    const response = await fetch('/api/customer-offers', {
+      method: 'PATCH',
+      headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify({ id: form.dataset.id || '', action, message: formData.get('message') }),
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || 'Unable to update this proposal.');
+    await loadAccountActivity();
+  } catch (error) {
+    window.alert(error.message || 'Unable to update this proposal.');
+  } finally {
+    if (button) button.disabled = false;
+  }
+});
 
 const setResetMessage = (message = '', tone = 'pending') => {
   if (!resetMessage) return;
@@ -1499,6 +1926,10 @@ accountPasswordForm?.addEventListener('submit', async (event) => {
     setInlineMessage(accountPasswordMessage, 'New password confirmation does not match.', 'error');
     return;
   }
+  if (passwordScore(newPassword) < 3) {
+    setInlineMessage(accountPasswordMessage, 'Use a stronger password with at least three of: 12+ characters, uppercase, lowercase, number, symbol.', 'error');
+    return;
+  }
 
   try {
     if (accountPasswordSubmit) accountPasswordSubmit.disabled = true;
@@ -1520,11 +1951,29 @@ forgotPasswordToggle?.addEventListener('click', () => {
   resetEmailInput?.focus();
 });
 
-resetCancel?.addEventListener('click', () => {
-  if (passwordResetForm) passwordResetForm.hidden = true;
-  if (loginActions) loginActions.hidden = false;
-  setResetMessage('Password reset uses the same Resend OTP email verification.');
+resetCancel?.addEventListener('click', (event) => {
+  if (!isPasswordResetPage()) {
+    event.preventDefault();
+    if (passwordResetForm) passwordResetForm.hidden = true;
+    if (loginActions) loginActions.hidden = false;
+    setResetMessage('Password reset uses the same Resend OTP email verification.');
+  }
 });
+
+const syncResetPasswordLink = () => {
+  if (!forgotPasswordLink) return;
+  const email = String(loginEmailInput?.value || '').trim();
+  forgotPasswordLink.href = email ? `reset-password.html?email=${encodeURIComponent(email)}` : 'reset-password.html';
+};
+
+loginEmailInput?.addEventListener('input', syncResetPasswordLink);
+syncResetPasswordLink();
+
+if (isPasswordResetPage() && resetEmailInput) {
+  const resetEmail = new URLSearchParams(window.location.search).get('email') || '';
+  resetEmailInput.value = resetEmail;
+  (resetEmail ? resetSubmit : resetEmailInput)?.focus();
+}
 
 loginPasswordInput?.addEventListener('input', () => {
   loginPasswordInput.removeAttribute('aria-invalid');
@@ -1535,6 +1984,7 @@ passwordResetForm?.addEventListener('submit', async (event) => {
   const email = String(resetEmailInput?.value || '').trim().toLowerCase();
   const otp = String(resetCodeInput?.value || '').trim();
   const password = String(resetPasswordInput?.value || '');
+  const passwordConfirm = String(resetPasswordConfirmInput?.value || '');
   const hasCode = /^\d{6}$/.test(otp);
 
   if (!email || !email.includes('@')) {
@@ -1551,6 +2001,7 @@ passwordResetForm?.addEventListener('submit', async (event) => {
       resetSubmit.textContent = 'Reset password';
       resetCodeInput.required = true;
       resetPasswordInput.required = true;
+      if (resetPasswordConfirmInput) resetPasswordConfirmInput.required = true;
       resetCodeInput?.focus();
       return;
     }
@@ -1559,14 +2010,26 @@ passwordResetForm?.addEventListener('submit', async (event) => {
       setResetMessage('Enter a new password with at least 8 characters.', 'error');
       return;
     }
+    if (password !== passwordConfirm) {
+      setResetMessage('New password confirmation does not match.', 'error');
+      return;
+    }
+    if (passwordScore(password) < 3) {
+      setResetMessage('Use a stronger password with at least three of: 12+ characters, uppercase, lowercase, number, symbol.', 'error');
+      return;
+    }
 
     setResetMessage('Updating your password…');
     await confirmPasswordReset(email, otp, password);
     setResetMessage('Password updated. You can now sign in with your new password.', 'success');
-    loginEmailInput.value = email;
-    loginPasswordInput.value = '';
-    if (passwordResetForm) passwordResetForm.hidden = true;
-    if (loginActions) loginActions.hidden = false;
+    if (loginEmailInput) loginEmailInput.value = email;
+    if (loginPasswordInput) loginPasswordInput.value = '';
+    if (isLoginPage()) {
+      if (passwordResetForm) passwordResetForm.hidden = true;
+      if (loginActions) loginActions.hidden = false;
+    } else if (resetSubmit) {
+      resetSubmit.textContent = 'Send another reset code';
+    }
   } catch (error) {
     setResetMessage(error.message || 'Unable to reset your password right now.', 'error');
   } finally {
@@ -1586,6 +2049,12 @@ document.querySelectorAll('[data-password-toggle]').forEach((button) => button.a
 registerPasswordInput?.addEventListener('input', updatePasswordStrength);
 registerPasswordConfirm?.addEventListener('input', updatePasswordStrength);
 updatePasswordStrength();
+accountNewPasswordInput?.addEventListener('input', updateAccountPasswordStrength);
+accountNewPasswordConfirmInput?.addEventListener('input', updateAccountPasswordStrength);
+updateAccountPasswordStrength();
+resetPasswordInput?.addEventListener('input', updateResetPasswordStrength);
+resetPasswordConfirmInput?.addEventListener('input', updateResetPasswordStrength);
+updateResetPasswordStrength();
 
 loginOtpBack?.addEventListener('click', () => {
   showLoginEmailStep();
@@ -1642,6 +2111,10 @@ accountEmailForm?.addEventListener('submit', async (event) => {
   } finally {
     changeEmailSubmit.disabled = false;
   }
+});
+
+managerRequestFilter?.addEventListener('change', () => {
+  renderRoleRequests(managerRequestsTarget, roleRequestCache.manager, 'No customer stay requests are connected to your assigned properties yet.', 'manager');
 });
 
 if (securityActivity) {
