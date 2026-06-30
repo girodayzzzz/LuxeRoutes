@@ -206,6 +206,8 @@
             <form class="admin-form account-settings-form" data-account-settings-form>
               <label>Full name<input name="name" type="text" placeholder="Your name" autocomplete="name" required data-settings-name></label>
               <label>Company / group<input name="company_name" type="text" placeholder="Optional company or property group" autocomplete="organization" data-settings-company></label>
+              <label>Phone / WhatsApp<input name="phone" type="tel" placeholder="Optional" autocomplete="tel" data-settings-phone></label>
+              <label>Preferred contact<select name="preferred_contact" data-settings-preferred-contact><option value="email">Email</option><option value="whatsapp">WhatsApp</option><option value="phone">Phone</option></select></label>
               <label class="full">Travel preferences<textarea name="notes" rows="4" placeholder="Preferred regions, stay types, budget notes, guest details, and privacy requests." data-settings-notes></textarea></label>
               <button class="btn btn-primary" type="submit" data-account-settings-submit>Save settings</button>
               <p class="admin-helper full" data-account-settings-message>Saved settings stay connected to your verified email.</p>
@@ -213,12 +215,23 @@
             <hr class="admin-divider" />
             <form class="admin-form account-password-form" data-account-password-form>
               <h4 class="full">Change password</h4>
-              <label>Current password<input name="current_password" type="password" autocomplete="current-password" required data-current-password></label>
-              <label>New password<input name="new_password" type="password" autocomplete="new-password" minlength="8" required data-new-password></label>
-              <label>Confirm new password<input name="new_password_confirm" type="password" autocomplete="new-password" minlength="8" required data-new-password-confirm></label>
+              <label>Current password<span class="password-field"><input name="current_password" type="password" autocomplete="current-password" required data-current-password><button type="button" class="password-toggle" data-password-toggle aria-label="Show password">Show</button></span></label>
+              <label>New password<span class="password-field"><input name="new_password" type="password" autocomplete="new-password" minlength="8" required data-new-password><button type="button" class="password-toggle" data-password-toggle aria-label="Show password">Show</button></span></label>
+              <label>Confirm new password<span class="password-field"><input name="new_password_confirm" type="password" autocomplete="new-password" minlength="8" required data-new-password-confirm><button type="button" class="password-toggle" data-password-toggle aria-label="Show password">Show</button></span></label>
               <button class="btn btn-secondary" type="submit" data-account-password-submit>Update password</button>
               <p class="admin-helper full" data-account-password-message>Use your current password; OTP login remains available as a backup.</p>
             </form>
+            <hr class="admin-divider" />
+            <form class="admin-form account-email-form" data-account-email-form>
+              <h4 class="full">Change email</h4>
+              <label>New email<input name="new_email" type="email" autocomplete="email" required data-change-email-input></label>
+              <label>6-digit code<input name="otp" type="text" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" data-change-email-code></label>
+              <button class="btn btn-secondary" type="submit" data-change-email-submit>Send verification code</button>
+              <p class="admin-helper full" data-change-email-message>We will verify the new email before moving your account.</p>
+            </form>
+            <hr class="admin-divider" />
+            <div class="stack-list" data-security-activity></div>
+            <button class="btn btn-secondary" type="button" data-account-logout-all>Sign out of this device</button>
           </article>
 
           <article class="admin-card">

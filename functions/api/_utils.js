@@ -267,6 +267,10 @@ const authSchemaStatements = [
     password_salt TEXT,
     password_iterations INTEGER,
     password_enabled INTEGER NOT NULL DEFAULT 0,
+    phone TEXT,
+    preferred_contact TEXT,
+    last_login_at TEXT,
+    last_login_method TEXT,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
   )`,
@@ -304,6 +308,10 @@ export const ensureAuthSchema = async (db) => {
   await ensureOptionalColumn(db, 'profiles', 'password_salt', 'TEXT');
   await ensureOptionalColumn(db, 'profiles', 'password_iterations', 'INTEGER');
   await ensureOptionalColumn(db, 'profiles', 'password_enabled', 'INTEGER NOT NULL DEFAULT 0');
+  await ensureOptionalColumn(db, 'profiles', 'phone', 'TEXT');
+  await ensureOptionalColumn(db, 'profiles', 'preferred_contact', 'TEXT');
+  await ensureOptionalColumn(db, 'profiles', 'last_login_at', 'TEXT');
+  await ensureOptionalColumn(db, 'profiles', 'last_login_method', 'TEXT');
 };
 
 

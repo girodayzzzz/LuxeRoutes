@@ -6610,3 +6610,54 @@ body:not(.auth-page) .page-hero h1 {
     justify-content: center;
   }
 }
+
+/* Account auth enhancements */
+.password-field {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.password-field input {
+  min-width: 0;
+}
+
+.password-toggle {
+  border: 1px solid rgba(156, 124, 69, 0.35);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.72);
+  color: #6f5730;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 0.55rem 0.8rem;
+  cursor: pointer;
+}
+
+.password-strength {
+  border: 1px solid rgba(156, 124, 69, 0.24);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.62);
+  color: #6f5730;
+  font-size: 0.88rem;
+  padding: 0.8rem 0.95rem;
+}
+
+.password-strength[data-strength="0"],
+.password-strength[data-strength="1"],
+.password-strength[data-strength="2"] {
+  border-color: rgba(164, 73, 73, 0.35);
+  color: #8a3b3b;
+}
+
+.password-strength[data-strength="4"],
+.password-strength[data-strength="5"] {
+  border-color: rgba(61, 128, 82, 0.35);
+  color: #336f47;
+}
+
+[data-login-resend-code][disabled] {
+  opacity: 0.7;
+  cursor: wait;
+}
