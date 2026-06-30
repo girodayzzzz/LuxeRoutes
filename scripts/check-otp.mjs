@@ -64,6 +64,13 @@ class FakeStatement {
       return { success: true };
     }
 
+    if (this.sql.includes('UPDATE profiles SET last_login_at')) {
+      const [lastLoginAt, lastLoginMethod, updatedAt, email] = this.params;
+      const profile = this.db.profiles.find((item) => item.email.toLowerCase() === email);
+      if (profile) Object.assign(profile, { lastLoginAt, lastLoginMethod, updatedAt });
+      return { success: true };
+    }
+
     throw new Error(`Unhandled run SQL: ${this.sql}`);
   }
 

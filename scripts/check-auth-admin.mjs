@@ -19,8 +19,16 @@ assert.doesNotMatch(
 );
 assert.match(loginSource, /data-login-otp-form/, 'Public login should show the Resend OTP account form.');
 assert.match(loginSource, /action="\/api\/auth\/otp"/, 'Public login should post OTP requests to the Resend-backed API.');
-assert.match(loginSource, /data-admin-access-link[\s\S]*Continue with Cloudflare Access/, 'Public login should keep a separate Cloudflare Access entry for admins.');
-assert.match(loginSource, /href="register\.html"[^>]*>Don\'t have an account\? Register here<\/a>/, 'Public login should link to registration.');
+assert.doesNotMatch(loginSource, /data-admin-access-link|<summary>Admin access<\/summary>|Admin Access/, 'Public login should not advertise the protected admin console to public users.');
+assert.match(loginSource, /href="register\.html"[^>]*>Create an account<\/a>/, 'Public login should link to registration.');
+assert.match(readFileSync('register.html', 'utf8'), /data-nav-account hidden>Account<\/a>/, 'Register page should hide the Account nav link until a visitor is signed in.');
+assert.match(siteScriptSource, /normalizePublicAccessLinks/, 'Shared navigation code should normalize accidental public admin links from marketing pages.');
+assert.doesNotMatch(readFileSync('become-affiliate.html', 'utf8'), /admin review|admin approval|admin panel|anything admin should know/i, 'Affiliate application copy should use public-facing review language.');
+assert.doesNotMatch(readFileSync('offer.html', 'utf8'), /Admin reviews|admin approval|admin review/i, 'Offer detail copy should use public-facing review language.');
+assert.match(readFileSync('index.html', 'utf8'), /data-home-map/, 'Homepage should include an approximate regional map preview.');
+assert.match(readFileSync('offers.html', 'utf8'), /data-map-toggle[\s\S]*data-offers-map/, 'Offer filters should include a map toggle and map canvas.');
+assert.match(readFileSync('offer.html', 'utf8'), /data-offer-map/, 'Offer details should include an approximate location map canvas.');
+assert.match(siteScriptSource, /regionalMapPoints[\s\S]*OpenStreetMap contributors/, 'Shared site script should use privacy-first regional map points with OpenStreetMap tiles.');
 assert.match(accountSource, /fetchAccountAuth\('\/.cloudflare\/access\/get-identity',[\s\S]*?redirect: 'manual'/, 'Cloudflare Access identity checks must not follow Access redirects into a browser redirect loop.');
 assert.match(accountSource, /const accountAuthFetchTimeoutMs = 8000;/, 'Account auth fetches should use a defined timeout instead of throwing before session checks.');
 assert.match(accountSource, /const isLoginRedirectTarget = \(path\) =>/, 'Login redirect sanitizing should define the login-target helper used after OTP verification.');
@@ -254,8 +262,15 @@ class FakeStatement {
       return { success: true };
     }
 
+    if (sql.includes('UPDATE profiles SET last_login_at')) {
+      const [lastLoginAt, lastLoginMethod, updatedAt, email] = this.params;
+      const profile = this.db.profiles.find((item) => item.email.toLowerCase() === email);
+      if (profile) Object.assign(profile, { lastLoginAt, lastLoginMethod, updatedAt });
+      return { success: true };
+    }
+
     if (sql.includes('INSERT INTO profiles') && sql.includes('company_name')) {
-      const [id, email, name, requestedRole, companyName, companyWebsite, businessContext, notes, status, passwordHash, passwordSalt, passwordIterations, passwordEnabled, createdAt, updatedAt] = this.params;
+      const [id, email, name, requestedRole, companyName, companyWebsite, businessContext, notes, phone, preferredContact, status, passwordHash, passwordSalt, passwordIterations, passwordEnabled, createdAt, updatedAt] = this.params;
       const existing = this.db.profiles.find((profile) => profile.email === email);
       const next = {
         id: existing?.id || id,
@@ -267,6 +282,8 @@ class FakeStatement {
         companyWebsite,
         businessContext,
         notes,
+        phone,
+        preferredContact,
         status: requestedRole === 'customer' ? 'active' : status,
         passwordHash: passwordHash || existing?.passwordHash || null,
         passwordSalt: passwordSalt || existing?.passwordSalt || null,
