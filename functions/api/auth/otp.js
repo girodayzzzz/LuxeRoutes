@@ -2,6 +2,8 @@ import { createAccountSessionCookie, ensureAuthSchema, errorJson, getAccountSess
 
 const OTP_TTL_MINUTES = 10;
 const OTP_LENGTH = 6;
+const OTP_REQUEST_COOLDOWN_SECONDS = 45;
+const OTP_MAX_PENDING_PER_HOUR = 6;
 const RESEND_ENDPOINT = 'https://api.resend.com/emails';
 const MISSING_RESEND_API_KEY_MESSAGE = 'Missing RESEND_API_KEY for OTP email delivery. Recommended setup: Cloudflare Access protects only /admin, while customers, owners, and managers use the public /login.html OTP form. Create one Resend account/API key for the LuxeRoutes site (not one profile per user) and add it as RESEND_API_KEY in Cloudflare Pages production runtime secrets (Workers & Pages → LuxeRoutes → Settings → Environment variables). RESEND_API_TOKEN or RESEND_TOKEN are also accepted aliases.';
 
@@ -224,6 +226,10 @@ const requestOtp = async ({ request, env }) => {
 
   await ensureOtpSchema(db);
   await ensureAuthSchema(db);
+  const recent = await db.prepare("SELECT COUNT(*) AS count FROM login_otps WHERE email = ? AND created_at > datetime('now', '-1 hour')").bind(email).first();
+  const last = await db.prepare("SELECT created_at AS createdAt FROM login_otps WHERE email = ? ORDER BY created_at DESC LIMIT 1").bind(email).first();
+  if (Number(recent?.count || 0) >= OTP_MAX_PENDING_PER_HOUR) return otpErrorResponse(request, 'Too many code requests. Try again later.', 429, email);
+  if (last?.createdAt && Date.now() - new Date(last.createdAt).getTime() < OTP_REQUEST_COOLDOWN_SECONDS * 1000) return otpErrorResponse(request, 'Please wait before requesting another code.', 429, email);
 
   const grant = await getActiveGrant(db, email);
   if (grant?.role === 'admin') {
@@ -403,12 +409,13 @@ const clearAccountSession = () => json({ ok: true }, {
 });
 
 
-const buildLoginAccountResponse = async ({ request, env, db, email, remember = false }) => {
+const buildLoginAccountResponse = async ({ request, env, db, email, remember = false, method = 'otp' }) => {
   const [profile, grant] = await Promise.all([
     getProfile(db, email),
     getActiveGrant(db, email),
   ]);
 
+  await db.prepare('UPDATE profiles SET last_login_at = ?, last_login_method = ?, updated_at = ? WHERE lower(trim(email)) = ?').bind(nowIso(), method, nowIso(), email).run();
   const sessionCookie = await createAccountSessionCookie(env, email, { remember });
   const role = grant?.role || profile?.defaultRole || 'customer';
   const redirect = {
@@ -469,7 +476,7 @@ const verifyOtp = async ({ request, env }) => {
 
   await db.prepare("UPDATE login_otps SET status = 'verified', updated_at = ? WHERE id = ?").bind(nowIso(), challenge.id).run();
 
-  return buildLoginAccountResponse({ request, env, db, email, remember });
+  return buildLoginAccountResponse({ request, env, db, email, remember, method: 'otp' });
 };
 
 const loginWithPassword = async ({ request, env }) => {
@@ -492,13 +499,56 @@ const loginWithPassword = async ({ request, env }) => {
     return errorJson('Email or password is not correct.', 401);
   }
 
-  return buildLoginAccountResponse({ request, env, db, email, remember });
+  return buildLoginAccountResponse({ request, env, db, email, remember, method: 'password' });
+};
+
+
+const createMagicLink = async ({ request, env }) => {
+  const db = requireDb(env);
+  const body = await parseRequestBody(request);
+  const email = normalizeEmail(body.email);
+  if (!email || !email.includes('@')) return errorJson('Valid email is required.', 400);
+  await ensureOtpSchema(db);
+  await ensureAuthSchema(db);
+  const tokenBytes = new Uint8Array(32);
+  crypto.getRandomValues(tokenBytes);
+  const token = Array.from(tokenBytes).map((byte) => byte.toString(16).padStart(2, '0')).join('');
+  const tokenHash = await hashOtp(token);
+  const timestamp = nowIso();
+  const expiresAt = minutesFromNow(OTP_TTL_MINUTES);
+  await db.prepare(`INSERT INTO login_otps (id, email, otp_hash, attempts, status, expires_at, created_at, updated_at)
+    VALUES (?, ?, ?, 0, 'pending', ?, ?, ?)`)
+    .bind(makeId('magic'), email, tokenHash, expiresAt, timestamp, timestamp).run();
+  const url = new URL(request.url);
+  const link = `${url.origin}/api/auth/otp?action=magic&email=${encodeURIComponent(email)}&token=${encodeURIComponent(token)}`;
+  await fetch(RESEND_ENDPOINT, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${getOtpEmailConfig(env).apiKey}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ from: getOtpEmailConfig(env).from, to: email, subject: 'Your LuxeRoutes magic login link', text: `Open this secure LuxeRoutes link within ${OTP_TTL_MINUTES} minutes: ${link}` }),
+  }).then(async (response) => { if (!response.ok) throw new Error(`Magic link email delivery failed (${response.status}).`); });
+  return json({ ok: true, email, expiresAt });
+};
+
+const verifyMagicLink = async ({ request, env }) => {
+  const db = requireDb(env);
+  const url = new URL(request.url);
+  const email = normalizeEmail(url.searchParams.get('email'));
+  const token = String(url.searchParams.get('token') || '').trim();
+  if (!email || !token) return redirectResponse('/login.html?error=magic_link');
+  await ensureOtpSchema(db);
+  await ensureAuthSchema(db);
+  const tokenHash = await hashOtp(token);
+  const challenge = await db.prepare("SELECT id, expires_at AS expiresAt FROM login_otps WHERE email = ? AND otp_hash = ? AND status = 'pending' ORDER BY created_at DESC LIMIT 1").bind(email, tokenHash).first();
+  if (!challenge || new Date(challenge.expiresAt).getTime() < Date.now()) return redirectResponse('/login.html?error=magic_link');
+  await db.prepare("UPDATE login_otps SET status = 'verified', updated_at = ? WHERE id = ?").bind(nowIso(), challenge.id).run();
+  return buildLoginAccountResponse({ request, env, db, email, remember: true, method: 'magic_link' });
 };
 
 export const onRequestGet = async (context) => {
   try {
     const action = new URL(context.request.url).searchParams.get('action');
     if (action === 'session') return await getSessionAccount(context);
+    if (action === 'magic') return await verifyMagicLink(context);
     return errorJson('Not found.', 404);
   } catch (error) {
     return privateErrorJson(error.message || 'Unable to load account session.', 500);
@@ -511,6 +561,7 @@ export const onRequestPost = async (context) => {
     if (action === 'verify') return await verifyOtp(context);
     if (action === 'password') return await loginWithPassword(context);
     if (action === 'reset-request') return await requestPasswordReset(context);
+    if (action === 'magic-link') return await createMagicLink(context);
     if (action === 'reset') return await resetPassword(context);
     if (action === 'change-password') return await changePassword(context);
     if (action === 'logout') return clearAccountSession();

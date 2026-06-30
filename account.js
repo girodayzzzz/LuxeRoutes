@@ -22,6 +22,8 @@ const accountSettingsMessage = document.querySelector('[data-account-settings-me
 const settingsNameInput = document.querySelector('[data-settings-name]');
 const settingsCompanyInput = document.querySelector('[data-settings-company]');
 const settingsNotesInput = document.querySelector('[data-settings-notes]');
+const settingsPhoneInput = document.querySelector('[data-settings-phone]');
+const settingsPreferredContactInput = document.querySelector('[data-settings-preferred-contact]');
 const accountPasswordForm = document.querySelector('[data-account-password-form]');
 const accountPasswordSubmit = document.querySelector('[data-account-password-submit]');
 const accountPasswordMessage = document.querySelector('[data-account-password-message]');
@@ -64,6 +66,17 @@ const registerCompleteLink = document.querySelector('[data-register-complete-lin
 const loginOtpEmail = document.querySelector('[data-login-otp-email]');
 const loginOtpMessage = document.querySelector('[data-login-otp-message]');
 const loginOtpBack = document.querySelector('[data-login-otp-back]');
+const loginResendCode = document.querySelector('[data-login-resend-code]');
+const loginMagicLink = document.querySelector('[data-login-magic-link]');
+const registerPasswordInput = document.querySelector('[data-register-password-input]');
+const registerPasswordConfirm = document.querySelector('[data-register-password-confirm]');
+const passwordStrength = document.querySelector('[data-password-strength]');
+const accountEmailForm = document.querySelector('[data-account-email-form]');
+const changeEmailInput = document.querySelector('[data-change-email-input]');
+const changeEmailCode = document.querySelector('[data-change-email-code]');
+const changeEmailSubmit = document.querySelector('[data-change-email-submit]');
+const changeEmailMessage = document.querySelector('[data-change-email-message]');
+const securityActivity = document.querySelector('[data-security-activity]');
 const isRegisterPage = () => document.body.classList.contains('register-page') && Boolean(accountForm);
 const isDashboardPage = () => document.body.classList.contains('account-dashboard-page');
 const isProtectedAccountPage = () => isDashboardPage();
@@ -382,6 +395,8 @@ const populateAccountSettings = (profile = {}) => {
   if (settingsNameInput) settingsNameInput.value = profile.name || '';
   if (settingsCompanyInput) settingsCompanyInput.value = profile.companyName || '';
   if (settingsNotesInput) settingsNotesInput.value = profile.notes || '';
+  if (settingsPhoneInput) settingsPhoneInput.value = profile.phone || '';
+  if (settingsPreferredContactInput) settingsPreferredContactInput.value = profile.preferredContact || 'email';
 };
 
 const getSettingsProfilePayload = () => {
@@ -394,6 +409,8 @@ const getSettingsProfilePayload = () => {
     companyWebsite: cached.companyWebsite || '',
     businessContext: cached.businessContext || '',
     notes: String(settingsNotesInput?.value || '').trim(),
+    phone: String(settingsPhoneInput?.value || '').trim(),
+    preferredContact: String(settingsPreferredContactInput?.value || 'email').trim(),
   };
 };
 
@@ -449,6 +466,31 @@ const readJsonOrAuthError = async (response, fallbackMessage) => {
   return data;
 };
 
+const setResendCooldown = (seconds = 45) => {
+  if (!loginResendCode) return;
+  let remaining = seconds;
+  loginResendCode.disabled = true;
+  const tick = () => {
+    if (remaining > 0) loginResendCode.disabled = true;
+    loginResendCode.textContent = remaining > 0 ? `Resend code (${remaining}s)` : 'Resend code';
+    if (remaining <= 0) { loginResendCode.disabled = false; return; }
+    remaining -= 1;
+    window.setTimeout(tick, 1000);
+  };
+  tick();
+};
+
+const passwordScore = (value = '') => [value.length >= 12, /[A-Z]/.test(value), /[a-z]/.test(value), /\d/.test(value), /[^A-Za-z0-9]/.test(value)].filter(Boolean).length;
+
+const updatePasswordStrength = () => {
+  if (!passwordStrength || !registerPasswordInput) return;
+  const value = registerPasswordInput.value || '';
+  const score = passwordScore(value);
+  const matches = !registerPasswordConfirm?.value || registerPasswordConfirm.value === value;
+  passwordStrength.dataset.strength = String(score);
+  passwordStrength.textContent = `${score >= 4 ? 'Strong' : score >= 3 ? 'Good' : 'Needs work'} password · ${matches ? 'Passwords match' : 'Passwords do not match'} · Use 12+ chars, upper/lowercase, number, and symbol.`;
+};
+
 const setLoginOtpBusy = (busy = false) => {
   loginOtpForm?.querySelectorAll('button').forEach((button) => {
     button.disabled = busy;
@@ -500,6 +542,15 @@ const requestPasswordReset = async (email) => {
   return readJsonOrAuthError(response, 'Unable to send the password reset code right now.');
 };
 
+const requestMagicLink = async (email) => {
+  const response = await fetch('/api/auth/otp?action=magic-link', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    body: JSON.stringify({ email }),
+  });
+  return readJsonOrAuthError(response, 'Unable to send a magic link right now.');
+};
+
 const confirmPasswordReset = async (email, otp, password) => {
   const response = await fetch('/api/auth/otp?action=reset', {
     method: 'POST',
@@ -509,6 +560,26 @@ const confirmPasswordReset = async (email, otp, password) => {
     body: JSON.stringify({ email, otp, password }),
   });
   return readJsonOrAuthError(response, 'Unable to reset your password right now.');
+};
+
+const requestEmailChangeCode = async (email) => {
+  const response = await fetch('/api/account?action=email-change-request', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    credentials: 'same-origin',
+    body: JSON.stringify({ email }),
+  });
+  return readJsonOrAuthError(response, 'Unable to send email change code right now.');
+};
+
+const confirmEmailChange = async (email, otp) => {
+  const response = await fetch('/api/account?action=email-change-confirm', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    credentials: 'same-origin',
+    body: JSON.stringify({ email, otp }),
+  });
+  return readJsonOrAuthError(response, 'Unable to update your email right now.');
 };
 
 const logoutRemoteAccountSession = async () => {
@@ -1027,6 +1098,7 @@ const getRegisterValidationMessage = (profile = {}) => {
   if (!profile.name) return 'Enter your full name.';
   if (!profile.password || profile.password.length < 8) return 'Create a password with at least 8 characters.';
   if (profile.passwordConfirm !== undefined && profile.password !== profile.passwordConfirm) return 'Password confirmation must match.';
+  if (profile.password && passwordScore(profile.password) < 3) return 'Use a stronger password with at least three of: 12+ characters, uppercase, lowercase, number, symbol.';
   return '';
 };
 
@@ -1238,6 +1310,8 @@ accountForm?.addEventListener('submit', async (event) => {
     companyWebsite: String(formData.get('company_website') || '').trim(),
     businessContext: String(formData.get('business_context') || '').trim(),
     notes: String(formData.get('notes') || '').trim(),
+    phone: String(formData.get('phone') || '').trim(),
+    preferredContact: String(formData.get('preferred_contact') || 'email').trim(),
     password: String(formData.get('password') || ''),
     passwordConfirm: String(formData.get('password_confirm') || ''),
     status: String(formData.get('requested_role') || 'customer') === 'customer' ? 'active' : 'pending_admin_grant',
@@ -1500,10 +1574,80 @@ passwordResetForm?.addEventListener('submit', async (event) => {
   }
 });
 
+document.querySelectorAll('[data-password-toggle]').forEach((button) => button.addEventListener('click', () => {
+  const input = button.closest('.password-field')?.querySelector('input');
+  if (!input) return;
+  const show = input.type === 'password';
+  input.type = show ? 'text' : 'password';
+  button.textContent = show ? 'Hide' : 'Show';
+  button.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+}));
+
+registerPasswordInput?.addEventListener('input', updatePasswordStrength);
+registerPasswordConfirm?.addEventListener('input', updatePasswordStrength);
+updatePasswordStrength();
+
 loginOtpBack?.addEventListener('click', () => {
   showLoginEmailStep();
   setLoginOtpMessage('Enter your email and we will send a fresh 6-digit login code.');
 });
+
+loginResendCode?.addEventListener('click', async () => {
+  const email = String(loginEmailInput?.value || '').trim().toLowerCase();
+  if (!email || !email.includes('@')) return setLoginOtpMessage('Enter a valid email before requesting a new code.', 'error');
+  try {
+    setLoginOtpMessage('Sending a fresh code…');
+    await requestLoginOtp(email);
+    setLoginOtpMessage('Fresh code sent. Check your email.', 'success');
+    setResendCooldown();
+  } catch (error) {
+    setLoginOtpMessage(error.message || 'Unable to resend code right now.', 'error');
+  }
+});
+
+loginMagicLink?.addEventListener('click', async () => {
+  const email = String(loginEmailInput?.value || '').trim().toLowerCase();
+  if (!email || !email.includes('@')) return setLoginOtpMessage('Enter a valid email before requesting a magic link.', 'error');
+  try {
+    setLoginOtpMessage('Sending your magic link…');
+    await requestMagicLink(email);
+    setLoginOtpMessage('Magic link sent. Open it on this device to continue.', 'success');
+  } catch (error) {
+    setLoginOtpMessage(error.message || 'Unable to send magic link right now.', 'error');
+  }
+});
+
+accountEmailForm?.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const email = String(changeEmailInput?.value || '').trim().toLowerCase();
+  const otp = String(changeEmailCode?.value || '').trim();
+  if (!email || !email.includes('@')) return setInlineMessage(changeEmailMessage, 'Enter a valid new email.', 'error');
+  try {
+    changeEmailSubmit.disabled = true;
+    if (!/^\d{6}$/.test(otp)) {
+      setInlineMessage(changeEmailMessage, 'Sending verification code to your new email…');
+      await requestEmailChangeCode(email);
+      setInlineMessage(changeEmailMessage, 'Code sent. Enter the 6-digit code and submit again.', 'success');
+      changeEmailCode.required = true;
+      changeEmailSubmit.textContent = 'Verify and change email';
+      changeEmailCode?.focus();
+      return;
+    }
+    const account = await confirmEmailChange(email, otp);
+    setInlineMessage(changeEmailMessage, 'Email updated. Refreshing account…', 'success');
+    saveAccountSession({ identity: account.identity || { email }, profile: account.profile, grant: account.grant, role: account.role, remember: true });
+    window.location.reload();
+  } catch (error) {
+    setInlineMessage(changeEmailMessage, error.message || 'Unable to change email right now.', 'error');
+  } finally {
+    changeEmailSubmit.disabled = false;
+  }
+});
+
+if (securityActivity) {
+  const session = loadAccountSession();
+  securityActivity.innerHTML = `<div class="stack-item"><div><strong>Login activity</strong><span>Session: ${session?.remember ? 'remembered device' : 'standard'} · Expires: ${session?.expiresAt ? new Date(session.expiresAt).toLocaleString() : 'server cookie'}</span></div><span class="status-pill">Secure</span></div>`;
+}
 
 loginOtpForm?.addEventListener('submit', async (event) => {
   event.preventDefault();
