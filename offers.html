@@ -195,8 +195,20 @@
         <div class="offers-results-shell">
           <div class="results-toolbar">
             <p><strong data-result-count>12</strong> curated offers found</p>
-            <span>Request links prefill your private brief</span>
+            <div class="results-toolbar-actions">
+              <span>Request links prefill your private brief</span>
+              <button class="map-toggle" type="button" data-map-toggle aria-expanded="false">View map</button>
+            </div>
           </div>
+
+          <section class="offer-map-panel" data-offer-map-panel hidden aria-label="Map of filtered offer regions">
+            <div class="offer-map-copy">
+              <p class="eyebrow">Approximate map</p>
+              <h3>Explore filtered offers by region.</h3>
+              <p>Pins show approximate areas only. Exact stay addresses stay private until the LuxeRoutes team confirms fit and availability.</p>
+            </div>
+            <div class="offer-map-canvas" data-offers-map role="img" aria-label="Approximate offer locations on an interactive map"></div>
+          </section>
 
           <div class="stay-offer-grid" data-offer-results>
             <!-- GENERATED_OFFERS_START -->

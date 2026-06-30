@@ -200,6 +200,27 @@ const protectPrivateAccessPage = () => {
 
 protectPrivateAccessPage();
 
+const isPublicMarketingSurface = () => !window.location.pathname.includes('/admin/')
+  && !['account.html', 'admin-panel.html'].includes((window.location.pathname.split('/').filter(Boolean).pop() || 'index.html'));
+
+const normalizePublicAccessLinks = () => {
+  if (!isPublicMarketingSurface()) return;
+
+  document.querySelectorAll('a[href*="admin/index.html"], a[href$="admin-panel.html"]').forEach((link) => {
+    const removableContainer = link.closest('details, li');
+    if (removableContainer) {
+      removableContainer.remove();
+      return;
+    }
+
+    link.hidden = true;
+    link.removeAttribute('href');
+    link.setAttribute('aria-hidden', 'true');
+  });
+};
+
+normalizePublicAccessLinks();
+
 const updateRoleBasedNavigation = (sessionOverride = null) => {
   const session = sessionOverride || readAccountSession();
   const isLoggedIn = Boolean(session?.identity?.email || session?.profile?.email);
@@ -741,6 +762,130 @@ document.querySelectorAll('[data-inquiry-form]').forEach((form, formIndex) => {
 
 const normalizeFilterValue = (value) => String(value || '').trim().toLowerCase();
 
+const leafletState = { promise: null };
+const leafletAssets = {
+  css: 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
+  js: 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
+};
+
+const regionalMapPoints = [
+  { key: 'slovenia:lakes', country: 'slovenia', region: 'lakes', label: 'Slovenia · Lakes', lat: 46.3683, lng: 14.1146, zoom: 9 },
+  { key: 'slovenia:alps', country: 'slovenia', region: 'alps', label: 'Slovenia · Alps', lat: 46.3633, lng: 13.8360, zoom: 8 },
+  { key: 'slovenia:wine-country', country: 'slovenia', region: 'wine-country', label: 'Slovenia · Wine country', lat: 45.9970, lng: 13.5260, zoom: 9 },
+  { key: 'slovenia:countryside', country: 'slovenia', region: 'countryside', label: 'Slovenia · Countryside', lat: 45.9500, lng: 14.6500, zoom: 8 },
+  { key: 'croatia:adriatic', country: 'croatia', region: 'adriatic', label: 'Croatia · Adriatic', lat: 43.5081, lng: 16.4402, zoom: 7 },
+  { key: 'croatia:city', country: 'croatia', region: 'city', label: 'Croatia · City coast', lat: 43.5081, lng: 16.4402, zoom: 8 },
+  { key: 'italy:wine-country', country: 'italy', region: 'wine-country', label: 'Italy · Tuscany', lat: 43.7711, lng: 11.2486, zoom: 7 },
+  { key: 'italy:countryside', country: 'italy', region: 'countryside', label: 'Italy · Countryside', lat: 43.4633, lng: 11.8788, zoom: 7 },
+  { key: 'italy:lakes', country: 'italy', region: 'lakes', label: 'Italy · Lakes', lat: 45.9870, lng: 9.2610, zoom: 8 },
+  { key: 'austria:alps', country: 'austria', region: 'alps', label: 'Austria · Alps', lat: 47.2692, lng: 11.4041, zoom: 7 },
+  { key: 'austria:city', country: 'austria', region: 'city', label: 'Austria · City', lat: 48.2082, lng: 16.3738, zoom: 8 },
+  { key: 'switzerland:lakes', country: 'switzerland', region: 'lakes', label: 'Switzerland · Lakes', lat: 46.5197, lng: 6.6323, zoom: 8 },
+  { key: 'switzerland:alps', country: 'switzerland', region: 'alps', label: 'Switzerland · Alps', lat: 46.0207, lng: 7.7491, zoom: 7 },
+  { key: 'france:riviera', country: 'france', region: 'riviera', label: 'France · Riviera', lat: 43.5528, lng: 7.0174, zoom: 8 },
+  { key: 'france:countryside', country: 'france', region: 'countryside', label: 'France · Provence', lat: 43.9493, lng: 5.0514, zoom: 7 },
+  { key: 'france:wine-country', country: 'france', region: 'wine-country', label: 'France · Wine country', lat: 44.8378, lng: -0.5792, zoom: 7 },
+];
+
+const countryMapFallbacks = {
+  slovenia: { label: 'Slovenia', lat: 46.1512, lng: 14.9955, zoom: 7 },
+  croatia: { label: 'Croatia', lat: 44.1000, lng: 15.2000, zoom: 6 },
+  italy: { label: 'Italy', lat: 43.7696, lng: 11.2558, zoom: 6 },
+  austria: { label: 'Austria', lat: 47.5162, lng: 14.5501, zoom: 6 },
+  switzerland: { label: 'Switzerland', lat: 46.8182, lng: 8.2275, zoom: 7 },
+  france: { label: 'France', lat: 46.2276, lng: 2.2137, zoom: 6 },
+};
+
+const ensureLeaflet = () => {
+  if (window.L) return Promise.resolve(window.L);
+  if (leafletState.promise) return leafletState.promise;
+
+  leafletState.promise = new Promise((resolve, reject) => {
+    if (!document.querySelector('link[data-leaflet-css]')) {
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = leafletAssets.css;
+      link.dataset.leafletCss = 'true';
+      document.head.appendChild(link);
+    }
+
+    const existingScript = document.querySelector('script[data-leaflet-js]');
+    if (existingScript) {
+      existingScript.addEventListener('load', () => resolve(window.L));
+      existingScript.addEventListener('error', reject);
+      return;
+    }
+
+    const script = document.createElement('script');
+    script.src = leafletAssets.js;
+    script.defer = true;
+    script.dataset.leafletJs = 'true';
+    script.onload = () => resolve(window.L);
+    script.onerror = () => reject(new Error('Unable to load map library.'));
+    document.head.appendChild(script);
+  });
+
+  return leafletState.promise;
+};
+
+const getOfferMapPoint = ({ country = '', region = '', label = '', lat = '', lng = '' } = {}) => {
+  const parsedLat = Number.parseFloat(lat);
+  const parsedLng = Number.parseFloat(lng);
+  if (Number.isFinite(parsedLat) && Number.isFinite(parsedLng)) {
+    return { label: label || 'Approximate offer area', lat: parsedLat, lng: parsedLng, zoom: 10 };
+  }
+
+  const normalizedCountry = normalizeFilterValue(country);
+  const regions = normalizeFilterValue(region).split(/\s+/).filter(Boolean);
+  const regionMatch = regionalMapPoints.find((point) => point.country === normalizedCountry && regions.includes(point.region));
+  if (regionMatch) return { ...regionMatch, label: label || regionMatch.label };
+  const fallback = countryMapFallbacks[normalizedCountry];
+  return fallback ? { ...fallback, label: label || fallback.label } : null;
+};
+
+const createLeafletMap = async (mapElement, points = [], { zoom = 6 } = {}) => {
+  if (!mapElement || !points.length) return null;
+  const L = await ensureLeaflet();
+  if (!L) return null;
+
+  if (mapElement._luxeroutesMap) {
+    mapElement._luxeroutesMap.remove();
+    mapElement._luxeroutesMap = null;
+  }
+
+  const map = L.map(mapElement, { scrollWheelZoom: false, attributionControl: true });
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 18,
+    attribution: '&copy; OpenStreetMap contributors',
+  }).addTo(map);
+
+  const markerGroup = L.featureGroup();
+  points.forEach((point) => {
+    const marker = L.marker([point.lat, point.lng]).bindPopup(point.popup || point.label || 'Approximate LuxeRoutes area');
+    marker.addTo(markerGroup);
+  });
+  markerGroup.addTo(map);
+  if (points.length === 1) map.setView([points[0].lat, points[0].lng], points[0].zoom || zoom);
+  else map.fitBounds(markerGroup.getBounds().pad(0.18));
+  mapElement._luxeroutesMap = map;
+  setTimeout(() => map.invalidateSize(), 120);
+  return map;
+};
+
+const showMapFallback = (mapElement, message = 'Map could not load. The region labels still show approximate locations.') => {
+  if (!mapElement) return;
+  mapElement.innerHTML = `<div class="map-fallback"><strong>Map unavailable</strong><span>${message}</span></div>`;
+};
+
+const homeMapElement = document.querySelector('[data-home-map]');
+if (homeMapElement) {
+  const homeMapPoints = ['slovenia:lakes', 'croatia:adriatic', 'italy:wine-country', 'austria:alps', 'switzerland:alps', 'france:riviera']
+    .map((key) => regionalMapPoints.find((point) => point.key === key))
+    .filter(Boolean)
+    .map((point) => ({ ...point, popup: `<strong>${point.label}</strong><br><a href="offers.html?region=${encodeURIComponent(point.region)}#stay-finder">Explore matching offers</a>` }));
+  createLeafletMap(homeMapElement, homeMapPoints, { zoom: 5 }).catch(() => showMapFallback(homeMapElement));
+}
+
 const offerFilterRoot = document.querySelector('[data-offer-filter]');
 
 if (offerFilterRoot) {
@@ -751,6 +896,10 @@ if (offerFilterRoot) {
   const resultCount = offerFilterRoot.querySelector('[data-result-count]');
   const noResults = offerFilterRoot.querySelector('[data-no-results]');
   const resetButton = offerFilterRoot.querySelector('[data-filter-reset]');
+  const mapToggle = offerFilterRoot.querySelector('[data-map-toggle]');
+  const mapPanel = offerFilterRoot.querySelector('[data-offer-map-panel]');
+  const offersMapElement = offerFilterRoot.querySelector('[data-offers-map]');
+  let offersMapEnabled = false;
   const escapeOfferHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[character]));
   const typeLabels = { villa: 'Private villa', chalet: 'Chalet', 'boutique-hotel': 'Boutique hotel', apartment: 'Apartment', cabin: 'Cabin', retreat: 'Wellness retreat', 'wine-tasting': 'Wine tasting', 'food-experience': 'Food experience', 'private-transfer': 'Private transfer', 'yacht-experience': 'Yacht experience', 'fishing-escape': 'Fishing escape', 'wellness-experience': 'Wellness experience', 'guided-route': 'Guided route', 'event-service': 'Event or concierge service' };
   const bestForLabels = {
@@ -770,6 +919,35 @@ if (offerFilterRoot) {
     'event-service': 'Best for celebrations, proposals, and concierge extras',
   };
   let offerCards = offerFilterRoot.querySelectorAll('[data-offer-card]');
+
+  const getCardMapPoint = (card) => {
+    const badge = card.querySelector('.offer-badge')?.textContent.trim() || card.querySelector('h3')?.textContent.trim() || '';
+    const point = getOfferMapPoint({
+      country: card.dataset.country,
+      region: card.dataset.region,
+      label: badge,
+      lat: card.dataset.lat,
+      lng: card.dataset.lng,
+    });
+    if (!point) return null;
+    const title = card.querySelector('h3')?.textContent.trim() || badge || 'LuxeRoutes offer';
+    const slug = card.dataset.slug || card.dataset.offerSlug || '';
+    const href = slug ? `offer/${encodeURIComponent(slug)}` : card.querySelector('.offer-footer a')?.href || 'plan-trip.html#trip-brief';
+    return { ...point, popup: `<strong>${escapeOfferHtml(title)}</strong><br><span>${escapeOfferHtml(point.label)}</span><br><a href="${escapeOfferHtml(href)}">View offer</a>` };
+  };
+
+  const refreshOfferMap = () => {
+    if (!offersMapEnabled || !offersMapElement) return;
+    const visiblePoints = Array.from(offerCards)
+      .filter((card) => !card.classList.contains('is-hidden'))
+      .map(getCardMapPoint)
+      .filter(Boolean);
+    if (!visiblePoints.length) {
+      showMapFallback(offersMapElement, 'No visible offers match the current filters.');
+      return;
+    }
+    createLeafletMap(offersMapElement, visiblePoints, { zoom: 5 }).catch(() => showMapFallback(offersMapElement));
+  };
 
   const addOfferGuidance = (card) => {
     const body = card.querySelector('.stay-offer-body');
@@ -820,6 +998,7 @@ if (offerFilterRoot) {
     });
     if (resultCount) resultCount.textContent = String(visibleCount);
     if (noResults) noResults.hidden = visibleCount !== 0;
+    refreshOfferMap();
   };
   const renderDatabaseOffers = async () => {
     if (!resultsTarget) return;
@@ -838,6 +1017,11 @@ if (offerFilterRoot) {
         card.dataset.type = offer.stayType;
         card.dataset.options = offer.options || '';
         card.dataset.slug = offer.slug || '';
+        const offerPoint = getOfferMapPoint({ country: offer.country, region: offer.region, label: offer.locationLabel });
+        if (offerPoint) {
+          card.dataset.lat = String(offerPoint.lat);
+          card.dataset.lng = String(offerPoint.lng);
+        }
         card.dataset.search = [offer.title, offer.locationLabel, offer.description, offer.country, offer.region, offer.stayType, offer.options].join(' ').toLowerCase();
         const imageUrl = offer.imageUrl || 'https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?auto=format&fit=crop&w=900&q=80';
         card.innerHTML = `<div class="offer-image-wrap"><img src="${escapeOfferHtml(imageUrl)}" alt="${escapeOfferHtml(offer.imageAlt || offer.title)}" loading="lazy" width="900" height="600" decoding="async" /><span class="offer-badge">${escapeOfferHtml(offer.locationLabel)}</span></div><div class="stay-offer-body"><div class="offer-meta"><span>${escapeOfferHtml(typeLabels[offer.stayType] || formatLabel(offer.stayType))}</span><span>${escapeOfferHtml(offer.guestLabel || 'By private request')}</span></div><h3>${escapeOfferHtml(offer.title)}</h3><p>${escapeOfferHtml(offer.description)}</p><div class="offer-footer"><span>${escapeOfferHtml(offer.priceLabel || 'Price by private request')}</span><a class="text-link" href="offer/${encodeURIComponent(offer.slug || '')}">View full offer</a></div></div>`;
@@ -851,9 +1035,22 @@ if (offerFilterRoot) {
     }
   };
 
+  const filterParams = new URLSearchParams(window.location.search);
+  selectFilters.forEach((select) => {
+    const requestedValue = normalizeFilterValue(filterParams.get(select.dataset.filterSelect));
+    if (requestedValue && Array.from(select.options).some((option) => normalizeFilterValue(option.value) === requestedValue)) select.value = requestedValue;
+  });
+
   selectFilters.forEach((select) => select.addEventListener('change', updateOffers));
   optionFilters.forEach((input) => input.addEventListener('change', updateOffers));
   searchInput?.addEventListener('input', updateOffers);
+  mapToggle?.addEventListener('click', () => {
+    offersMapEnabled = !offersMapEnabled;
+    if (mapPanel) mapPanel.hidden = !offersMapEnabled;
+    mapToggle.setAttribute('aria-expanded', String(offersMapEnabled));
+    mapToggle.textContent = offersMapEnabled ? 'Hide map' : 'View map';
+    refreshOfferMap();
+  });
   resetButton?.addEventListener('click', () => {
     selectFilters.forEach((select) => { select.value = 'all'; });
     optionFilters.forEach((input) => { input.checked = false; });
@@ -878,6 +1075,9 @@ if (offerDetailRoot) {
   const factsTarget = offerDetailRoot.querySelector('[data-offer-facts]');
   const availabilityTarget = offerDetailRoot.querySelector('[data-offer-availability]');
   const galleryTarget = offerDetailRoot.querySelector('[data-offer-gallery]');
+  const detailMapElement = offerDetailRoot.querySelector('[data-offer-map]');
+  const detailMapHeading = offerDetailRoot.querySelector('[data-offer-map-heading]');
+  const detailMapNote = offerDetailRoot.querySelector('[data-offer-map-note]');
   const setField = (name, value) => offerDetailRoot.querySelectorAll(`[data-offer-field="${name}"]`).forEach((field) => { field.value = value || ''; });
   const renderLines = (text) => String(text || '').split(/\n+/).map((line) => line.trim()).filter(Boolean).map((line) => `<span>${escapeOfferDetailHtml(line)}</span>`).join('');
   const renderOfferDetail = (offer) => {
@@ -900,6 +1100,12 @@ if (offerDetailRoot) {
     if (galleryTarget) {
       const urls = [offer.imageUrl, ...String(offer.galleryUrls || '').split(/\n+/)].filter(Boolean).slice(0, 9);
       galleryTarget.innerHTML = urls.map((url) => `<img src="${escapeOfferDetailHtml(url)}" alt="${escapeOfferDetailHtml(offer.title || 'LuxeRoutes offer')}" loading="lazy" decoding="async" />`).join('');
+    }
+    const mapPoint = getOfferMapPoint({ country: offer.country, region: offer.region, label: offer.locationLabel || offer.title, lat: offer.mapLat, lng: offer.mapLng });
+    if (detailMapHeading) detailMapHeading.textContent = mapPoint?.label || 'Approximate region';
+    if (detailMapNote) detailMapNote.textContent = 'Pins show the approximate area only. Exact addresses stay private until the LuxeRoutes team confirms fit and availability.';
+    if (detailMapElement && mapPoint) {
+      createLeafletMap(detailMapElement, [{ ...mapPoint, popup: `<strong>${escapeOfferDetailHtml(offer.title || 'LuxeRoutes offer')}</strong><br><span>${escapeOfferDetailHtml(mapPoint.label)}</span>` }], { zoom: mapPoint.zoom || 8 }).catch(() => showMapFallback(detailMapElement));
     }
   };
   if (!slug) {
