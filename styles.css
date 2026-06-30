@@ -6661,3 +6661,315 @@ body:not(.auth-page) .page-hero h1 {
   opacity: 0.7;
   cursor: wait;
 }
+
+/* Dedicated password reset page mirrors the private login desk while keeping recovery focused. */
+.reset-password-page .auth-shell {
+  align-items: center;
+}
+
+.reset-password-page .login-reset-form {
+  margin-top: 1rem;
+}
+
+.reset-password-page .login-security-list {
+  margin-top: 1rem;
+}
+
+.account-contact-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: .8rem;
+  margin: 1rem 0 1.1rem;
+}
+
+.account-contact-summary div {
+  display: grid;
+  gap: .25rem;
+  padding: .85rem .95rem;
+  border: 1px solid rgba(241, 215, 150, .16);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, .045);
+}
+
+.account-contact-summary strong {
+  color: var(--color-text);
+  font-size: .82rem;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+
+.account-contact-summary span {
+  color: var(--color-muted-strong);
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 720px) {
+  .account-contact-summary {
+    grid-template-columns: 1fr;
+  }
+}
+
+.affiliate-status-card[data-affiliate-status="active"],
+.affiliate-link-card[data-affiliate-link-enabled="true"] {
+  border-color: rgba(61, 128, 82, .32);
+}
+
+.affiliate-code-card {
+  display: grid;
+  gap: .25rem;
+  margin: 1rem 0;
+  padding: 1rem;
+  border: 1px solid rgba(241, 215, 150, .16);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, .045);
+}
+
+.affiliate-code-card span {
+  color: var(--color-muted-strong);
+  font-size: .82rem;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+
+.affiliate-code-card strong {
+  color: var(--color-text);
+  font-size: clamp(1.2rem, 3vw, 1.75rem);
+  overflow-wrap: anywhere;
+}
+
+.affiliate-steps {
+  display: grid;
+  gap: .8rem;
+  margin: 1rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.affiliate-steps li {
+  display: grid;
+  gap: .2rem;
+  padding: .85rem .95rem;
+  border: 1px solid rgba(241, 215, 150, .13);
+  border-radius: 16px;
+  background: rgba(6, 8, 13, .34);
+}
+
+.affiliate-steps strong {
+  color: var(--color-text);
+}
+
+.affiliate-steps span {
+  color: var(--color-muted-strong);
+}
+
+.admin-filter-bar,
+.manager-filter-bar {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(180px, 1fr));
+  gap: .8rem;
+  margin: 1rem 0;
+}
+
+.admin-filter-bar label,
+.manager-filter-bar label {
+  display: grid;
+  gap: .35rem;
+  color: var(--color-muted-strong);
+  font-size: .9rem;
+  font-weight: 700;
+}
+
+.owner-listing-checklist,
+.manager-request-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: .55rem;
+  margin: 1rem 0;
+}
+
+.owner-listing-checklist span,
+.manager-request-summary span {
+  display: grid;
+  gap: .2rem;
+  padding: .7rem .8rem;
+  border: 1px solid rgba(241, 215, 150, .14);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, .04);
+  color: var(--color-muted-strong);
+  font-size: .86rem;
+}
+
+.owner-listing-checklist span::before {
+  content: '○';
+  color: var(--color-muted-strong);
+  font-weight: 900;
+}
+
+.owner-listing-checklist span[data-complete="true"] {
+  border-color: rgba(61, 128, 82, .34);
+  color: var(--color-text);
+}
+
+.owner-listing-checklist span[data-complete="true"]::before {
+  content: '✓';
+  color: #63a875;
+}
+
+.manager-request-summary strong {
+  color: var(--color-text);
+  font-size: 1.2rem;
+}
+
+@media (max-width: 720px) {
+  .admin-filter-bar,
+  .manager-filter-bar {
+    grid-template-columns: 1fr;
+  }
+}
+
+.owner-listing-preview {
+  display: grid;
+  gap: .55rem;
+  margin: 1rem 0;
+  padding: 1rem;
+  border: 1px solid rgba(241, 215, 150, .16);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, .04);
+}
+
+.owner-listing-preview img,
+.owner-preview-placeholder {
+  width: 100%;
+  min-height: 170px;
+  border-radius: 16px;
+  object-fit: cover;
+  background: linear-gradient(135deg, rgba(241, 215, 150, .16), rgba(255, 255, 255, .04));
+}
+
+.owner-preview-placeholder {
+  display: grid;
+  place-items: center;
+  color: var(--color-muted-strong);
+  font-weight: 800;
+}
+
+.owner-listing-preview h4 {
+  margin: .2rem 0 0;
+  color: var(--color-text);
+}
+
+.owner-listing-preview span {
+  color: var(--color-muted-strong);
+  line-height: 1.55;
+}
+
+/* Focus the login page around the sign-in card and center the signup callout. */
+.login-page .auth-login-section {
+  min-height: auto;
+  padding: clamp(3rem, 7vw, 6rem) 0;
+}
+
+.login-page .auth-shell {
+  grid-template-columns: minmax(280px, 0.85fr) minmax(360px, 520px);
+  justify-content: center;
+  max-width: 1120px;
+}
+
+.login-page .login-box {
+  width: 100%;
+  max-width: 520px;
+  margin-inline: auto;
+}
+
+.login-page .login-box-head {
+  text-align: center;
+}
+
+.login-signup-block {
+  display: grid;
+  justify-items: center;
+  gap: .7rem;
+  margin: 1.05rem auto 0;
+  padding: 1rem;
+  border: 1px solid rgba(241, 215, 150, .16);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, .045);
+  text-align: center;
+}
+
+.login-signup-block span {
+  color: var(--color-muted-strong);
+  font-weight: 800;
+}
+
+.login-signup-block .btn {
+  width: 100%;
+  max-width: 280px;
+}
+
+@media (max-width: 900px) {
+  .login-page .auth-shell {
+    grid-template-columns: minmax(0, 560px);
+  }
+
+  .login-page .login-box {
+    order: 1;
+  }
+
+  .login-page .login-studio-panel {
+    order: 2;
+  }
+}
+
+/* Account coupons, owner preview details, and manager follow-up tools */
+.owner-preview-chips,
+.owner-preview-gallery {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .45rem;
+  margin: .65rem 0;
+}
+.owner-preview-chips span {
+  border: 1px solid rgba(217,188,122,.28);
+  border-radius: 999px;
+  color: var(--muted-gold);
+  font-size: .75rem;
+  letter-spacing: .04em;
+  padding: .3rem .6rem;
+  text-transform: capitalize;
+}
+.owner-preview-gallery img {
+  border-radius: .85rem;
+  height: 64px;
+  object-fit: cover;
+  width: 86px;
+}
+.owner-preview-missing {
+  color: var(--muted-text);
+  display: block;
+  margin-top: .75rem;
+}
+.owner-preview-missing.is-complete { color: var(--muted-gold); }
+.manager-request-note-form {
+  border-top: 1px solid rgba(217,188,122,.16);
+  margin-top: .9rem;
+  padding-top: .9rem;
+  width: 100%;
+}
+.manager-request-note-form .full { grid-column: 1 / -1; }
+
+/* Customer proposal workflow */
+[data-account-customer-offers] .stack-item-vertical {
+  align-items: stretch;
+}
+.proposal-response-form {
+  border-top: 1px solid rgba(217,188,122,.16);
+  margin-top: .85rem;
+  padding-top: .85rem;
+  width: 100%;
+}
+.proposal-response-form .full { grid-column: 1 / -1; }
+.proposal-response-form .button-row {
+  grid-column: 1 / -1;
+  justify-content: flex-start;
+}

@@ -317,6 +317,12 @@ const requestPasswordReset = async ({ request, env }) => {
 
   await ensureOtpSchema(db);
   await ensureAuthSchema(db);
+
+  const recent = await db.prepare("SELECT COUNT(*) AS count FROM login_otps WHERE email = ? AND created_at > datetime('now', '-1 hour')").bind(email).first();
+  const last = await db.prepare("SELECT created_at AS createdAt FROM login_otps WHERE email = ? ORDER BY created_at DESC LIMIT 1").bind(email).first();
+  if (Number(recent?.count || 0) >= OTP_MAX_PENDING_PER_HOUR) return errorJson('Too many reset code requests. Try again later.', 429);
+  if (last?.createdAt && Date.now() - new Date(last.createdAt).getTime() < OTP_REQUEST_COOLDOWN_SECONDS * 1000) return errorJson('Please wait before requesting another reset code.', 429);
+
   const profile = await getProfile(db, email);
   if (!profile) return json({ ok: true, email, message: 'If this email has a LuxeRoutes account, a reset code has been sent.' });
 

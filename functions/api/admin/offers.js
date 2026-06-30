@@ -29,6 +29,20 @@ const normalizeOptions = (value) => {
   return [...new Set(values.map((item) => cleanString(item, 80)).filter((item) => OPTIONS.includes(item)))].join(' ');
 };
 
+const ensureOfferFollowUpColumns = async (db) => {
+  for (const [column, type] of [
+    ['owner_follow_up_at', 'TEXT'],
+    ['owner_follow_up_status', 'TEXT'],
+    ['manager_follow_up_at', 'TEXT'],
+    ['manager_follow_up_status', 'TEXT'],
+  ]) {
+    try {
+      await db.prepare(`ALTER TABLE stay_offers ADD COLUMN ${column} ${type}`).run();
+    } catch (error) {
+      if (!String(error.message || '').toLowerCase().includes('duplicate column')) throw error;
+    }
+  }
+};
 
 const getOwnerOfferDecision = (offer = {}) => {
   const partnerStatus = String(offer.partnerStatus || '').toLowerCase();
@@ -83,7 +97,7 @@ const offerSelect = `
     external_availability_url AS externalAvailabilityUrl, description, image_url AS imageUrl, image_alt AS imageAlt,
     status, published_at AS publishedAt, created_by_email AS createdByEmail,
     owner_email AS ownerEmail, manager_email AS managerEmail, partner_status AS partnerStatus,
-    owner_notes AS ownerNotes, manager_notes AS managerNotes, created_at AS createdAt, updated_at AS updatedAt
+    owner_notes AS ownerNotes, manager_notes AS managerNotes, owner_follow_up_at AS ownerFollowUpAt, owner_follow_up_status AS ownerFollowUpStatus, manager_follow_up_at AS managerFollowUpAt, manager_follow_up_status AS managerFollowUpStatus, created_at AS createdAt, updated_at AS updatedAt
   FROM stay_offers
 `;
 
@@ -115,6 +129,10 @@ const normalizeOffer = (body) => ({
   partnerStatus: cleanString(body.partnerStatus, 40).toLowerCase() || (cleanString(body.status, 30).toLowerCase() === 'published' ? 'published' : 'pending_review'),
   ownerNotes: cleanString(body.ownerNotes, 2000),
   managerNotes: cleanString(body.managerNotes, 2000),
+  ownerFollowUpAt: cleanDate(body.ownerFollowUpAt),
+  ownerFollowUpStatus: cleanString(body.ownerFollowUpStatus, 80).toLowerCase(),
+  managerFollowUpAt: cleanDate(body.managerFollowUpAt),
+  managerFollowUpStatus: cleanString(body.managerFollowUpStatus, 80).toLowerCase(),
 });
 
 const validateOffer = (offer, body = {}) => {
@@ -138,6 +156,7 @@ export const onRequestGet = async ({ request, env }) => {
   try {
     const auth = await requireAdmin(request, env);
     if (auth.error) return auth.error;
+    await ensureOfferFollowUpColumns(auth.db);
     const offers = await auth.db.prepare(`${offerSelect} ORDER BY updated_at DESC LIMIT 200`).all();
     return privateJson({ offers: offers.results || [] });
   } catch (error) {
@@ -149,6 +168,7 @@ export const onRequestPost = async ({ request, env }) => {
   try {
     const auth = await requireAdmin(request, env);
     if (auth.error) return auth.error;
+    await ensureOfferFollowUpColumns(auth.db);
     const body = await request.json().catch(() => ({}));
     const offer = normalizeOffer(body);
     const validationError = validateOffer(offer, body);
@@ -163,13 +183,13 @@ export const onRequestPost = async ({ request, env }) => {
         location_label, guest_label, price_label, accommodation_details, pricing_details, gallery_urls, external_availability_url,
         description, image_url, image_alt,
         status, published_at, created_by_email, owner_email, manager_email, partner_status,
-        owner_notes, manager_notes, created_at, updated_at
-      ) VALUES (?, NULLIF(?, ''), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULLIF(?, ''), NULLIF(?, ''), ?, ?, ?, ?, ?)
+        owner_notes, manager_notes, owner_follow_up_at, owner_follow_up_status, manager_follow_up_at, manager_follow_up_status, created_at, updated_at
+      ) VALUES (?, NULLIF(?, ''), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULLIF(?, ''), NULLIF(?, ''), ?, ?, ?, NULLIF(?, ''), ?, NULLIF(?, ''), ?, ?, ?)
     `).bind(id, offer.sourceInquiryId, offer.title, offer.slug, offer.country, offer.region, offer.stayType,
       offer.options, offer.locationLabel, offer.guestLabel, offer.priceLabel, offer.accommodationDetails, offer.pricingDetails,
       offer.galleryUrls, offer.externalAvailabilityUrl, offer.description, offer.imageUrl,
       offer.imageAlt || offer.title, offer.status, publishedAt, auth.email, offer.ownerEmail, offer.managerEmail,
-      offer.partnerStatus, offer.ownerNotes, offer.managerNotes, timestamp, timestamp).run();
+      offer.partnerStatus, offer.ownerNotes, offer.managerNotes, offer.ownerFollowUpAt, offer.ownerFollowUpStatus, offer.managerFollowUpAt, offer.managerFollowUpStatus, timestamp, timestamp).run();
 
     await auth.db.prepare(`
       UPDATE stay_offers
@@ -212,6 +232,7 @@ export const onRequestPatch = async ({ request, env }) => {
   try {
     const auth = await requireAdmin(request, env);
     if (auth.error) return auth.error;
+    await ensureOfferFollowUpColumns(auth.db);
     const body = await request.json().catch(() => ({}));
     const id = cleanString(body.id, 160);
     const status = cleanString(body.status, 30).toLowerCase();
@@ -221,6 +242,10 @@ export const onRequestPatch = async ({ request, env }) => {
     const partnerStatus = requestedPartnerStatus || (status === 'published' ? 'published' : status === 'unpublished' ? 'approved' : '');
     const ownerNotes = cleanString(body.ownerNotes, 2000);
     const managerNotes = cleanString(body.managerNotes, 2000);
+    const ownerFollowUpAt = cleanDate(body.ownerFollowUpAt);
+    const ownerFollowUpStatus = cleanString(body.ownerFollowUpStatus, 80).toLowerCase();
+    const managerFollowUpAt = cleanDate(body.managerFollowUpAt);
+    const managerFollowUpStatus = cleanString(body.managerFollowUpStatus, 80).toLowerCase();
     const imageUrl = safeImageUrl(body.imageUrl);
     const galleryUrls = (Array.isArray(body.galleryUrls) ? body.galleryUrls : cleanString(body.galleryUrls, 4000).split(/[\n,]+/)).map(safeImageUrl).filter(Boolean).slice(0, 12).join('\n');
     if (!id) return privateErrorJson('Offer ID is required.', 400);
@@ -242,6 +267,10 @@ export const onRequestPatch = async ({ request, env }) => {
         partner_status = COALESCE(NULLIF(?, ''), partner_status),
         owner_notes = CASE WHEN ? IS NULL THEN owner_notes ELSE ? END,
         manager_notes = CASE WHEN ? IS NULL THEN manager_notes ELSE ? END,
+        owner_follow_up_at = CASE WHEN ? IS NULL THEN owner_follow_up_at ELSE NULLIF(?, '') END,
+        owner_follow_up_status = CASE WHEN ? IS NULL THEN owner_follow_up_status ELSE ? END,
+        manager_follow_up_at = CASE WHEN ? IS NULL THEN manager_follow_up_at ELSE NULLIF(?, '') END,
+        manager_follow_up_status = CASE WHEN ? IS NULL THEN manager_follow_up_status ELSE ? END,
         image_url = CASE WHEN ? IS NULL THEN image_url ELSE ? END,
         gallery_urls = CASE WHEN ? IS NULL THEN gallery_urls ELSE ? END,
         updated_at = ?
@@ -249,7 +278,12 @@ export const onRequestPatch = async ({ request, env }) => {
     `).bind(status, status, timestamp, body.ownerEmail === undefined ? null : ownerEmail, ownerEmail,
       body.managerEmail === undefined ? null : managerEmail, managerEmail, partnerStatus,
       body.ownerNotes === undefined ? null : ownerNotes, ownerNotes, body.managerNotes === undefined ? null : managerNotes,
-      managerNotes, body.imageUrl === undefined ? null : imageUrl, imageUrl,
+      managerNotes,
+      body.ownerFollowUpAt === undefined ? null : ownerFollowUpAt, ownerFollowUpAt,
+      body.ownerFollowUpStatus === undefined ? null : ownerFollowUpStatus, ownerFollowUpStatus,
+      body.managerFollowUpAt === undefined ? null : managerFollowUpAt, managerFollowUpAt,
+      body.managerFollowUpStatus === undefined ? null : managerFollowUpStatus, managerFollowUpStatus,
+      body.imageUrl === undefined ? null : imageUrl, imageUrl,
       body.galleryUrls === undefined ? null : galleryUrls, galleryUrls, timestamp, id).run();
     const offer = await auth.db.prepare(`${offerSelect} WHERE id = ? LIMIT 1`).bind(id).first();
     if (!offer) return privateErrorJson('Offer not found.', 404);
