@@ -67,6 +67,7 @@ const loginEmailInput = document.querySelector('[data-login-email-input]');
 const loginCodeInput = document.querySelector('[data-login-code-input]');
 const loginRememberInput = document.querySelector('[data-login-remember-input]');
 const loginPasswordInput = document.querySelector('[data-login-password-input]');
+const loginPasswordError = document.querySelector('[data-login-password-error]');
 const passwordResetForm = document.querySelector('[data-password-reset-form]');
 const forgotPasswordToggle = document.querySelector('[data-forgot-password-toggle]');
 const forgotPasswordLink = document.querySelector('[data-forgot-password-link]');
@@ -459,6 +460,17 @@ const getSettingsProfilePayload = () => {
 };
 
 
+
+const setLoginPasswordError = (message = '') => {
+  if (loginPasswordError) {
+    loginPasswordError.textContent = message;
+    loginPasswordError.hidden = !message;
+  }
+  if (loginPasswordInput) loginPasswordInput.setAttribute('aria-invalid', message ? 'true' : 'false');
+};
+
+const isWrongPasswordError = (message = '') => /wrong password|email or password is not correct/i.test(String(message || ''));
+
 const setLoginOtpMessage = (message = '', tone = 'pending') => {
   if (!loginOtpMessage) return;
   loginOtpMessage.textContent = message;
@@ -468,6 +480,7 @@ const setLoginOtpMessage = (message = '', tone = 'pending') => {
 };
 
 const showLoginCodeStep = (email) => {
+  setLoginPasswordError('');
   if (loginOtpForm) loginOtpForm.action = '/api/auth/otp?action=verify';
   if (loginEmailStep) loginEmailStep.hidden = true;
   if (loginCodeStep) loginCodeStep.hidden = false;
@@ -1664,8 +1677,8 @@ const initialiseAccount = async () => {
     approved: false,
   });
   if (isLoginPage() && loginError === 'wrong_password') {
+    setLoginPasswordError('Wrong password. Please try again or use a one-time email code.');
     setLoginOtpMessage('Wrong password.', 'error');
-    loginPasswordInput?.setAttribute('aria-invalid', 'true');
     loginPasswordInput?.focus();
   }
   renderAccountProfile(null);
@@ -1966,7 +1979,10 @@ const syncResetPasswordLink = () => {
   forgotPasswordLink.href = email ? `reset-password.html?email=${encodeURIComponent(email)}` : 'reset-password.html';
 };
 
-loginEmailInput?.addEventListener('input', syncResetPasswordLink);
+loginEmailInput?.addEventListener('input', () => {
+  syncResetPasswordLink();
+  setLoginPasswordError('');
+});
 syncResetPasswordLink();
 
 if (isPasswordResetPage() && resetEmailInput) {
@@ -1975,9 +1991,7 @@ if (isPasswordResetPage() && resetEmailInput) {
   (resetEmail ? resetSubmit : resetEmailInput)?.focus();
 }
 
-loginPasswordInput?.addEventListener('input', () => {
-  loginPasswordInput.removeAttribute('aria-invalid');
-});
+loginPasswordInput?.addEventListener('input', () => setLoginPasswordError(''));
 
 passwordResetForm?.addEventListener('submit', async (event) => {
   event.preventDefault();
@@ -2134,8 +2148,10 @@ loginOtpForm?.addEventListener('submit', async (event) => {
   }
 
   try {
+    setLoginPasswordError('');
     setLoginOtpBusy(true);
     if (!isCodeStep) {
+      setLoginPasswordError('');
       const password = String(loginPasswordInput?.value || '');
       const submittedWithOtpButton = Boolean(event.submitter?.matches('[data-login-otp-submit]'));
       const usePassword = Boolean(event.submitter?.matches('[data-login-password-submit]')) || (Boolean(password) && !submittedWithOtpButton);
@@ -2195,7 +2211,13 @@ loginOtpForm?.addEventListener('submit', async (event) => {
     setLoginOtpMessage('Signed in successfully. Opening your account…', 'success');
     window.location.assign(getLoginRedirectTarget(account));
   } catch (error) {
-    setLoginOtpMessage(error.message || 'Unable to complete login right now.', 'error');
+    const message = error.message || 'Unable to complete login right now.';
+    if (isWrongPasswordError(message)) {
+      setLoginPasswordError('Wrong password. Please try again or use a one-time email code.');
+      loginPasswordInput?.focus();
+      loginPasswordInput?.select?.();
+    }
+    setLoginOtpMessage(message, 'error');
   } finally {
     setLoginOtpBusy(false);
   }
