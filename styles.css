@@ -7149,3 +7149,19 @@ body:not(.auth-page) .page-hero h1 {
     min-height: 300px;
   }
 }
+
+.field-error {
+  color: #8a3b3b;
+  font-size: 0.84rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.login-password-error {
+  margin-top: -0.35rem;
+}
+
+.login-box .auth-form input[aria-invalid="true"] {
+  border-color: rgba(164, 73, 73, 0.72);
+  box-shadow: 0 0 0 4px rgba(164, 73, 73, 0.12);
+}

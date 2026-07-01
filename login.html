@@ -101,7 +101,8 @@
                 <input name="email" type="email" placeholder="you@example.com" autocomplete="email" required data-login-email-input>
               </label>
               <label>Password
-                <span class="password-field"><input name="password" type="password" placeholder="Your password" autocomplete="current-password" data-login-password-input><button type="button" class="password-toggle" data-password-toggle aria-label="Show password">Show</button></span>
+                <span class="password-field"><input name="password" type="password" placeholder="Your password" autocomplete="current-password" aria-describedby="login-password-error" data-login-password-input><button type="button" class="password-toggle" data-password-toggle aria-label="Show password">Show</button></span>
+                <span class="field-error login-password-error" id="login-password-error" role="alert" aria-live="polite" data-login-password-error hidden>Wrong password. Please try again or use a one-time email code.</span>
               </label>
               <label class="auth-checkbox"><input type="checkbox" data-login-remember-input> Keep me signed in on this device</label>
               <div class="login-action-stack">
