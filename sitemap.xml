@@ -6,309 +6,284 @@
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://luxeroutes.eu/destinations.html</loc>
+    <loc>https://luxeroutes.eu/destinations</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://luxeroutes.eu/routes.html</loc>
+    <loc>https://luxeroutes.eu/routes</loc>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://luxeroutes.eu/stays.html</loc>
+    <loc>https://luxeroutes.eu/stays</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://luxeroutes.eu/experiences.html</loc>
+    <loc>https://luxeroutes.eu/experiences</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://luxeroutes.eu/offers.html</loc>
+    <loc>https://luxeroutes.eu/partner-offers</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://luxeroutes.eu/partner-hotels</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://luxeroutes.eu/partner-flights</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://luxeroutes.eu/partner-cars</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://luxeroutes.eu/partner-experiences</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://luxeroutes.eu/journal</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://luxeroutes.eu/partner-offers.html</loc>
+    <loc>https://luxeroutes.eu/slovenia</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://luxeroutes.eu/partner-live-deals.html</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://luxeroutes.eu/partner-accommodation.html</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://luxeroutes.eu/partner-hotels.html</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://luxeroutes.eu/partner-flights.html</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://luxeroutes.eu/partner-cars.html</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://luxeroutes.eu/partner-experiences.html</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://luxeroutes.eu/journal.html</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://luxeroutes.eu/slovenia.html</loc>
+    <loc>https://luxeroutes.eu/croatia</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://luxeroutes.eu/croatia.html</loc>
+    <loc>https://luxeroutes.eu/italy</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://luxeroutes.eu/italy.html</loc>
+    <loc>https://luxeroutes.eu/austria</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://luxeroutes.eu/austria.html</loc>
+    <loc>https://luxeroutes.eu/switzerland</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://luxeroutes.eu/switzerland.html</loc>
+    <loc>https://luxeroutes.eu/france</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://luxeroutes.eu/france.html</loc>
+    <loc>https://luxeroutes.eu/villas</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://luxeroutes.eu/villas.html</loc>
+    <loc>https://luxeroutes.eu/chalets</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://luxeroutes.eu/chalets.html</loc>
+    <loc>https://luxeroutes.eu/cabins</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://luxeroutes.eu/cabins.html</loc>
+    <loc>https://luxeroutes.eu/boutique-hotels</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://luxeroutes.eu/boutique-hotels.html</loc>
+    <loc>https://luxeroutes.eu/wellness-retreats</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://luxeroutes.eu/wellness-retreats.html</loc>
+    <loc>https://luxeroutes.eu/private-transfers</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://luxeroutes.eu/private-transfers.html</loc>
+    <loc>https://luxeroutes.eu/wine-tours</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://luxeroutes.eu/wine-tours.html</loc>
+    <loc>https://luxeroutes.eu/yacht-experiences</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://luxeroutes.eu/yacht-experiences.html</loc>
+    <loc>https://luxeroutes.eu/romantic-getaways</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://luxeroutes.eu/romantic-getaways.html</loc>
+    <loc>https://luxeroutes.eu/fishing-escapes</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://luxeroutes.eu/fishing-escapes.html</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://luxeroutes.eu/partners.html</loc>
+    <loc>https://luxeroutes.eu/partners</loc>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://luxeroutes.eu/managers.html</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://luxeroutes.eu/plan-trip.html</loc>
+    <loc>https://luxeroutes.eu/plan-trip</loc>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://luxeroutes.eu/contact.html</loc>
+    <loc>https://luxeroutes.eu/contact</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://luxeroutes.eu/about.html</loc>
+    <loc>https://luxeroutes.eu/about</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://luxeroutes.eu/blog.html</loc>
+    <loc>https://luxeroutes.eu/hotels</loc>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://luxeroutes.eu/hotels.html</loc>
+    <loc>https://luxeroutes.eu/apartments</loc>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://luxeroutes.eu/apartments.html</loc>
+    <loc>https://luxeroutes.eu/other-offers</loc>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://luxeroutes.eu/other-offers.html</loc>
+    <loc>https://luxeroutes.eu/privacy</loc>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://luxeroutes.eu/privacy.html</loc>
+    <loc>https://luxeroutes.eu/terms</loc>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://luxeroutes.eu/terms.html</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://luxeroutes.eu/cookies.html</loc>
+    <loc>https://luxeroutes.eu/cookies</loc>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
 
   <url>
-    <loc>https://luxeroutes.eu/affiliate-disclosure.html</loc>
+    <loc>https://luxeroutes.eu/affiliate-disclosure</loc>
     <lastmod>2026-09-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://luxeroutes.eu/work-with-luxeroutes.html</loc>
+    <loc>https://luxeroutes.eu/work-with-luxeroutes</loc>
     <lastmod>2026-09-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://luxeroutes.eu/journal/7-day-luxury-road-trip-slovenia.html</loc>
+    <loc>https://luxeroutes.eu/journal/7-day-luxury-road-trip-slovenia</loc>
     <lastmod>2026-09-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://luxeroutes.eu/journal/best-european-chalet-destinations-winter.html</loc>
+    <loc>https://luxeroutes.eu/journal/best-european-chalet-destinations-winter</loc>
     <lastmod>2026-09-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://luxeroutes.eu/journal/best-european-destinations-romantic-getaway.html</loc>
+    <loc>https://luxeroutes.eu/journal/best-european-destinations-romantic-getaway</loc>
     <lastmod>2026-09-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://luxeroutes.eu/journal/best-wine-regions-slovenia.html</loc>
+    <loc>https://luxeroutes.eu/journal/best-wine-regions-slovenia</loc>
     <lastmod>2026-09-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://luxeroutes.eu/journal/boutique-stays-lake-bled-lake-bohinj.html</loc>
+    <loc>https://luxeroutes.eu/journal/boutique-stays-lake-bled-lake-bohinj</loc>
     <lastmod>2026-09-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://luxeroutes.eu/journal/choose-perfect-boutique-hotel-europe.html</loc>
+    <loc>https://luxeroutes.eu/journal/choose-perfect-boutique-hotel-europe</loc>
     <lastmod>2026-09-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://luxeroutes.eu/journal/croatia-coastal-destinations-couples.html</loc>
+    <loc>https://luxeroutes.eu/journal/croatia-coastal-destinations-couples</loc>
     <lastmod>2026-09-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://luxeroutes.eu/journal/hidden-luxury-destinations-slovenia.html</loc>
+    <loc>https://luxeroutes.eu/journal/hidden-luxury-destinations-slovenia</loc>
     <lastmod>2026-09-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://luxeroutes.eu/journal/luxury-glamping-slovenia-croatia.html</loc>
+    <loc>https://luxeroutes.eu/journal/luxury-glamping-slovenia-croatia</loc>
     <lastmod>2026-09-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://luxeroutes.eu/journal/luxury-road-trip-istria.html</loc>
+    <loc>https://luxeroutes.eu/journal/luxury-road-trip-istria</loc>
     <lastmod>2026-09-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://luxeroutes.eu/journal/luxury-wellness-retreats-central-europe.html</loc>
+    <loc>https://luxeroutes.eu/journal/luxury-wellness-retreats-central-europe</loc>
     <lastmod>2026-09-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://luxeroutes.eu/journal/plan-luxury-european-road-trip.html</loc>
+    <loc>https://luxeroutes.eu/journal/plan-luxury-european-road-trip</loc>
     <lastmod>2026-09-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://luxeroutes.eu/journal/romantic-weekend-escapes-slovenia.html</loc>
+    <loc>https://luxeroutes.eu/journal/romantic-weekend-escapes-slovenia</loc>
     <lastmod>2026-09-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://luxeroutes.eu/journal/slovenia-croatia-10-day-adriatic-road-trip.html</loc>
+    <loc>https://luxeroutes.eu/journal/slovenia-croatia-10-day-adriatic-road-trip</loc>
     <lastmod>2026-09-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://luxeroutes.eu/journal/ultimate-alps-road-trip-austria-slovenia-italy.html</loc>
+    <loc>https://luxeroutes.eu/journal/ultimate-alps-road-trip-austria-slovenia-italy</loc>
     <lastmod>2026-09-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>

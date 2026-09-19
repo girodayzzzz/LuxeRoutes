@@ -7196,7 +7196,7 @@ body:not(.auth-page) .page-hero h1 {
 .route-ideas { display:grid; grid-template-columns:repeat(3,1fr); gap:1rem; }
 .route-ideas a { display:grid; gap:.5rem; padding:1.5rem; background:#102535; border:1px solid rgba(255,255,255,.1); border-radius:12px; color:#fff; text-decoration:none; }
 .route-ideas strong { color:#e8b917; font-size:1.4rem; }
-.article-hero { position:relative; min-height:clamp(560px,76vh,800px); display:flex; align-items:end; overflow:hidden; }
+.article-hero { position:relative; min-height:clamp(440px,62vh,680px); display:flex; align-items:end; overflow:hidden; }
 .article-hero:after { content:""; position:absolute; inset:0; background:linear-gradient(180deg,rgba(4,12,18,.15),rgba(4,12,18,.92)); }
 .article-hero>img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
 .article-hero-overlay { position:relative; z-index:1; padding-bottom:clamp(3rem,7vw,6rem); }
@@ -7225,6 +7225,14 @@ body:not(.auth-page) .page-hero h1 {
 .sr-only { position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0; }
 @media(max-width:900px){.journal-portal-grid{grid-template-columns:repeat(2,1fr)}.featured-guide,.article-layout{grid-template-columns:1fr}.article-facts{position:static}.route-ideas,.related-grid{grid-template-columns:1fr}.journal-heading{align-items:stretch;flex-direction:column}}
 @media(max-width:600px){.journal-portal-grid{grid-template-columns:1fr}.article-hero{min-height:650px}.article-layout{padding-inline:1.1rem}.journal-masthead{padding-top:7rem}.journal-search{width:100%}}
+@media(max-width:600px){.article-hero{min-height:520px}.article-hero-overlay{padding-bottom:2.5rem}.article-hero h1{font-size:clamp(2.15rem,11vw,3.25rem)}}
+.itinerary-day { margin:1.5rem 0; padding:1.25rem; background:#0d2231; border:1px solid rgba(232,185,23,.22); border-radius:12px; }
+.itinerary-day h3 { margin-top:0; }
+.itinerary-day dl { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:.9rem 1.5rem; margin:0; }
+.itinerary-day dl div { display:grid; gap:.15rem; }
+.itinerary-day dt { color:#f4d57e; font-size:.78rem; font-weight:800; letter-spacing:.06em; text-transform:uppercase; }
+.itinerary-day dd { margin:0; }
+@media(max-width:600px){.itinerary-day dl{grid-template-columns:1fr}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto!important}*,*:before,*:after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
 .legal-copy { max-width:780px; }
 .form-consent { grid-template-columns:auto 1fr!important; align-items:start; }

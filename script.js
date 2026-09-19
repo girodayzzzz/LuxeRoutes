@@ -280,9 +280,9 @@ const updateHeaderState = () => {
 updateHeaderState();
 window.addEventListener('scroll', updateHeaderState, { passive: true });
 
-const currentPage = window.location.pathname.split('/').pop() || 'index.html';
+const currentPage = (window.location.pathname.split('/').pop() || 'index').replace(/\.html$/, '');
 document.querySelectorAll('.primary-nav a[href]').forEach((link) => {
-  const href = link.getAttribute('href');
+  const href = (link.getAttribute('href') || '').split(/[?#]/)[0].split('/').pop().replace(/\.html$/, '') || 'index';
   if (href === currentPage) {
     link.classList.add('active');
     link.setAttribute('aria-current', 'page');
@@ -1083,7 +1083,7 @@ if (offerDetailRoot) {
   const renderOfferDetail = (offer) => {
     document.title = `${offer.title} | LuxeRoutes`;
     if (titleTarget) titleTarget.textContent = offer.title || 'Curated stay offer';
-    if (descriptionTarget) descriptionTarget.textContent = offer.description || 'Request confirmed availability from LuxeRoutes.';
+    if (descriptionTarget) descriptionTarget.textContent = offer.description || 'Request information and confirm availability with the responsible provider.';
     if (heroImage && offer.imageUrl) heroImage.src = offer.imageUrl;
     setField('title', offer.title);
     setField('slug', offer.slug);
@@ -1094,7 +1094,7 @@ if (offerDetailRoot) {
       <div class="stack-item"><strong>${escapeOfferDetailHtml(formatLabel(offer.stayType || 'Stay'))}</strong><span>${escapeOfferDetailHtml(offer.guestLabel || 'Capacity by request')}</span></div>
       ${offer.accommodationDetails ? `<div class="stack-item stack-item-vertical"><strong>Accommodation details</strong>${renderLines(offer.accommodationDetails)}</div>` : ''}`;
     if (availabilityTarget) availabilityTarget.innerHTML = `
-      <div class="stack-item"><strong>${escapeOfferDetailHtml(offer.priceLabel || 'Price by private request')}</strong><span>${escapeOfferDetailHtml(offer.discountLabel || 'Final quote confirmed after inquiry')}</span></div>
+      <div class="stack-item"><strong>${escapeOfferDetailHtml(offer.priceLabel || 'Price by private request')}</strong><span>${escapeOfferDetailHtml(offer.discountLabel || 'Current terms are provided by the responsible provider')}</span></div>
       <div class="stack-item"><strong>${escapeOfferDetailHtml([offer.availableFrom, offer.availableTo].filter(Boolean).join(' → ') || 'Availability on request')}</strong><span>${escapeOfferDetailHtml(offer.availabilityNotes || 'Owner can update availability from the owner panel.')}</span></div>
       ${offer.pricingDetails ? `<div class="stack-item stack-item-vertical"><strong>Pricing details</strong>${renderLines(offer.pricingDetails)}</div>` : ''}`;
     if (galleryTarget) {
@@ -1103,7 +1103,7 @@ if (offerDetailRoot) {
     }
     const mapPoint = getOfferMapPoint({ country: offer.country, region: offer.region, label: offer.locationLabel || offer.title, lat: offer.mapLat, lng: offer.mapLng });
     if (detailMapHeading) detailMapHeading.textContent = mapPoint?.label || 'Approximate region';
-    if (detailMapNote) detailMapNote.textContent = 'Pins show the approximate area only. Exact addresses stay private until the LuxeRoutes team confirms fit and availability.';
+    if (detailMapNote) detailMapNote.textContent = 'Pins show the approximate area only. Location details are supplied by the external provider and shown only when appropriate.';
     if (detailMapElement && mapPoint) {
       createLeafletMap(detailMapElement, [{ ...mapPoint, popup: `<strong>${escapeOfferDetailHtml(offer.title || 'LuxeRoutes offer')}</strong><br><span>${escapeOfferDetailHtml(mapPoint.label)}</span>` }], { zoom: mapPoint.zoom || 8 }).catch(() => showMapFallback(detailMapElement));
     }
@@ -1150,13 +1150,23 @@ document.querySelectorAll('[data-share-article]').forEach((button) => button.add
   catch (error) { window.prompt('Copy this article link:', window.location.href); }
 }));
 
+// First-party, device-local affiliate CTA counter. No identifier or event is
+// transmitted; the aggregate helps future on-device debugging without consent.
+document.querySelectorAll('a[rel~="sponsored"]').forEach((link) => link.addEventListener('click', () => {
+  try {
+    const key = 'luxeroutes-external-affiliate-clicks';
+    const count = Number(sessionStorage.getItem(key) || 0);
+    sessionStorage.setItem(key, String(count + 1));
+  } catch (error) {}
+}));
+
 document.querySelectorAll('[data-inquiry-form]').forEach((form) => {
   if (form.querySelector('[data-inquiry-privacy-note]')) return;
   const note = document.createElement('p');
   note.className = 'form-note';
   note.dataset.inquiryPrivacyNote = '';
   const prefix = window.location.pathname.includes('/admin/') ? '../' : '';
-  note.innerHTML = `Submitting this form sends a non-binding inquiry, not a booking. Read our <a href="${prefix}privacy.html">Privacy Policy</a>.`;
+  note.innerHTML = `Submitting this form sends a non-binding inquiry, not a booking. Read our <a href="${prefix}privacy">Privacy Policy</a>.`;
   const submit = form.querySelector('button[type="submit"]');
   if (submit) form.insertBefore(note, submit); else form.append(note);
 });
