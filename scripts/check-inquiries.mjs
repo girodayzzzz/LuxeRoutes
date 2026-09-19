@@ -13,14 +13,20 @@ class FakeStatement {
   constructor(db, sql) { this.db = db; this.sql = sql; this.params = []; }
   bind(...params) { this.params = params; return this; }
   first() {
+    if (this.sql.includes('FROM affiliate_partners')) return null;
     if (this.sql.includes('FROM stay_offers')) {
       return this.db.offers.find((offer) => offer.title.toLowerCase() === String(this.params[0] || '').trim().toLowerCase()) || null;
     }
     throw new Error(`Unhandled first SQL: ${this.sql}`);
   }
+  all() {
+    if (this.sql.includes('PRAGMA table_info(inquiries)')) return { results: [{ name: 'affiliate_referral_code' }, { name: 'affiliate_partner_id' }] };
+    throw new Error(`Unhandled all SQL: ${this.sql}`);
+  }
   run() {
+    if (this.sql.includes('CREATE TABLE') || this.sql.includes('CREATE INDEX')) return { success: true };
     if (!this.sql.includes('INSERT INTO inquiries')) throw new Error(`Unhandled SQL: ${this.sql}`);
-    const [id, inquiryType, name, email, phone, sourcePage, submittedFrom, payloadJson, offerId, offerTitle, ownerEmail, managerEmail, createdAt, updatedAt] = this.params;
+    const [id, inquiryType, name, email, phone, sourcePage, submittedFrom, payloadJson, offerId, offerTitle, ownerEmail, managerEmail, affiliateReferralCode, affiliatePartnerId, createdAt, updatedAt] = this.params;
     this.db.inquiries.push({ id, inquiryType, name, email, phone, sourcePage, submittedFrom, payloadJson, offerId, offerTitle, ownerEmail, managerEmail, status: 'new', createdAt, updatedAt });
     return { success: true };
   }

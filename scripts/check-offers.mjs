@@ -49,6 +49,7 @@ class FakeStatement {
     throw new Error(`Unhandled first SQL: ${this.sql}`);
   }
   run() {
+    if (this.sql.includes('ALTER TABLE') && this.sql.includes('ADD COLUMN')) throw new Error('duplicate column name');
     if (this.sql.includes('INSERT INTO stay_offers') && this.sql.includes('available_from')) {
       const [id, title, slug, country, region, stayType, options, locationLabel, guestLabel, priceLabel, availableFrom, availableTo, discountLabel, availabilityNotes, accommodationDetails, pricingDetails, galleryUrls, externalAvailabilityUrl, description, imageUrl, imageAlt, createdByEmail, ownerEmail, ownerNotes, createdAt, updatedAt] = this.params;
       this.db.offers.unshift({ id, sourceInquiryId: null, title, slug, country, region, stayType, options, locationLabel, guestLabel, priceLabel, availableFrom, availableTo, discountLabel, availabilityNotes, accommodationDetails, pricingDetails, galleryUrls, externalAvailabilityUrl, description, imageUrl, imageAlt, status: 'unpublished', publishedAt: null, createdByEmail, ownerEmail, managerEmail: null, partnerStatus: 'pending_review', ownerNotes, managerNotes: '', createdAt, updatedAt });
@@ -68,13 +69,15 @@ class FakeStatement {
     }
     if (this.sql.includes('UPDATE inquiries SET status')) { this.db.resolvedInquiry = this.params[1]; return { success: true }; }
     if (this.sql.includes('UPDATE stay_offers') && this.sql.includes('available_from')) {
-      const [availableFrom, availableTo, priceLabel, discountLabel, availabilityNotes, accommodationDetails, pricingDetails, galleryUrls, externalAvailabilityUrl, updatedAt, id] = this.params;
+      const [guestLabel, availableFrom, availableTo, priceLabel, discountLabel, availabilityNotes, accommodationDetails, pricingDetails, description, imageUrl, imageAlt, galleryUrls, externalAvailabilityUrl, updatedAt, id] = this.params;
       const offer = this.db.offers.find((item) => item.id === id);
-      if (offer) Object.assign(offer, { availableFrom, availableTo, priceLabel, discountLabel, availabilityNotes, accommodationDetails, pricingDetails, galleryUrls, externalAvailabilityUrl, updatedAt });
+      if (offer) Object.assign(offer, { guestLabel, availableFrom, availableTo, priceLabel, discountLabel, availabilityNotes, accommodationDetails, pricingDetails, description, imageUrl, imageAlt, galleryUrls, externalAvailabilityUrl, updatedAt });
       return { success: true };
     }
     if (this.sql.includes('UPDATE stay_offers') && this.sql.includes('SET status')) {
-      const [status, , publishedAt, , ownerEmail, , managerEmail, partnerStatus, , ownerNotes, , managerNotes, updatedAt, id] = this.params;
+      const [status, , publishedAt, , ownerEmail, , managerEmail, partnerStatus, , ownerNotes, , managerNotes] = this.params;
+      const updatedAt = this.params.at(-2);
+      const id = this.params.at(-1);
       const offer = this.db.offers.find((item) => item.id === id);
       if (offer) Object.assign(offer, { status: status || offer.status, publishedAt: offer.publishedAt || publishedAt, ownerEmail: ownerEmail || offer.ownerEmail, managerEmail: managerEmail || offer.managerEmail, partnerStatus: partnerStatus || offer.partnerStatus, ownerNotes, managerNotes, updatedAt });
       return { success: true };
