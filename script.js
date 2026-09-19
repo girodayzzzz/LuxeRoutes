@@ -1150,14 +1150,19 @@ document.querySelectorAll('[data-share-article]').forEach((button) => button.add
   catch (error) { window.prompt('Copy this article link:', window.location.href); }
 }));
 
-// First-party, device-local affiliate CTA counter. No identifier or event is
-// transmitted; the aggregate helps future on-device debugging without consent.
-document.querySelectorAll('a[rel~="sponsored"]').forEach((link) => link.addEventListener('click', () => {
-  try {
-    const key = 'luxeroutes-external-affiliate-clicks';
-    const count = Number(sessionStorage.getItem(key) || 0);
-    sessionStorage.setItem(key, String(count + 1));
-  } catch (error) {}
+// Emit a privacy-safe first-party event for every labelled affiliate CTA.
+// No analytics provider is currently installed; ANALYTICS-SETUP.md documents
+// how an owner can forward this event later without exposing URL parameters.
+document.querySelectorAll('a.affiliate-link').forEach((link) => link.addEventListener('click', () => {
+  let destinationDomain = '';
+  try { destinationDomain = new URL(link.href, window.location.href).hostname; } catch (error) {}
+  const detail = {
+    category: link.dataset.affiliateCategory || 'other',
+    placement: link.dataset.affiliatePlacement || 'unknown',
+    article: link.dataset.affiliateArticle || window.location.pathname.replace(/^\/|\/$/g, '') || 'home',
+    destinationDomain,
+  };
+  document.dispatchEvent(new CustomEvent('luxeroutes:affiliate-click', { detail }));
 }));
 
 document.querySelectorAll('[data-inquiry-form]').forEach((form) => {
