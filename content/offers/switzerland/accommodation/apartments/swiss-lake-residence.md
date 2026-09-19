@@ -13,11 +13,11 @@ options:
   - spa
   - family
 guests: "2–6 guests"
-price_note: "From €520/night concept"
+price_note: "Travel inspiration · availability not implied"
 image: "https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=900&q=80"
 image_alt: "Swiss lake apartment with mountain scenery"
 badge: "Switzerland · Lakes"
-cta_label: "Request stay"
+cta_label: "Find Similar Stays"
 cta_url: "contact.html"
 search_terms:
   - switzerland
@@ -31,7 +31,7 @@ search_terms:
 
 ## Short description
 
-Design-led lakeside living with concierge pairing for scenic transfers and alpine days.
+Stay concept — Design-led lakeside living with concierge pairing for scenic transfers and alpine days.
 
 ## Highlights
 

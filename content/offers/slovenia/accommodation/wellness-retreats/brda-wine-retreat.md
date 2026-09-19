@@ -14,11 +14,11 @@ options:
   - pet-friendly
   - private-chef
 guests: "2–8 guests"
-price_note: "From €390/night concept"
+price_note: "Travel inspiration · availability not implied"
 image: "https://images.unsplash.com/photo-1506377247377-2a5b3b417ebb?auto=format&fit=crop&w=900&q=80"
 image_alt: "Slovenian wine country retreat"
 badge: "Slovenia · Wine country"
-cta_label: "Request stay"
+cta_label: "Find Similar Stays"
 cta_url: "contact.html"
 search_terms:
   - slovenia
@@ -33,7 +33,7 @@ search_terms:
 
 ## Short description
 
-Vineyard calm, private tastings, restorative treatments, and a soft countryside pace.
+Stay concept — Vineyard calm, private tastings, restorative treatments, and a soft countryside pace.
 
 ## Highlights
 

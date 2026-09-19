@@ -14,11 +14,11 @@ options:
   - private-chef
   - family
 guests: "6–12 guests"
-price_note: "From €1,320/night concept"
+price_note: "Travel inspiration · availability not implied"
 image: "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=900&q=80"
 image_alt: "Italian lake villa with pool"
 badge: "Italy · Lakes"
-cta_label: "Request stay"
+cta_label: "Find Similar Stays"
 cta_url: "contact.html"
 search_terms:
   - italy
@@ -33,7 +33,7 @@ search_terms:
 
 ## Short description
 
-A polished lakeside base for boat days, garden lunches, and multi-generational trips.
+Stay concept — A polished lakeside base for boat days, garden lunches, and multi-generational trips.
 
 ## Highlights
 

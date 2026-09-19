@@ -1117,3 +1117,46 @@ if (offerDetailRoot) {
       .catch(() => { if (titleTarget) titleTarget.textContent = 'This offer is not available yet'; if (descriptionTarget) descriptionTarget.textContent = 'It may still be waiting for admin approval or may have been unpublished.'; });
   }
 }
+
+// Accessible Journal filtering and native/fallback article sharing.
+const journalCards = [...document.querySelectorAll('[data-article-card]')];
+const journalSearch = document.querySelector('[data-journal-search]');
+const journalFilters = [...document.querySelectorAll('[data-journal-filter]')];
+const journalResults = document.querySelector('[data-journal-results]');
+const journalEmpty = document.querySelector('[data-journal-empty]');
+let activeJournalCategory = 'All';
+const updateJournal = () => {
+  const query = (journalSearch?.value || '').trim().toLowerCase();
+  let visible = 0;
+  journalCards.forEach((card) => {
+    const matchesCategory = activeJournalCategory === 'All' || card.dataset.category === activeJournalCategory;
+    const matchesSearch = !query || (card.dataset.search || '').includes(query);
+    card.hidden = !(matchesCategory && matchesSearch);
+    if (!card.hidden) visible += 1;
+  });
+  if (journalResults) journalResults.textContent = `Showing ${visible} ${visible === 1 ? 'guide' : 'guides'}.`;
+  if (journalEmpty) journalEmpty.hidden = visible !== 0;
+};
+journalSearch?.addEventListener('input', updateJournal);
+journalFilters.forEach((button) => button.addEventListener('click', () => {
+  activeJournalCategory = button.dataset.journalFilter || 'All';
+  journalFilters.forEach((item) => item.classList.toggle('is-active', item === button));
+  updateJournal();
+}));
+document.querySelectorAll('[data-share-article]').forEach((button) => button.addEventListener('click', async () => {
+  const shareData = { title: button.dataset.shareTitle || document.title, url: window.location.href };
+  if (navigator.share) { try { await navigator.share(shareData); return; } catch (error) { if (error.name === 'AbortError') return; } }
+  try { await navigator.clipboard.writeText(window.location.href); button.textContent = 'Link copied'; }
+  catch (error) { window.prompt('Copy this article link:', window.location.href); }
+}));
+
+document.querySelectorAll('[data-inquiry-form]').forEach((form) => {
+  if (form.querySelector('[data-inquiry-privacy-note]')) return;
+  const note = document.createElement('p');
+  note.className = 'form-note';
+  note.dataset.inquiryPrivacyNote = '';
+  const prefix = window.location.pathname.includes('/admin/') ? '../' : '';
+  note.innerHTML = `Submitting this form sends a non-binding inquiry, not a booking. Read our <a href="${prefix}privacy.html">Privacy Policy</a>.`;
+  const submit = form.querySelector('button[type="submit"]');
+  if (submit) form.insertBefore(note, submit); else form.append(note);
+});

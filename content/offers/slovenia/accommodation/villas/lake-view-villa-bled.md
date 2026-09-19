@@ -14,11 +14,11 @@ options:
   - family
   - private-chef
 guests: "6–10 guests"
-price_note: "From €780/night concept"
+price_note: "Travel inspiration · availability not implied"
 image: "https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?auto=format&fit=crop&w=900&q=80"
 image_alt: "Elegant lake villa in Slovenia"
 badge: "Slovenia · Lakes"
-cta_label: "Request stay"
+cta_label: "Find Similar Stays"
 cta_url: "contact.html"
 search_terms:
   - bled
@@ -34,7 +34,7 @@ search_terms:
 
 ## Short description
 
-Private terraces, calm lake mornings, chef dinners, and easy access to alpine routes.
+Stay concept — Private terraces, calm lake mornings, chef dinners, and easy access to alpine routes.
 
 ## Highlights
 

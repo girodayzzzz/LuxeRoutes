@@ -14,11 +14,11 @@ options:
   - family
   - private-chef
 guests: "8–12 guests"
-price_note: "From €1,150/night concept"
+price_note: "Travel inspiration · availability not implied"
 image: "https://images.unsplash.com/photo-1600607688969-a5bfcd646154?auto=format&fit=crop&w=900&q=80"
 image_alt: "Adriatic villa with sea view in Croatia"
 badge: "Croatia · Adriatic"
-cta_label: "Request stay"
+cta_label: "Find Similar Stays"
 cta_url: "contact.html"
 search_terms:
   - croatia
@@ -34,7 +34,7 @@ search_terms:
 
 ## Short description
 
-A coastal villa concept for island days, yacht add-ons, sunset dinners, and family privacy.
+Stay concept — A coastal villa concept for island days, yacht add-ons, sunset dinners, and family privacy.
 
 ## Highlights
 

@@ -14,11 +14,11 @@ options:
   - pet-friendly
   - family
 guests: "2–6 guests"
-price_note: "From €360/night concept"
+price_note: "Travel inspiration · availability not implied"
 image: "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=900&q=80"
 image_alt: "French countryside cabin and retreat interior"
 badge: "France · Countryside"
-cta_label: "Request stay"
+cta_label: "Find Similar Stays"
 cta_url: "contact.html"
 search_terms:
   - france
@@ -33,7 +33,7 @@ search_terms:
 
 ## Short description
 
-A relaxed countryside escape with pool days, village markets, vineyard lunches, and privacy.
+Stay concept — A relaxed countryside escape with pool days, village markets, vineyard lunches, and privacy.
 
 ## Highlights
 
