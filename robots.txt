@@ -1,4 +1,14 @@
 User-agent: *
 Allow: /
+Disallow: /admin/
+Disallow: /admin-panel.html
+Disallow: /account.html
+Disallow: /login.html
+Disallow: /register.html
+Disallow: /reset-password.html
+Disallow: /owner-panel.html
+Disallow: /manager-panel.html
+Disallow: /affiliate-panel.html
+Disallow: /api/
 
 Sitemap: https://luxeroutes.eu/sitemap.xml

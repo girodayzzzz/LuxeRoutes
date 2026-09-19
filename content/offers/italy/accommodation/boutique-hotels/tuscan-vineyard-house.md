@@ -14,11 +14,11 @@ options:
   - spa
   - private-chef
 guests: "Suites"
-price_note: "From €460/night concept"
+price_note: "Travel inspiration · availability not implied"
 image: "https://images.unsplash.com/photo-1510798831971-661eb04b3739?auto=format&fit=crop&w=900&q=80"
 image_alt: "Tuscan boutique hotel surrounded by countryside"
 badge: "Italy · Tuscany"
-cta_label: "Request stay"
+cta_label: "Find Similar Stays"
 cta_url: "contact.html"
 search_terms:
   - italy
@@ -33,7 +33,7 @@ search_terms:
 
 ## Short description
 
-Slow countryside days, cellar visits, pool afternoons, and refined suites near hill towns.
+Stay concept — Slow countryside days, cellar visits, pool afternoons, and refined suites near hill towns.
 
 ## Highlights
 

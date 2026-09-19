@@ -13,11 +13,11 @@ options:
   - private-chef
   - family
 guests: "8–14 guests"
-price_note: "From €1,850/night concept"
+price_note: "Travel inspiration · availability not implied"
 image: "https://images.unsplash.com/photo-1489515217757-5fd1be406fef?auto=format&fit=crop&w=900&q=80"
 image_alt: "Swiss alpine chalet"
 badge: "Switzerland · Alps"
-cta_label: "Request stay"
+cta_label: "Find Similar Stays"
 cta_url: "contact.html"
 search_terms:
   - switzerland
@@ -32,7 +32,7 @@ search_terms:
 
 ## Short description
 
-High-alpine comfort with chef dinners, wellness areas, ski access, and panoramic views.
+Stay concept — High-alpine comfort with chef dinners, wellness areas, ski access, and panoramic views.
 
 ## Highlights
 

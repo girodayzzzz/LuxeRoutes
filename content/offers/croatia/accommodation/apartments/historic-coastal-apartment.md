@@ -13,11 +13,11 @@ options:
   - sea-view
   - family
 guests: "2–5 guests"
-price_note: "From €310/night concept"
+price_note: "Travel inspiration · availability not implied"
 image: "https://images.unsplash.com/photo-1552832230-c0197dd311b5?auto=format&fit=crop&w=900&q=80"
 image_alt: "Mediterranean city apartment with historic architecture"
 badge: "Croatia · City coast"
-cta_label: "Request stay"
+cta_label: "Find Similar Stays"
 cta_url: "contact.html"
 search_terms:
   - croatia
@@ -32,7 +32,7 @@ search_terms:
 
 ## Short description
 
-Refined city living close to old towns, harbors, private guides, and coastal transfers.
+Stay concept — Refined city living close to old towns, harbors, private guides, and coastal transfers.
 
 ## Highlights
 

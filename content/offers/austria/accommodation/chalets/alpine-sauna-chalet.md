@@ -13,11 +13,11 @@ options:
   - family
   - pet-friendly
 guests: "4–8 guests"
-price_note: "From €690/night concept"
+price_note: "Travel inspiration · availability not implied"
 image: "https://images.unsplash.com/photo-1517320964276-a002fa203177?auto=format&fit=crop&w=900&q=80"
 image_alt: "Austrian alpine chalet in winter"
 badge: "Austria · Alps"
-cta_label: "Request stay"
+cta_label: "Find Similar Stays"
 cta_url: "contact.html"
 search_terms:
   - austria
@@ -32,7 +32,7 @@ search_terms:
 
 ## Short description
 
-A warm mountain hideaway for ski weeks, summer hikes, private sauna rituals, and families.
+Stay concept — A warm mountain hideaway for ski weeks, summer hikes, private sauna rituals, and families.
 
 ## Highlights
 

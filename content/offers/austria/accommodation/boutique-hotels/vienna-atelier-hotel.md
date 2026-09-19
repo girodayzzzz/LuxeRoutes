@@ -12,11 +12,11 @@ options:
   - spa
   - pet-friendly
 guests: "Rooms & suites"
-price_note: "From €420/night concept"
+price_note: "Travel inspiration · availability not implied"
 image: "https://images.unsplash.com/photo-1516550893923-42d28e5677af?auto=format&fit=crop&w=900&q=80"
 image_alt: "Elegant Austrian city hotel interior"
 badge: "Austria · City"
-cta_label: "Request stay"
+cta_label: "Find Similar Stays"
 cta_url: "contact.html"
 search_terms:
   - austria
@@ -30,7 +30,7 @@ search_terms:
 
 ## Short description
 
-A cultured city stay for opera evenings, private guides, galleries, and refined dining.
+Stay concept — A cultured city stay for opera evenings, private guides, galleries, and refined dining.
 
 ## Highlights
 
