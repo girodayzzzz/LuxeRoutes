@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1920" viewBox="0 0 1080 1920" role="img" aria-labelledby="title desc">
+<title id="title">SLOVENIA + CROATIA ROAD TRIP — LuxeRoutes</title><desc id="desc">Branded LuxeRoutes social graphic with an abstract mountain and Adriatic landscape.</desc>
+<defs><linearGradient id="sky" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#183c4c"/><stop offset="1" stop-color="#0c2025"/></linearGradient><linearGradient id="sea" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#4f8b8a"/><stop offset="1" stop-color="#142f39"/></linearGradient></defs>
+<rect width="1080" height="1920" fill="url(#sky)"/><circle cx="832" cy="365" r="140" fill="#cf9b59" opacity=".92"/>
+<path d="M0 979 L205 595 L367 902 L583 461 L853 941 L1080 653 V1267 H0Z" fill="#dbe4dc" opacity=".92"/>
+<path d="M0 1114 Q292 979 518 1171 T1080 1094 V1920 H0Z" fill="url(#sea)"/>
+<path d="M0 1325 Q248 1190 518 1363 T1080 1286" fill="none" stroke="#f7f1e7" stroke-width="3" opacity=".42"/>
+<rect x="76" y="76" width="928" height="1768" rx="4" fill="none" stroke="#f7f1e7" stroke-width="2" opacity=".48"/>
+<text x="104" y="138" fill="#fff" font-family="Georgia,serif" font-size="38" letter-spacing="5">LUXEROUTES</text><line x1="104" y1="160" x2="326" y2="160" stroke="#cf9b59" stroke-width="5"/>
+<g transform="translate(104 1344)"><text fill="#cf9b59" font-family="Arial,sans-serif" font-weight="700" font-size="30" letter-spacing="7">10-DAY</text><text y="78" fill="#fff" font-family="Georgia,serif" font-weight="700" font-size="68">SLOVENIA + CROATIA</text><text y="152" fill="#fff" font-family="Georgia,serif" font-weight="700" font-size="68">ROAD TRIP</text><rect y="195" width="520" height="72" rx="36" fill="#cf9b59"/><text x="30" y="242" fill="#122b30" font-family="Arial,sans-serif" font-weight="700" font-size="25">Explore the route  →</text><text y="310" fill="#fff" font-family="Arial,sans-serif" font-size="19" letter-spacing="1">luxeroutes.eu/journal/slovenia-croatia-10-day-adriatic-road-trip</text></g>
+</svg>

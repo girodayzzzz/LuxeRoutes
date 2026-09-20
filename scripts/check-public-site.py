@@ -105,6 +105,7 @@ for slug,count in [('7-day-luxury-road-trip-slovenia',7),('slovenia-croatia-10-d
 
 sitemap=(ROOT/'sitemap.xml').read_text()
 if '<loc>https://luxeroutes.eu/slovenia-croatia-trip-planning</loc>' not in sitemap: errors.append('sitemap missing Slovenia-Croatia planning page')
+if 'marketing-materials' in sitemap: errors.append('sitemap exposes non-public marketing materials')
 if '.html</loc>' in sitemap: errors.append('sitemap contains .html URL')
 if re.search(r'<loc>[^<]+/(?:login|account|admin|manager-panel|owner-panel|api)(?:<|/)',sitemap): errors.append('sitemap contains protected URL')
 article_locs=set(re.findall(r'<loc>https://luxeroutes\.eu/journal/([^<]+)</loc>',sitemap))
@@ -129,6 +130,16 @@ for path in pages:
                      'Editorial Policy','Affiliate Disclosure','Privacy Policy','Terms','Cookie Policy',
                      'Dayzzzz S.P.','Independent European travel guides and selected external offers.'):
         if required not in source: errors.append(f'{path.relative_to(ROOT)}: shared footer missing {required!r}')
+
+landing=(ROOT/'slovenia-croatia-trip-planning.html').read_text()
+for required in ('WebPage','FAQPage','Ljubljana → Bled or Bohinj → Piran → Istria → Rovinj → Opatija → Zagreb',
+                 'href="slovenia"','href="croatia"','href="plan-trip#trip-brief"','href="partner-offers"'):
+    if required not in landing: errors.append(f'slovenia-croatia-trip-planning.html: missing {required!r}')
+
+measurement_script=(ROOT/'script.js').read_text()
+for event in ('plan_trip_cta_click','trip_brief_form_start','trip_brief_form_submit','affiliate_link_click',
+              'journal_article_view','slovenia_croatia_landing_view'):
+    if event not in measurement_script: errors.append(f'script.js: missing privacy-safe measurement event {event}')
 
 if errors:
     print('\n'.join(f'ERROR: {e}' for e in errors)); sys.exit(1)
