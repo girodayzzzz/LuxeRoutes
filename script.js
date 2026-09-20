@@ -16,6 +16,10 @@ if (document.querySelector('.journal-article')) {
   emitMeasurementEvent('journal_article_view', { article_path: window.location.pathname });
 }
 
+if (window.location.pathname.replace(/\/$/, '') === '/slovenia-croatia-trip-planning') {
+  emitMeasurementEvent('slovenia_croatia_landing_view', { page_name: 'slovenia-croatia-trip-planning' });
+}
+
 document.querySelectorAll('[data-current-year]').forEach((year) => {
   year.textContent = String(new Date().getFullYear());
 });

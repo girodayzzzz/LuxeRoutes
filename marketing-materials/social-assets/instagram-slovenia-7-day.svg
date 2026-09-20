@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1350" viewBox="0 0 1080 1350" role="img" aria-labelledby="title desc">
+<title id="title">SLOVENIA ROAD TRIP — LuxeRoutes</title><desc id="desc">Branded LuxeRoutes social graphic with an abstract mountain and Adriatic landscape.</desc>
+<defs><linearGradient id="sky" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#173f3a"/><stop offset="1" stop-color="#0c2025"/></linearGradient><linearGradient id="sea" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#4f8b8a"/><stop offset="1" stop-color="#142f39"/></linearGradient></defs>
+<rect width="1080" height="1350" fill="url(#sky)"/><circle cx="832" cy="256" r="140" fill="#c6a15b" opacity=".92"/>
+<path d="M0 688 L205 418 L367 634 L583 324 L853 662 L1080 459 V891 H0Z" fill="#dbe4dc" opacity=".92"/>
+<path d="M0 783 Q292 688 518 824 T1080 769 V1350 H0Z" fill="url(#sea)"/>
+<path d="M0 931 Q248 837 518 958 T1080 904" fill="none" stroke="#f7f1e7" stroke-width="3" opacity=".42"/>
+<rect x="76" y="76" width="928" height="1198" rx="4" fill="none" stroke="#f7f1e7" stroke-width="2" opacity=".48"/>
+<text x="104" y="138" fill="#fff" font-family="Georgia,serif" font-size="38" letter-spacing="5">LUXEROUTES</text><line x1="104" y1="160" x2="326" y2="160" stroke="#c6a15b" stroke-width="5"/>
+<g transform="translate(104 945)"><text fill="#c6a15b" font-family="Arial,sans-serif" font-weight="700" font-size="30" letter-spacing="7">7-DAY</text><text y="78" fill="#fff" font-family="Georgia,serif" font-weight="700" font-size="68">SLOVENIA</text><text y="152" fill="#fff" font-family="Georgia,serif" font-weight="700" font-size="68">ROAD TRIP</text><rect y="195" width="520" height="72" rx="36" fill="#c6a15b"/><text x="30" y="242" fill="#122b30" font-family="Arial,sans-serif" font-weight="700" font-size="25">Read the practical guide  →</text><text y="310" fill="#fff" font-family="Arial,sans-serif" font-size="19" letter-spacing="1">luxeroutes.eu/journal/7-day-luxury-road-trip-slovenia</text></g>
+</svg>
