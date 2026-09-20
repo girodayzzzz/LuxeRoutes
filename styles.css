@@ -7244,3 +7244,14 @@ body:not(.auth-page) .page-hero h1 {
 pre { overflow:auto; padding:1.2rem; background:#07131e; border:1px solid rgba(255,255,255,.1); border-radius:8px; color:#e7edf0; font-size:.8rem; }
 .business-model-note { background:#cda94e; color:#07131e; padding:.9rem 0; font-size:.9rem; }
 .business-model-note a { color:#07131e; font-weight:800; }
+
+/* Shared trust and policy components */
+.unified-footer-grid { grid-template-columns: minmax(260px, 1.8fr) minmax(190px, 1fr) minmax(220px, 1fr); }
+.policy-copy { max-width: 850px; }
+.policy-copy h2:not(:first-child) { margin-top: 2rem; }
+.breadcrumbs { padding-top: 1rem; display: flex; gap: .55rem; align-items: center; }
+.example-structure, .editorial-trust-note, .official-resources { padding: 1.25rem; border: 1px solid rgba(168,132,73,.35); background: rgba(255,255,255,.7); }
+.editorial-trust-note { margin-bottom: 1rem; font-size: .94rem; }
+.affiliate-topic-card .text-link { margin-top: auto; }
+.affiliate-topic-card { display: flex; flex-direction: column; }
+@media (max-width: 768px) { .unified-footer-grid { grid-template-columns: 1fr; } .affiliate-topic-grid { grid-template-columns: 1fr; } }
