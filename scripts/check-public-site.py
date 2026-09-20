@@ -64,7 +64,7 @@ articles=list((ROOT/'journal').glob('*.html'))
 if len(articles)!=15: errors.append(f'expected 15 articles, got {len(articles)}')
 for path in articles:
     text=path.read_text()
-    for required in ('FAQPage','BreadcrumbList','Related Guides','Published ','Updated ','min read','affiliate-notice'):
+    for required in ('FAQPage','BreadcrumbList','Related Guides','Published ','Updated ','min read','affiliate-notice','editorial-trust-note','../editorial-policy'):
         if required not in text: errors.append(f'{path.name}: missing {required}')
     parser=Page(); parser.feed(text)
     for required in ('description','og:title','og:description','og:url','og:image','twitter:card','twitter:title','twitter:description','twitter:image'):
@@ -102,6 +102,20 @@ if article_locs != expected_articles: errors.append(f'sitemap article set mismat
 robots=(ROOT/'robots.txt').read_text()
 for route in ('/admin/','/account.html','/api/'):
     if f'Disallow: {route}' not in robots: errors.append(f'robots.txt does not block {route}')
+
+redirects=(ROOT/'_redirects').read_text()
+for path in pages:
+    relative=path.relative_to(ROOT).as_posix()
+    clean='/' if relative == 'index.html' else '/' + relative[:-5]
+    rule=f'/{relative} {clean} 301 # legacy-html'
+    if rule not in redirects: errors.append(f'{relative}: missing permanent legacy HTML redirect')
+
+for path in pages:
+    source=path.read_text()
+    for required in ('About','Contact','Journal','Partner Offers','Plan My Trip','Work With LuxeRoutes',
+                     'Editorial Policy','Affiliate Disclosure','Privacy Policy','Terms','Cookie Policy',
+                     'Dayzzzz S.P.','Independent European travel guides and selected external offers.'):
+        if required not in source: errors.append(f'{path.relative_to(ROOT)}: shared footer missing {required!r}')
 
 if errors:
     print('\n'.join(f'ERROR: {e}' for e in errors)); sys.exit(1)

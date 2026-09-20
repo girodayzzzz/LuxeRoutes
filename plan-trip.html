@@ -28,7 +28,7 @@
   <header class="site-header" data-header>
     <div class="header-top" aria-label="LuxeRoutes concierge highlights">
       <div class="container header-top-inner">
-        <span>Private European Travel Design</span>
+        <span>Independent European Travel Guides</span>
         <a href="mailto:info@luxeroutes.eu">info@luxeroutes.eu</a>
         <span>Independent guides · External bookings</span>
       </div>
@@ -59,8 +59,8 @@
           <span>Included in your route brief</span>
           <ul>
             <li>Destination flow and travel pace</li>
-            <li>Curated stays matched to your style</li>
-            <li>Private transfers and experience logic</li>
+            <li>Recommended areas to consider for overnight stays</li>
+            <li>External transfer options and experience logic</li>
             <li>Food, wine, wellness, yacht, nature, or romance add-ons</li>
             <li>Clear next steps before confirmation</li>
           </ul>
@@ -72,7 +72,7 @@
       <div class="container section-heading split-heading">
         <div>
           <p class="eyebrow">How it works</p>
-          <h2>What happens after you submit your private brief.</h2>
+          <h2>What happens after you submit your research brief.</h2>
         </div>
         <p>Your message is a private inquiry, not a booking commitment. LuxeRoutes reviews your preferences and prepares an informational research direction; only external providers confirm availability, prices and reservations.</p>
       </div>
@@ -92,12 +92,13 @@
         <p>If you do not know exactly what to request yet, pick one of these directions in the form and add a few personal notes. LuxeRoutes can turn it into a first route concept.</p>
       </div>
       <div class="container card-grid three trip-idea-grid">
-        <article class="plain-card trip-idea-card"><span>Signature</span><h3>Slovenia + Croatia coast</h3><p>Lake Bled, Ljubljana, Istria, private transfers, wine stops, boutique stays, and Adriatic sea time.</p></article>
+        <article class="plain-card trip-idea-card"><span>Signature</span><h3>Slovenia + Croatia coast</h3><p>Lake Bled, Ljubljana, Istria, external transfer options, wine stops, boutique stays, and Adriatic sea time.</p></article>
         <article class="plain-card trip-idea-card"><span>Romance</span><h3>Italy food, wine & villas</h3><p>Elegant countryside stays, slow lunches, cellar tastings, scenic drives, and a refined celebration rhythm.</p></article>
         <article class="plain-card trip-idea-card"><span>Wellness</span><h3>Alpine reset route</h3><p>Austria, Slovenia, or Switzerland with spa hotels, mountain air, private drivers, and low-stress pacing.</p></article>
       </div>
     </section>
 
+    <section class="section section-soft" aria-labelledby="receive-heading"><div class="container section-heading split-heading"><div><p class="eyebrow">Personalized Travel Research Brief</p><h2 id="receive-heading">What you may receive</h2></div><p>An informational response shaped around the details you submit—not a reservation, package or confirmation of services.</p></div><div class="container info-columns"><div><h3>Research components</h3><ul class="check-list"><li>A suggested route flow</li><li>Recommended areas for overnight stays</li><li>An approximate destination sequence</li><li>Practical transport notes</li><li>Relevant external links for further checking</li></ul></div><div class="example-structure"><p class="eyebrow">Example structure — not a confirmed itinerary</p><ol><li>Arrival area and first overnight base</li><li>Suggested next region and approximate travel note</li><li>Optional final base near the departure point</li><li>External resources to verify before booking</li></ol><p>No hotel, price, availability or provider service is confirmed by this example.</p></div></div></section>
     <section id="trip-brief" class="section plan-brief-section">
       <div class="container form-shell plan-form-shell">
         <div class="plan-brief-intro">
@@ -109,7 +110,7 @@
             <span>Prices and availability are confirmed only by each external provider.</span>
           </div>
         </div>
-        <form class="luxury-form trip-brief-form" data-inquiry-form data-endpoint="/api/inquiries" data-form-type="Private LuxeRoutes trip brief" data-recipient="info@luxeroutes.eu">
+        <form class="luxury-form trip-brief-form" data-inquiry-form data-endpoint="/api/inquiries" data-form-type="Personalized Travel Research Brief" data-recipient="info@luxeroutes.eu">
           <input type="hidden" name="source_page" value="Plan a Trip">
           <label class="honeypot" aria-hidden="true">Leave this field empty<input name="website" type="text" tabindex="-1" autocomplete="off"></label>
           <input type="hidden" name="source_offer_url" data-prefill-param="source_url">
@@ -149,13 +150,13 @@
           <section class="form-section full" aria-labelledby="brief-style-heading">
             <div class="form-section-heading"><span>03</span><h3 id="brief-style-heading">Stay style and experience priorities</h3><p>Tell us what the trip should feel like; we will shape the route around that.</p></div>
             <div class="form-field-grid">
-              <label>Stay preference<select name="stay_preference" data-prefill-param="stay_preference"><option value="">Select preference</option><option>Luxury hotel</option><option>Private villa</option><option>Boutique apartment</option><option>Chalet or cabin</option><option>Wellness retreat</option><option>Mix of curated stays</option></select></label>
-              <label>Transfer preference<select name="transfer_preference"><option value="">Select preference</option><option>Private driver</option><option>Self-drive route</option><option>Train plus private transfers</option><option>Yacht or sea transfer</option><option>Not sure yet</option></select></label>
+              <label>Stay preference<select name="stay_preference" data-prefill-param="stay_preference"><option value="">Select preference</option><option>Luxury hotel</option><option>Private villa</option><option>Boutique apartment</option><option>Chalet or cabin</option><option>Wellness retreat</option><option>Mix of selected stay ideas</option></select></label>
+              <label>Transfer preference<select name="transfer_preference"><option value="">Select preference</option><option>Private driver</option><option>Self-drive route</option><option>Train plus external transfer options</option><option>Yacht or sea transfer</option><option>Not sure yet</option></select></label>
               <label class="full">Trip style<select name="trip_style" required><option value="">Select trip style</option><option>Romantic escape</option><option>Family journey</option><option>Food and wine route</option><option>Wellness retreat</option><option>Adventure and nature</option><option>Multi-country signature route</option><option>Business or partner trip</option></select></label>
               <fieldset class="full form-options">
                 <legend>Experiences to include</legend>
                 <label><input type="checkbox" name="experience_interests" value="Wine tasting"> Wine tasting</label>
-                <label><input type="checkbox" name="experience_interests" value="Private transfers"> Private transfers</label>
+                <label><input type="checkbox" name="experience_interests" value="External transfer options"> External transfer options</label>
                 <label><input type="checkbox" name="experience_interests" value="Yacht or coast day"> Yacht or coast day</label>
                 <label><input type="checkbox" name="experience_interests" value="Wellness and spa"> Wellness and spa</label>
                 <label><input type="checkbox" name="experience_interests" value="Nature or adventure"> Nature or adventure</label>
@@ -166,86 +167,27 @@
           </section>
           <div class="form-submit-panel full">
             <p><strong>After you submit:</strong> LuxeRoutes reviews your brief and may reply with informational route ideas and external links. The inquiry is non-binding and is not a reservation. Prices and availability are confirmed by each provider; its services are governed by its own terms.</p><label class="form-consent"><input type="checkbox" name="privacy_consent" required> I have read the <a href="privacy">Privacy Policy</a> and agree to the processing of my inquiry data.</label>
-            <button class="btn btn-primary" type="submit">Send Private Trip Brief</button>
+            <button class="btn btn-primary" type="submit">Request My Travel Research Brief</button>
           </div>
         </form>
       </div>
     </section>
   </main>
-
   <footer class="site-footer">
     <div class="container footer-consultation">
-      <div>
-        <p class="eyebrow">Begin your route</p>
-        <h2>Tell us where Europe should take you next.</h2>
-        <p>Share your preferred dates, travel style, and occasion. LuxeRoutes will shape a refined first proposal with stays, routes, and experiences that feel personal from the start.</p>
-      </div>
-      <a class="btn btn-primary" href="plan-trip">Start Planning</a>
+      <div><p class="eyebrow">Informational route research</p><h2>Request a Personalized Travel Research Brief.</h2><p>Receive route ideas and practical notes for your own planning. This is not a booking service.</p></div>
+      <a class="btn btn-primary" href="plan-trip">Request a Travel Research Brief</a>
     </div>
-    <div class="container footer-grid">
+    <div class="container footer-grid unified-footer-grid">
       <div class="footer-about">
-        <a class="footer-brand" href="/"><img src="logo.svg" alt="LuxeRoutes wordmark"  width="620" height="160" loading="eager" decoding="async" /></a>
-        <p>Independent European travel guides, route ideas and selected external offers. Bookings take place with external providers.</p>
-        <div class="footer-contact-card company-card">
-          <span>Operated by</span>
-          <strong>Dayzzzz S.P.</strong>
-          <small>Tibi Topolinjak Munda · VAT: SI23492783</small>
-          <small>Spodnji Ključarovci 15A, 2274 Velika Nedelja, Slovenia</small>
-          <a href="mailto:info@luxeroutes.eu">info@luxeroutes.eu</a>
-        </div>
+        <a class="footer-brand" href="/"><img src="logo.svg" alt="LuxeRoutes wordmark" width="620" height="160" loading="lazy" decoding="async" /></a>
+        <p>LuxeRoutes provides independent European travel guides, informational route research and selected links to external booking providers.</p>
+        <div class="footer-contact-card company-card"><span>Operated by</span><strong>Dayzzzz S.P.</strong><small>Tibi Topolinjak Munda · VAT: SI23492783</small><small>Spodnji Ključarovci 15A, 2274 Velika Nedelja, Slovenia</small><a href="mailto:info@luxeroutes.eu">info@luxeroutes.eu</a></div>
       </div>
-      <div>
-        <h2>Explore</h2>
-        <ul>
-          <li><a href="destinations">Destinations</a></li>
-          <li><a href="routes">Signature Routes</a></li>
-          <li><a href="stays">Curated Stays</a></li>
-          <li><a href="experiences">Experiences</a></li>
-          <li><a href="partner-offers">Partner Offers</a></li>
-          <li><a href="offers">Private Offers</a></li>
-          <li><a href="journal">Journal</a></li>
-        </ul>
-      </div>
-      <div>
-        <h2>Stay Types</h2>
-        <ul>
-          <li><a href="hotels">Luxury Hotels</a></li>
-          <li><a href="apartments">Private Apartments</a></li>
-          <li><a href="other-offers">Tailor-made Concepts</a></li>
-          <li><a href="plan-trip">Tailor-made Route</a></li>
-        </ul>
-      </div>
-      <div>
-        <h2>Business access</h2>
-        <ul>
-          <li><a href="partner-signup">Partners</a></li>
-          <li><a href="partners">Partner access</a></li>
-          <li><a href="partners">Owner access</a></li>
-          <li><a href="managers">Manager access</a></li>
-        </ul>
-      </div>
-      <div>
-        <h2>Legal</h2>
-        <ul>
-          <li><a href="privacy">Privacy Policy</a></li>
-          <li><a href="terms">Terms of Use</a></li>
-          <li><a href="cookies">Cookie Policy</a></li>
-          <li><a href="affiliate-disclosure">Affiliate Disclosure</a></li>
-        </ul>
-      </div>
-      <div>
-        <h2>Social</h2>
-        <ul>
-          <li><a href="https://www.facebook.com/luxeroutes" target="_blank" rel="noopener noreferrer">Facebook</a></li>
-          <li><a href="contact">Contact</a></li>
-          <li><a href="journal">Journal</a></li>
-        </ul>
-      </div>
+      <div><h2>Information</h2><ul><li><a href="about">About</a></li><li><a href="contact">Contact</a></li><li><a href="journal">Journal</a></li><li><a href="partner-offers">Partner Offers</a></li><li><a href="plan-trip">Plan My Trip</a></li><li><a href="work-with-luxeroutes">Work With LuxeRoutes</a></li><li><a href="editorial-policy">Editorial Policy</a></li><li><a href="affiliate-disclosure">Affiliate Disclosure</a></li><li><a href="privacy">Privacy Policy</a></li><li><a href="terms">Terms</a></li><li><a href="cookies">Cookie Policy</a></li></ul></div>
+      <div><h2>Booking clarity</h2><p>Bookings, payments, prices, availability and customer support are handled by the external provider.</p></div>
     </div>
-    <div class="container footer-bottom">
-      <p>© <span data-current-year>2026</span> LuxeRoutes. All rights reserved.</p>
-      <p>Designed for bespoke European travel planning.</p>
-    </div>
+    <div class="container footer-bottom"><p>© <span data-current-year>2026</span> LuxeRoutes. All rights reserved.</p><p>Independent European travel guides and selected external offers.</p></div>
   </footer>
   <script src="script.js"></script>
 </body>
