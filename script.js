@@ -1,5 +1,21 @@
 const header = document.querySelector('[data-header]');
 
+// Privacy-safe measurement bridge. This never creates an analytics provider;
+// it forwards named events only when an existing dataLayer is already present.
+const emitMeasurementEvent = (eventName, parameters = {}) => {
+  const detail = { event: eventName, ...parameters };
+  document.dispatchEvent(new CustomEvent(`luxeroutes:${eventName.replaceAll('_', '-')}`, { detail }));
+  if (Array.isArray(window.dataLayer)) window.dataLayer.push(detail);
+};
+
+document.querySelectorAll('a[href*="plan-trip"]').forEach((link) => link.addEventListener('click', () => {
+  emitMeasurementEvent('plan_trip_cta_click', { source_path: window.location.pathname, link_text: link.textContent.trim().slice(0, 80) });
+}));
+
+if (document.querySelector('.journal-article')) {
+  emitMeasurementEvent('journal_article_view', { article_path: window.location.pathname });
+}
+
 document.querySelectorAll('[data-current-year]').forEach((year) => {
   year.textContent = String(new Date().getFullYear());
 });
@@ -700,6 +716,13 @@ document.querySelectorAll('[data-inquiry-form]').forEach((form, formIndex) => {
 
   restoreDraft();
   syncInquiryDateMinimums(form);
+  let formStarted = false;
+  const recordFormStart = () => {
+    if (formStarted) return;
+    formStarted = true;
+    emitMeasurementEvent('trip_brief_form_start', { form_type: form.dataset.formType || 'inquiry', source_path: window.location.pathname });
+  };
+  form.addEventListener('focusin', recordFormStart);
   form.addEventListener('input', saveDraft);
   form.addEventListener('change', saveDraft);
 
@@ -746,6 +769,7 @@ document.querySelectorAll('[data-inquiry-form]').forEach((form, formIndex) => {
       await submitInquiryPayload(endpoint, payload, formData);
       status.classList.add('is-success');
       status.textContent = 'Thank you. Your inquiry has been received — LuxeRoutes will review it and reply within 48 hours.';
+      emitMeasurementEvent('trip_brief_form_submit', { form_type: form.dataset.formType || 'inquiry', source_path: window.location.pathname });
       form.reset();
       try { localStorage.removeItem(draftKey); } catch (error) {}
       status.focus({ preventScroll: true });
@@ -1163,6 +1187,7 @@ document.querySelectorAll('a.affiliate-link').forEach((link) => link.addEventLis
     destinationDomain,
   };
   document.dispatchEvent(new CustomEvent('luxeroutes:affiliate-click', { detail }));
+  emitMeasurementEvent('affiliate_link_click', detail);
 }));
 
 document.querySelectorAll('[data-inquiry-form]').forEach((form) => {
