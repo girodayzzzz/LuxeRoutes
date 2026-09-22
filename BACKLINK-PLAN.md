@@ -51,7 +51,7 @@ For transparency: [state any affiliate or commercial relationship, or “there i
 Kind regards,  
 [Name]  
 LuxeRoutes Editorial Team  
-info@luxeroutes.eu
+info.dayzzzz@gmail.com
 
 ## Contact ledger
 

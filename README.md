@@ -94,3 +94,17 @@ The static Markdown offers remain the curated baseline collection. New owner-sub
 5. Admins can unpublish a stay without deleting its record.
 
 Apply all D1 migrations, including `migrations/0006_offer_assignments.sql` and `migrations/0007_offer_availability_and_inquiry_assignments.sql`, before using this workflow. Migration `0007` adds owner-editable availability, pricing/discount notes, and inquiry assignment fields so customer requests can appear in owner and manager panels. See `docs/cloudflare-admin-auth.md` for deployment and security details.
+
+## Provider advertising subscriptions and Places
+
+LuxeRoutes uses the existing account roles, signed session, D1 database, and `OWNER_IMAGES` R2 bucket. An admin must approve an owner before `/api/owner/*` is available. Apply `migrations/0014_provider_subscriptions_and_places.sql` before enabling the feature.
+
+Configure these **encrypted Cloudflare Pages secrets/variables** (never commit real values):
+
+- `STRIPE_SECRET_KEY`: Stripe secret key (test key in preview, live key in production).
+- `STRIPE_WEBHOOK_SECRET`: signing secret for the production webhook endpoint.
+- `STRIPE_PRICE_BASIC`, `STRIPE_PRICE_PREMIUM`, `STRIPE_PRICE_FEATURED`: recurring monthly Price IDs for €15, €29, and €49 plans.
+
+In Stripe, create three EUR monthly recurring Prices, enable Customer Portal subscription cancellation/plan management, and register `https://luxeroutes.eu/api/stripe/webhook`. Subscribe it to `checkout.session.completed`, `customer.subscription.created`, `customer.subscription.updated`, and `customer.subscription.deleted`. Do not protect the webhook with Cloudflare Access; Stripe signature verification protects it. Keep owner/admin APIs behind the existing signed account/admin controls.
+
+Public `/places` results are selected server-side only when a listing is `approved` and its owner's subscription is `active` or `trialing`. Stripe cancellation or failed-payment status therefore removes it without deleting provider content. LuxeRoutes is an advertising directory and does not accept guest bookings or payments.

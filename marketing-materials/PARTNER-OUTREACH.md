@@ -21,7 +21,7 @@ Kind regards,
 Tibi Topolinjak Munda  
 LuxeRoutes.eu  
 Dayzzzz s.p.  
-[info@luxeroutes.eu](mailto:info@luxeroutes.eu)
+[info.dayzzzz@gmail.com](mailto:info.dayzzzz@gmail.com)
 
 ## Follow-up after 5–7 days
 
@@ -40,7 +40,7 @@ Kind regards,
 Tibi Topolinjak Munda  
 LuxeRoutes.eu  
 Dayzzzz s.p.  
-[info@luxeroutes.eu](mailto:info@luxeroutes.eu)
+[info.dayzzzz@gmail.com](mailto:info.dayzzzz@gmail.com)
 
 ## Email — activity provider
 
@@ -59,7 +59,7 @@ Kind regards,
 Tibi Topolinjak Munda  
 LuxeRoutes.eu  
 Dayzzzz s.p.  
-[info@luxeroutes.eu](mailto:info@luxeroutes.eu)
+[info.dayzzzz@gmail.com](mailto:info.dayzzzz@gmail.com)
 
 ## Short Facebook or Instagram message
 
@@ -82,7 +82,7 @@ Kind regards,
 Tibi Topolinjak Munda  
 LuxeRoutes.eu  
 Dayzzzz s.p.  
-[info@luxeroutes.eu](mailto:info@luxeroutes.eu)
+[info.dayzzzz@gmail.com](mailto:info.dayzzzz@gmail.com)
 
 ## Information and permissions required before publication
 

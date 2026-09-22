@@ -574,7 +574,7 @@ const buildInquiryBody = (form, formData) => {
 };
 
 const showInquiryFallback = (form, formData, status) => {
-  const recipient = form.dataset.recipient || 'info@luxeroutes.eu';
+  const recipient = form.dataset.recipient || 'info.dayzzzz@gmail.com';
   const offerName = String(formData.get('accommodation_interest') || '').trim();
   const subjectBase = form.dataset.formType || 'LuxeRoutes inquiry';
   const subject = encodeURIComponent(offerName ? `${subjectBase}: ${offerName}` : subjectBase);
@@ -761,7 +761,7 @@ document.querySelectorAll('[data-inquiry-form]').forEach((form, formIndex) => {
       : 'Preparing your inquiry on this page…';
 
     if (!endpoint) {
-      status.textContent = 'Thank you. Your inquiry has been prepared — please email info@luxeroutes.eu if you do not hear from us within 48 hours.';
+      status.textContent = 'Thank you. Your inquiry has been prepared — please email info.dayzzzz@gmail.com if you do not hear from us within 48 hours.';
       form.reset();
       try { localStorage.removeItem(draftKey); } catch (error) {}
       form.removeAttribute('aria-busy');
