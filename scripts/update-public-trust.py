@@ -31,7 +31,7 @@ def footer(prefix: str) -> str:
       <div class="footer-about">
         <a class="footer-brand" href="{prefix or '/'}"><img src="{prefix}logo.svg" alt="LuxeRoutes wordmark" width="620" height="160" loading="lazy" decoding="async" /></a>
         <p>LuxeRoutes provides independent European travel guides, informational route research and selected links to external booking providers.</p>
-        <div class="footer-contact-card company-card"><span>Operated by</span><strong>Dayzzzz S.P.</strong><small>Tibi Topolinjak Munda · VAT: SI23492783</small><small>Spodnji Ključarovci 15A, 2274 Velika Nedelja, Slovenia</small><a href="mailto:info@luxeroutes.eu">info@luxeroutes.eu</a></div>
+        <div class="footer-contact-card company-card"><span>Operated by</span><strong>Dayzzzz S.P.</strong><small>Tibi Topolinjak Munda · VAT: SI23492783</small><small>Spodnji Ključarovci 15A, 2274 Velika Nedelja, Slovenia</small><a href="mailto:info.dayzzzz@gmail.com">info.dayzzzz@gmail.com</a></div>
       </div>
       <div><h2>Information</h2><ul>{items}</ul></div>
       <div><h2>Booking clarity</h2><p>Bookings, payments, prices, availability and customer support are handled by the external provider.</p></div>

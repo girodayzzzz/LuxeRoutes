@@ -3,3 +3,10 @@
 RESEND_API_KEY="re_your_resend_api_key"
 AUTH_SESSION_SECRET="replace-with-a-long-random-secret"
 OTP_EMAIL_FROM="LuxeRoutes <login@luxeroutes.eu>"
+
+# Stripe test-mode values for provider advertising subscriptions.
+STRIPE_SECRET_KEY="sk_test_replace_me"
+STRIPE_WEBHOOK_SECRET="whsec_replace_me"
+STRIPE_PRICE_BASIC="price_replace_basic"
+STRIPE_PRICE_PREMIUM="price_replace_premium"
+STRIPE_PRICE_FEATURED="price_replace_featured"

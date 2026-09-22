@@ -24,7 +24,7 @@
     <div class="header-top" aria-label="LuxeRoutes owner highlights">
       <div class="container header-top-inner">
         <span>Owner Panel</span>
-        <a href="mailto:info@luxeroutes.eu">info@luxeroutes.eu</a>
+        <a href="mailto:info.dayzzzz@gmail.com">info.dayzzzz@gmail.com</a>
         <span>Properties · Listing status · Partner profile</span>
       </div>
     </div>
@@ -194,6 +194,7 @@
         </div>
       </div>
     </section>
+    <section class="section provider-console" id="subscription"><div class="container"><p class="eyebrow">Provider advertising</p><h2>Subscription and accommodation listings</h2><p>LuxeRoutes charges providers only for advertising. Guest bookings and payments always happen directly with you.</p><div class="subscription-plans" data-subscription-plans><p class="empty-state">Loading subscription…</p></div><div class="button-row"><button class="btn btn-secondary" data-billing-portal type="button">Manage billing in Stripe</button></div><p data-provider-message role="status" aria-live="polite"></p><article class="admin-card"><h3>Add an accommodation</h3><p>Save a draft or submit it for admin review. An approved listing appears publicly only while your subscription is active.</p><form class="admin-publish-form" data-provider-listing-form><label>Title<input name="title" required maxlength="180"></label><label>Country<input name="country" required maxlength="80"></label><label>Region<input name="region" required maxlength="120"></label><label>Location<input name="location" required maxlength="180"></label><label>Accommodation type<input name="accommodationType" required placeholder="villa, hotel, apartment…"></label><label>Indicative price from (€)<input name="priceFrom" type="number" min="0" step="0.01"></label><label>Maximum guests<input name="maxGuests" type="number" min="1" required></label><label>Contact name<input name="contactName" autocomplete="name"></label><label>Contact email<input name="contactEmail" type="email" autocomplete="email" required></label><label>Contact phone<input name="contactPhone" autocomplete="tel"></label><label>Website<input name="websiteUrl" type="url" placeholder="https://"></label><label class="full">Amenities<input name="amenities" placeholder="pool, spa, wifi, parking"></label><label class="full">Description<textarea name="description" rows="6" required maxlength="5000"></textarea></label><label class="full">Photos <input name="photos" type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple></label><label>Status<select name="status"><option value="draft">Save draft</option><option value="pending">Submit for review</option></select></label><button class="btn btn-primary" type="submit">Save listing</button></form></article><div class="places-grid" data-provider-listings></div><article class="admin-card"><h3>Direct inquiries</h3><div data-provider-inquiries><p class="empty-state">No inquiries yet.</p></div></article></div></section>
   </main>
 
   <footer class="site-footer">
@@ -204,5 +205,6 @@
   </footer>
   <script src="script.js"></script>
   <script src="account.js"></script>
+  <script src="provider-dashboard.js"></script>
 </body>
 </html>

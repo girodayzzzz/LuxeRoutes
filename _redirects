@@ -1,3 +1,4 @@
+/place/* /place.html 200
 /admin /admin/index.html 200
 /admin-panel.html /admin/index.html 200
 /admin/users.html /admin/index.html 200
@@ -70,3 +71,6 @@
 /journal/slovenia-croatia-10-day-adriatic-road-trip.html /journal/slovenia-croatia-10-day-adriatic-road-trip 301 # legacy-html
 /journal/ultimate-alps-road-trip-austria-slovenia-italy.html /journal/ultimate-alps-road-trip-austria-slovenia-italy 301 # legacy-html
 /slovenia-croatia-trip-planning.html /slovenia-croatia-trip-planning 301 # legacy-html
+
+/places.html /places 301 # legacy-html
+/place.html /place 301 # legacy-html

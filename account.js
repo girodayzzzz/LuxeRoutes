@@ -1404,7 +1404,7 @@ const renderAffiliateStatusState = (affiliate = null) => {
       heading: 'Affiliate tracking is paused',
       body: 'Your code is on file, but new visits and inquiries are not being tracked while the affiliate account is paused.',
       code: affiliate?.referralCode || 'Paused',
-      action: '<a class="btn btn-secondary" href="mailto:info@luxeroutes.eu">Contact LuxeRoutes</a>',
+      action: '<a class="btn btn-secondary" href="mailto:info.dayzzzz@gmail.com">Contact LuxeRoutes</a>',
     },
     rejected: {
       label: 'Rejected',
@@ -1419,7 +1419,7 @@ const renderAffiliateStatusState = (affiliate = null) => {
     heading: 'Affiliate status needs review',
     body: 'Contact LuxeRoutes if this affiliate status does not look right.',
     code: affiliate?.referralCode || 'Unavailable',
-    action: '<a class="btn btn-secondary" href="mailto:info@luxeroutes.eu">Contact LuxeRoutes</a>',
+    action: '<a class="btn btn-secondary" href="mailto:info.dayzzzz@gmail.com">Contact LuxeRoutes</a>',
   };
 
   if (affiliateStatusCard) {
